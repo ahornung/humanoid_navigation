@@ -1,0 +1,17 @@
+<package>
+  <description brief="footstep_planner">
+
+     Footstep planning for humanoid robots
+
+  </description>
+  <author>Johannes Garimort</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/footstep_planner</url>
+  <depend package="roscpp"/>
+  <depend package="map_server"/>
+  <depend package="opencv2"/>
+
+</package>
+
+

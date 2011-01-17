@@ -1,0 +1,10 @@
+<stack>
+  <description brief="humanoid_navigation">The humanoid navigation stack will contain
+  various packages for humanoid (biped) robot navigation.</description>
+  <author>Maintained by Armin Hornung</author>
+  <license>GPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/humanoid_navigation</url>
+  <depend stack="ros" />
+
+</stack>

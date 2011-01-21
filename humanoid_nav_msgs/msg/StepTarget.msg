@@ -1,10 +1,7 @@
-# Target for a single stepping motion ("stepTo" in NaoQI)
-uint8 leg
+# Target for a single stepping motion of a humanoid's leg
 
-# step pose relative to offset to last leg
-geometry_msgs/Pose2D pose
+geometry_msgs/Pose2D pose   # step pose as relative offset to last leg
+uint8 leg                   # which leg to use (left/right, see below)
 
-# right leg
-uint8 rightLeg=0
-# left leg
-uint8 leftLeg=1
+uint8 right=0               # right leg constant
+uint8 left=1                # left leg constant

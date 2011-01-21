@@ -1,0 +1,15 @@
+<package>
+  <description brief=" Messages and services for humanoid robot navigation">
+
+     Messages and services for humanoid robot navigation
+
+  </description>
+  <author>Armin Hornung</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/humanoid_nav_msgs</url>
+  <depend package="geometry_msgs"/>
+
+</package>
+
+

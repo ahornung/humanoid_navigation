@@ -1,11 +1,11 @@
 <package>
   <description brief="gridmap_2d">
 
-     gridmap_2d
+     gridmap_2d - a simple 2D gridmap structure, based on OpenCV's cv::Mat
 
   </description>
   <author>Armin Hornung</author>
-  <license>GPL</license>
+  <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/gridmap_2d</url>
   

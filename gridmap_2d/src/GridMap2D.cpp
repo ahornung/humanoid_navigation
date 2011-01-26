@@ -52,6 +52,8 @@ GridMap2D::~GridMap2D() {
 void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
 	m_mapInfo = gridMap->info;
 	m_frameId = gridMap->header.frame_id;
+	// allocate map structs so that x/y in the world correspond to x/y in the image
+	// (=> cv::Mat is rotated by 90 deg, because it's row-major!)
 	m_binaryMap = cv::Mat(m_mapInfo.width, m_mapInfo.height, CV_8UC1);
 	m_distMap = cv::Mat(m_binaryMap.size(), CV_32FC1);
 
@@ -60,13 +62,15 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
 	//TODO check / param
 	unsigned char map_occ_thres = 70;
 
-	for(unsigned int i = 0; i < m_mapInfo.height; ++i)	{
-		for(unsigned int j = 0; j < m_mapInfo.width; ++j){
+	// iterate over map, store in image
+	// (0,0) is lower left corner of OccupancyGrid
+	for(unsigned int j = 0; j < m_mapInfo.height; ++j)	{
+		for(unsigned int i = 0; i < m_mapInfo.width; ++i){
 			if (*mapDataIter > map_occ_thres){
 				// m_mapInfo.height-1-i
-				m_binaryMap.at<uchar>(j,i) = 0;
+				m_binaryMap.at<uchar>(i,j) = 0;
 			} else{
-				m_binaryMap.at<uchar>(j,i) = 255;
+				m_binaryMap.at<uchar>(i,j) = 255;
 			}
 			mapDataIter++;
 		}
@@ -75,7 +79,7 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
 	// distance map now contains distance in meters:
 	m_distMap = m_distMap * m_mapInfo.resolution;
 
-
+	ROS_INFO("GridMap2D created with %d x %d cells", m_mapInfo.width, m_mapInfo.height);
 }
 
 // See costmap2D for mapToWorld / worldToMap implementations:
@@ -93,13 +97,13 @@ void GridMap2D::worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsig
 }
 
 bool GridMap2D::worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const {
-	if(wx < m_mapInfo.origin.position.x || m_mapInfo.origin.position.y)
+	if(wx < m_mapInfo.origin.position.x || wy < m_mapInfo.origin.position.y)
 		return false;
 
     mx = (int) ((wx - m_mapInfo.origin.position.x) / m_mapInfo.resolution);
     my = (int) ((wy - m_mapInfo.origin.position.y) / m_mapInfo.resolution);
 
-    if(mx < m_binaryMap.size().width && my < m_binaryMap.size().height)
+    if(mx < m_mapInfo.width && my < m_mapInfo.height)
     	return true;
 
     return false;
@@ -109,7 +113,7 @@ float GridMap2D::distanceMapAt(double wx, double wy) const{
 	unsigned mx, my;
 
 	if (worldToMap(wx, wy, mx, my))
-		return m_distMap.at<float>(my, mx);
+		return m_distMap.at<float>(mx, my);
 	else
 		return -1.0f;
 }
@@ -119,7 +123,7 @@ uchar GridMap2D::binaryMapAt(double wx, double wy) const{
 	unsigned mx, my;
 
 	if (worldToMap(wx, wy, mx, my))
-		return m_binaryMap.at<uchar>(my, mx);
+		return m_binaryMap.at<uchar>(mx, my);
 	else
 		return 0;
 }

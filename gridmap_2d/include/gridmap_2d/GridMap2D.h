@@ -70,7 +70,7 @@ public:
 		return (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
 	}
 
-	/// Returns distance at world coordinates <wx,wy> in m; -1 if out of bounds!
+	/// Returns distance (in m) at world coordinates <wx,wy> in m; -1 if out of bounds!
 	float distanceMapAt(double wx, double wy) const;
 
 	/// Returns map value at world coordinates <wx,wy>; out of bounds will be returned as 0!

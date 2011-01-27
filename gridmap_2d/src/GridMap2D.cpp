@@ -79,7 +79,7 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
 	// distance map now contains distance in meters:
 	m_distMap = m_distMap * m_mapInfo.resolution;
 
-	ROS_INFO("GridMap2D created with %d x %d cells", m_mapInfo.width, m_mapInfo.height);
+	ROS_INFO("GridMap2D created with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
 }
 
 // See costmap2D for mapToWorld / worldToMap implementations:

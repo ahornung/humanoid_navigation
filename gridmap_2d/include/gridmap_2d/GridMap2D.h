@@ -79,7 +79,8 @@ public:
 	void setMap(const nav_msgs::OccupancyGridConstPtr& gridMap);
 	inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
 	inline float getResolution() const {return m_mapInfo.resolution; };
-	inline const std::string getFrame() const {return m_frameId;}
+	/// returns the tf frame ID of the map (usually "/map")
+	inline const std::string getFrameID() const {return m_frameId;}
 	const cv::Mat& distanceMap() const {return m_distMap;}
 	const cv::Mat& binaryMap() const {return m_binaryMap;}
 	inline const CvSize size() const {return m_binaryMap.size();};

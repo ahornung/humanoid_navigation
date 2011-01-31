@@ -1,16 +1,25 @@
 <package>
-  <description brief="footstep_planner">
+  <description brief="Footstep planning for humanoid robots">
 
-     Footstep planning for humanoid robots
+     A footstep planner for humanoid robots using dynamic replanning based on D* Lite.
 
   </description>
-  <author>Johannes Garimort</author>
-  <license>GPL</license>
+  <author>Johannes Garimort, Armin Hornung</author>
+  <license>GPL 3</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/footstep_planner</url>
-  <depend package="roscpp"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lfootstep_planner"/>
+  </export>  
+  
+  <depend package="humanoid_nav_msgs"/>
   <depend package="map_server"/>
+  <depend package="tf"/>
+  <depend package="visualization_msgs"/>
   <depend package="opencv2"/>
+  <depend package="roscpp"/>
+  <depend package="gridmap_2d"/>
 
 </package>
 

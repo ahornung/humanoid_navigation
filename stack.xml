@@ -1,10 +1,19 @@
 <stack>
-  <description brief="humanoid_navigation">The humanoid navigation stack will contain
-  various packages for humanoid (biped) robot navigation.</description>
+  <description brief="Various packages for humanoid (biped) navigation.">
+		<p>This stack contains packages for humanoid (biped) navigation, 
+		developed at the <a href="http://hrl.informatik.uni-freiburg.de/">Humanoid Robots Lab</a> 
+    at the Albert-Ludwigs-Unversitaet in Freiburg, Germany.
+   </p>
+  </description>
   <author>Maintained by Armin Hornung</author>
-  <license>GPL</license>  
+  <license>BSD,GPL,GPL 3</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/humanoid_navigation</url>
-  <depend stack="ros" />
+  <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs -->
+  <depend stack="geometry" /> <!-- tf -->
+  <depend stack="navigation" /> <!-- map_server -->
+  <depend stack="ros" /> <!-- roscpp -->
+  <depend stack="vision_opencv" /> <!-- opencv2 -->
+  <depend stack="visualization_common" /> <!-- visualization_msgs -->
 
 </stack>

@@ -23,21 +23,25 @@
 
 #include <footstep_planner/FootstepPlannerNode.h>
 
-FootstepPlannerNode::FootstepPlannerNode() {
-	ros::NodeHandle nh;
+namespace footstep_planner{
 
-	// provide callbacks to interact with the footstep planner:
-	ivGoalPoseSub = nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
-	ivGridMapSub = nh.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepPlanner::mapCallback, &ivFootstepPlanner);
-	ivStartPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &FootstepPlanner::startPoseCallback, &ivFootstepPlanner);
+	FootstepPlannerNode::FootstepPlannerNode() {
+		ros::NodeHandle nh;
 
-	if (ivFootstepPlanner.getPlanningMode() == FootstepPlanner::ROBOT_NAVIGATION)
-		ivRobotPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 1, &FootstepPlanner::robotPoseCallback, &ivFootstepPlanner);
+		// provide callbacks to interact with the footstep planner:
+		ivGoalPoseSub = nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
+		ivGridMapSub = nh.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepPlanner::mapCallback, &ivFootstepPlanner);
+		ivStartPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &FootstepPlanner::startPoseCallback, &ivFootstepPlanner);
+
+		if (ivFootstepPlanner.getPlanningMode() == FootstepPlanner::ROBOT_NAVIGATION)
+			ivRobotPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 1, &FootstepPlanner::robotPoseCallback, &ivFootstepPlanner);
 
 
 
-}
+	}
 
-FootstepPlannerNode::~FootstepPlannerNode() {
+	FootstepPlannerNode::~FootstepPlannerNode() {
+
+	}
 
 }

@@ -31,15 +31,24 @@
 
 #include <footstep_planner/FootstepPlanner.h>
 
+namespace footstep_planner{
 
-class FootstepPlannerNode {
-public:
-	FootstepPlannerNode();
-	virtual ~FootstepPlannerNode();
-protected:
-	FootstepPlanner ivFootstepPlanner;
 
-	ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivStartPoseSub, ivRobotPoseSub;
-};
+	/**
+	 * @brief Wrapper class for FootstepPlanner, providing callbacks for
+	 * the node functionality.
+	 *
+	 */
+	class FootstepPlannerNode {
+	public:
+		FootstepPlannerNode();
+		virtual ~FootstepPlannerNode();
+	protected:
+		FootstepPlanner ivFootstepPlanner;
+
+		ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivStartPoseSub, ivRobotPoseSub;
+	};
+
+}
 
 #endif /* FOOTSTEPPLANNERNODE_H_ */

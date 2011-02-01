@@ -2,7 +2,7 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b nao_path_planning is ... 
+\b footstep_planner is a package to provide footstep planning for humanoid or biped robots. 
 
 <!-- 
 Provide an overview of your package.
@@ -10,6 +10,9 @@ Provide an overview of your package.
 
 
 \section codeapi Code API
+
+The main functionality is in the FootstepPlanner class, which is wrapped by 
+FootstepPlannerNode for stand-alone planning in footstep_planner.cpp
 
 <!--
 Provide links to specific auto-generated API documentation within your

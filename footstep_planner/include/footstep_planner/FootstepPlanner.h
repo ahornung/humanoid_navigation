@@ -44,115 +44,156 @@
 #include <XmlRpcValue.h>
 #include <XmlRpcException.h>
 
+namespace footstep_planner{
 
-class FootstepPlanner
-{
+	/**
+	 * @brief The Footstep Planner class, offering the public interface to
+	 * use for (re)planning. Internally uses Dstar for planning.
+	 *
+	 */
+	class FootstepPlanner
+	{
 
-public:
+	public:
 
-	enum PlanningMode { MERE_PLANNING=0, ROBOT_NAVIGATION=1 };
+		enum PlanningMode { MERE_PLANNING=0, ROBOT_NAVIGATION=1 };
 
-	FootstepPlanner();
-	virtual ~FootstepPlanner();
+		FootstepPlanner();
+		virtual ~FootstepPlanner();
 
-	/// plan a single footstep sequence from start to goal pose
-	bool plan(const geometry_msgs::PoseStampedConstPtr& start, const geometry_msgs::PoseStampedConstPtr& goal);
-	/// plan a single footstep sequence from start to goal pose
-	bool plan(float startX, float startY, float startTheta, float goalX, float goalY, float goalTheta);
-	/// plan a single footstep sequence where start and goal have been set by the appropriate methods
-	bool plan();
+		/**
+		 * @brief Plan a single footstep sequence from start to goal pose
+		 *
+		 * @return success of planning
+		 */
+		bool plan(const geometry_msgs::PoseStampedConstPtr& start, const geometry_msgs::PoseStampedConstPtr& goal);
 
-	/// sets a new (static) goal location
-	bool setGoal(const geometry_msgs::PoseStampedConstPtr& goalPose);
-	/// sets a new (static) goal location. The coordinates need to be in the map coordinate frame.
-	bool setGoal(float x, float y, float theta);
+		/**
+		 * @brief Plan a single footstep sequence from start to goal pose
+		 *
+		 * @return success of planning
+		 */
+		bool plan(float startX, float startY, float startTheta, float goalX, float goalY, float goalTheta);
 
-	/// sets a new (static) start location
-	bool setStart(const geometry_msgs::PoseStampedConstPtr& startPose);
-	/// sets a new (static) start location. The coordinates need to be in the map coordinate frame.
-	bool setStart(float x, float y, float theta);
+		/**
+		 * @brief Plan a single footstep sequence where start and goal have been set by the appropriate methods
+		 *
+		 * @return success of planning
+		 */
+		bool plan();
 
-	/// Sets a new 2D grid, also updates the map of its Dstar-planner
-	void setMap(boost::shared_ptr<GridMap2D> gridMap);
+		/**
+		 * @brief Sets a new (static) goal location. The coordinates need to be in the map coordinate frame.
+		 *
+		 * @return false if the goalPose is invalid
+		 */
+		bool setGoal(const geometry_msgs::PoseStampedConstPtr& goalPose);
 
-	/// return true if the foot in state u would collide with an obstacle
-	bool occupied(const State& u);
+		/**
+		 * @brief Sets a new (static) goal location. The coordinates need to be in the map coordinate frame.
+		 *
+		 * @return false if the goalPose is invalid
+		 */
+		bool setGoal(float x, float y, float theta);
 
-	void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goalPose);
-	void startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& startPose);
-	void robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
-	void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap);
+		/**
+		 * @brief Sets a new (static) start location. The coordinates need to be in the map coordinate frame.
+		 *
+		 * @return false if the startPose is invalid
+		 */
+		bool setStart(const geometry_msgs::PoseStampedConstPtr& startPose);
 
-	PlanningMode getPlanningMode() const { return ivMode; };
+		/**
+		 * @brief Sets a new (static) start location. The coordinates need to be in the map coordinate frame.
+		 *
+		 * @return false if the startPose is invalid
+		 */
+		bool setStart(float x, float y, float theta);
 
-private:
+		/// Sets a new 2D grid, also updates the map of its Dstar-planner
+		void setMap(boost::shared_ptr<GridMap2D> gridMap);
 
-	boost::shared_ptr<Dstar>     ivDstarPtr;
-	boost::shared_ptr<GridMap2D> ivMapPtr;
-	roslib::Header ivRobotHeader;
+		/// return true if the foot in state u would collide with an obstacle
+		bool occupied(const State& u);
 
-	State ivStartFootLeft;
-	State ivStartFootRight;
-	State ivGoalFootLeft;
-	State ivGoalFootRight;
+		void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goalPose);
+		void startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& startPose);
+		void robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
 
-	boost::mutex ivRobotPoseUpdateMutex;
+		/// Callback on a map message, calls setMap() accordingly
+		void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap);
 
-	int    ivCollisionCheckAccuracy;
-	bool   ivDstarSetUp;
-	bool   ivStartPoseSet;
-	bool   ivGoalPoseSet;
-	bool   ivRobotPoseSet;
-	bool   ivExecutingFootsteps;
-	double ivFootsizeX;
-	double ivFootsizeY;
-	double ivFootsizeZ;
-	double ivFootOriginShiftX;
-	double ivFootOriginShiftY;
-	double ivFootMaxStepX;
-	double ivFootMaxStepY;
-	double ivFootMaxStepTheta;
-	double ivFootMaxInverseStepX;
-	double ivFootMaxInverseStepY;
-	double ivFootMaxInverseStepTheta;
-	double ivFootSeparation;
-	double ivFootstepAccuracyX;
-	double ivFootstepAccuracyY;
-	double ivFootstepAccuracyTheta;
-	int    ivLastMarkerMsgSize;
+		PlanningMode getPlanningMode() const { return ivMode; };
 
-	PlanningMode ivMode;
+	private:
 
-	std::string ivRFootID;
-	std::string ivLFootID;
+		boost::shared_ptr<Dstar>     ivDstarPtr;
+		boost::shared_ptr<GridMap2D> ivMapPtr;
+		roslib::Header ivRobotHeader;
 
-	ros::NodeHandle    ivNh;
-	ros::Publisher     ivExpandedStatesVisPub;
-	ros::Publisher	   ivFootstepPathVisPub;
-	ros::Publisher     ivStartPoseVisPub;
-	ros::Publisher	   ivPathVisPub;
-	ros::ServiceClient ivFootstepService;
+		State ivStartFootLeft;
+		State ivStartFootRight;
+		State ivGoalFootLeft;
+		State ivGoalFootRight;
 
-	tf::TransformListener ivTransformListener;
+		boost::mutex ivRobotPoseUpdateMutex;
 
-	void broadcastFootstepPathVis();
-	void broadcastExpandedNodesVis();
-	void broadcastPathVis();
-	void executeFootsteps();
-	void getFootPositions(const State& robot, State& footLeft, State& footRight);
-	void getFootTransform(tf::Transform& footstep,
-	                      const std::string& from,
-	                      const std::string& to,
-	                      const ros::Time& time);
-	bool getGreedyFootstep(const tf::Transform& supportFoot,
-	                       const tf::Transform& footPlacement,
-	                       humanoid_nav_msgs::StepTarget& footstep);
-	void navigate();
-	bool dstarPlanning();
-	void performPathAdjustment();
+		int    ivCollisionCheckAccuracy;
+		bool   ivDstarSetUp;
+		bool   ivStartPoseSet;
+		bool   ivGoalPoseSet;
+		bool   ivRobotPoseSet;
+		bool   ivExecutingFootsteps;
+		double ivFootsizeX;
+		double ivFootsizeY;
+		double ivFootsizeZ;
+		double ivFootOriginShiftX;
+		double ivFootOriginShiftY;
+		double ivFootMaxStepX;
+		double ivFootMaxStepY;
+		double ivFootMaxStepTheta;
+		double ivFootMaxInverseStepX;
+		double ivFootMaxInverseStepY;
+		double ivFootMaxInverseStepTheta;
+		double ivFootSeparation;
+		double ivFootstepAccuracyX;
+		double ivFootstepAccuracyY;
+		double ivFootstepAccuracyTheta;
+		int    ivLastMarkerMsgSize;
 
-	void footstepToMarker(const State& step, visualization_msgs::Marker& printOut);
+		PlanningMode ivMode;
 
-};
+		std::string ivRFootID;
+		std::string ivLFootID;
+
+		ros::NodeHandle    ivNh;
+		ros::Publisher     ivExpandedStatesVisPub;
+		ros::Publisher	   ivFootstepPathVisPub;
+		ros::Publisher     ivStartPoseVisPub;
+		ros::Publisher	   ivPathVisPub;
+		ros::ServiceClient ivFootstepService;
+
+		tf::TransformListener ivTransformListener;
+
+		void broadcastFootstepPathVis();
+		void broadcastExpandedNodesVis();
+		void broadcastPathVis();
+		void executeFootsteps();
+		void getFootPositions(const State& robot, State& footLeft, State& footRight);
+		void getFootTransform(tf::Transform& footstep,
+							  const std::string& from,
+							  const std::string& to,
+							  const ros::Time& time);
+		bool getGreedyFootstep(const tf::Transform& supportFoot,
+							   const tf::Transform& footPlacement,
+							   humanoid_nav_msgs::StepTarget& footstep);
+		void navigate();
+		bool dstarPlanning();
+		void performPathAdjustment();
+
+		void footstepToMarker(const State& step, visualization_msgs::Marker& printOut);
+
+	};
+}
 
 #endif /* FootstepPlanner_H_ */

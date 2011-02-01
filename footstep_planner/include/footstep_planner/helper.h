@@ -32,56 +32,58 @@
 #define ANGLE_COMP_THR 0.087
 #define MAPGRID_OCCUPENCY_THR 70.0
 
+namespace footstep_planner{
 
-static const double TWO_PI = 2 * M_PI;
-static const float  FLOAT_COMP_THR_SQR = FLOAT_COMP_THR * FLOAT_COMP_THR;
-
-
-enum Leg
-{
-
-	NOLEG=0, RIGHT=1, LEFT=2
-
-};
+	static const double TWO_PI = 2 * M_PI;
+	static const float  FLOAT_COMP_THR_SQR = FLOAT_COMP_THR * FLOAT_COMP_THR;
 
 
-bool  close(float x, float y);
-/**
- * Checking if a footstep (represented by its center and orientation (x, y, theta))
- * collides with an obstacle. The check is done by recursively testing if either
- * the outer circle around the foot, the inner circle of the foot or the are in
- * between has an appropriate distance to the nearest obstacle.
- *
- * @param x
- * @param y
- * @param theta
- * @param height of the foot
- * @param width of the foot
- * @param distanceMap containing distance information to the nearest obstacle
- * @return true if the footstep collides with an obstacle
- */
-bool  collisionCheck(float x,
-                     float y,
-                     float theta,
-                     float height,
-                     float width,
-                     int accuracy,
-                     const GridMap2D& distanceMap);
-float euclideanDistance(float x1, float x2, float y1, float y2, int roundingThreshold);
-/**
- * Calculate the footstep necessary to reach 'to' from 'from'.
- *
- * @param supportLeg
- * @param footSeparation
- * @param from
- * @param to
- * @param footstep
- */
-void  getFootstep(Leg supportLeg,
-                  float footSeparation,
-                  const tf::Transform& from,
-                  const tf::Transform& to,
-                  tf::Transform* footstep);
-float round(float f, short decimal);
+	enum Leg
+	{
+
+		NOLEG=0, RIGHT=1, LEFT=2
+
+	};
+
+
+	bool  close(float x, float y);
+	/**
+	 * Checking if a footstep (represented by its center and orientation (x, y, theta))
+	 * collides with an obstacle. The check is done by recursively testing if either
+	 * the outer circle around the foot, the inner circle of the foot or the are in
+	 * between has an appropriate distance to the nearest obstacle.
+	 *
+	 * @param x
+	 * @param y
+	 * @param theta
+	 * @param height of the foot
+	 * @param width of the foot
+	 * @param distanceMap containing distance information to the nearest obstacle
+	 * @return true if the footstep collides with an obstacle
+	 */
+	bool  collisionCheck(float x,
+						 float y,
+						 float theta,
+						 float height,
+						 float width,
+						 int accuracy,
+						 const GridMap2D& distanceMap);
+	float euclideanDistance(float x1, float x2, float y1, float y2, int roundingThreshold);
+	/**
+	 * Calculate the footstep necessary to reach 'to' from 'from'.
+	 *
+	 * @param supportLeg
+	 * @param footSeparation
+	 * @param from
+	 * @param to
+	 * @param footstep
+	 */
+	void  getFootstep(Leg supportLeg,
+					  float footSeparation,
+					  const tf::Transform& from,
+					  const tf::Transform& to,
+					  tf::Transform* footstep);
+	float round(float f, short decimal);
+}
 
 #endif

@@ -27,60 +27,62 @@
 #include <footstep_planner/helper.h>
 #include <footstep_planner/State.h>
 
+namespace footstep_planner{
 
-/*
- * class Heuristic
- * --------------------------
- * An abstract super class providing methods necessary to be used as heuristic
- * function within the D* lite algorithm.
- */
-class Heuristic
-{
+	/*
+	 * class Heuristic
+	 * --------------------------
+	 * An abstract super class providing methods necessary to be used as heuristic
+	 * function within the D* lite algorithm.
+	 */
+	class Heuristic
+	{
 
-public:
+	public:
 
-  Heuristic();
-  virtual ~Heuristic();
+	  Heuristic();
+	  virtual ~Heuristic();
 
-	virtual float getHValue(const State& from, const State& to) const = 0;
+		virtual float getHValue(const State& from, const State& to) const = 0;
 
-};
-
-
-class EuclideanHeuristic : public Heuristic
-{
-
-public:
-
-  EuclideanHeuristic(int roundingThreshold);
-  virtual ~EuclideanHeuristic();
-
-  virtual float getHValue(const State& from, const State& to) const;
-
-private:
-
-  const int ivRoundingThreshold;
-
-};
+	};
 
 
-class EuclStepCostHeuristic : public Heuristic
-{
+	class EuclideanHeuristic : public Heuristic
+	{
 
-public:
+	public:
 
-  EuclStepCostHeuristic(int roundingThreshold, float stepCosts, float maxStepWidth);
-  virtual ~EuclStepCostHeuristic();
+	  EuclideanHeuristic(int roundingThreshold);
+	  virtual ~EuclideanHeuristic();
 
-  virtual float getHValue(const State& from, const State& to) const;
+	  virtual float getHValue(const State& from, const State& to) const;
 
-private:
+	private:
 
-  const int   ivRoundingThreshold;
-  const float ivStepCosts;
-  const float ivMaxStepWidth;
+	  const int ivRoundingThreshold;
 
-};
+	};
+
+
+	class EuclStepCostHeuristic : public Heuristic
+	{
+
+	public:
+
+	  EuclStepCostHeuristic(int roundingThreshold, float stepCosts, float maxStepWidth);
+	  virtual ~EuclStepCostHeuristic();
+
+	  virtual float getHValue(const State& from, const State& to) const;
+
+	private:
+
+	  const int   ivRoundingThreshold;
+	  const float ivStepCosts;
+	  const float ivMaxStepWidth;
+
+	};
+}
 
 
 #endif /* HEURISTIC_H_ */

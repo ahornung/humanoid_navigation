@@ -23,59 +23,62 @@
 
 #include <footstep_planner/Heuristic.h>
 
+namespace footstep_planner{
 
-Heuristic::Heuristic()
-{}
-
-
-Heuristic::~Heuristic()
-{}
+	Heuristic::Heuristic()
+	{}
 
 
-EuclideanHeuristic::EuclideanHeuristic(int roundingThreshold)
-	: ivRoundingThreshold(roundingThreshold)
-{}
+	Heuristic::~Heuristic()
+	{}
 
 
-EuclideanHeuristic::~EuclideanHeuristic()
-{}
+	EuclideanHeuristic::EuclideanHeuristic(int roundingThreshold)
+		: ivRoundingThreshold(roundingThreshold)
+	{}
 
 
-float
-EuclideanHeuristic::getHValue(const State& from, const State& to)
-const
-{
-
-	if (from == to)
-		return 0;
-
-	return euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY(), ivRoundingThreshold);
-
-}
+	EuclideanHeuristic::~EuclideanHeuristic()
+	{}
 
 
-EuclStepCostHeuristic::EuclStepCostHeuristic(int roundingThreshold, float stepCosts, float maxStepWidth)
-	: ivRoundingThreshold(roundingThreshold),
-	  ivStepCosts(stepCosts),
-	  ivMaxStepWidth(maxStepWidth)
-{}
+	float
+	EuclideanHeuristic::getHValue(const State& from, const State& to)
+	const
+	{
+
+		if (from == to)
+			return 0;
+
+		return euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY(), ivRoundingThreshold);
+
+	}
 
 
-EuclStepCostHeuristic::~EuclStepCostHeuristic()
-{}
+	EuclStepCostHeuristic::EuclStepCostHeuristic(int roundingThreshold, float stepCosts, float maxStepWidth)
+		: ivRoundingThreshold(roundingThreshold),
+		  ivStepCosts(stepCosts),
+		  ivMaxStepWidth(maxStepWidth)
+	{}
 
 
-float
-EuclStepCostHeuristic::getHValue(const State& from, const State& to)
-const
-{
+	EuclStepCostHeuristic::~EuclStepCostHeuristic()
+	{}
 
-	if (from == to)
-		return 0;
 
-	float distance = euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY(), ivRoundingThreshold);
-	int expectedSteps = (int)(distance*2.0 / ivMaxStepWidth);
+	float
+	EuclStepCostHeuristic::getHValue(const State& from, const State& to)
+	const
+	{
 
-	return distance + expectedSteps * ivStepCosts;
+		if (from == to)
+			return 0;
+
+		float distance = euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY(), ivRoundingThreshold);
+		int expectedSteps = (int)(distance*2.0 / ivMaxStepWidth);
+
+		return distance + expectedSteps * ivStepCosts;
+
+	}
 
 }

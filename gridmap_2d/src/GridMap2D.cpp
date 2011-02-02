@@ -129,3 +129,27 @@ uchar GridMap2D::binaryMapAt(double wx, double wy) const{
 }
 
 
+float GridMap2D::distanceMapAtCell(unsigned int mx, unsigned int my) const{
+	return m_distMap.at<float>(mx, my);
+}
+
+
+uchar GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my) const{
+	return m_binaryMap.at<uchar>(mx, my);
+}
+
+
+bool GridMap2D::isOccupiedAtCell(unsigned int mx, unsigned int my) const{
+	return (m_binaryMap.at<uchar>(mx, my) < 255);
+}
+
+
+bool GridMap2D::isOccupiedAt(double wx, double wy) const{
+	unsigned mx, my;
+	if (worldToMap(wx, wy, mx, my))
+		return isOccupiedAtCell(mx, my);
+	else
+		return true;
+}
+
+

@@ -39,6 +39,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <nav_msgs/OccupancyGrid.h>
 
+/**
+ * @brief Stores a nav_msgs::OccupancyGrid in a convenient opencv cv::Mat
+ * as binary map (free: 255, occupied: 0) and as distance map (distance
+ * to closest obstacle in meter).
+ */
 class GridMap2D {
 public:
 	GridMap2D();
@@ -74,8 +79,21 @@ public:
 	/// Returns distance (in m) at world coordinates <wx,wy> in m; -1 if out of bounds!
 	float distanceMapAt(double wx, double wy) const;
 
-	/// Returns map value at world coordinates <wx,wy>; out of bounds will be returned as 0!
+	/// Returns distance (in m) at map cell <mx, my> in m; -1 if out of bounds!
+	float distanceMapAtCell(unsigned int mx, unsigned int my) const;
+
+	/// Returns map value at world coordinates <wx, wy>; out of bounds will be returned as 0!
 	uchar binaryMapAt(double wx, double wy) const;
+
+	/// Returns map value at map cell <mx, my>; out of bounds will be returned as 0!
+	uchar binaryMapAtCell(unsigned int mx, unsigned int my) const;
+
+	/// @return true if map is occupied at world coordinate <wx, wy>. Out of bounds
+	/// 		will be returned as occupied.
+	bool isOccupiedAt(double wx, double wy) const;
+
+	/// @return true if map is occupied at cell <mx, my>
+	bool isOccupiedAtCell(unsigned int mx, unsigned int my) const;
 
 	void setMap(const nav_msgs::OccupancyGridConstPtr& gridMap);
 	inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}

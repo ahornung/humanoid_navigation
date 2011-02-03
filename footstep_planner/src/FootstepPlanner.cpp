@@ -484,8 +484,8 @@ namespace footstep_planner{
 			{
 				tf::Transform leftFoot;
 				tf::Transform rightFoot;
-				getFootTransform(leftFoot, ivLFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp);
-				getFootTransform(rightFoot, ivRFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp);
+				getFootTransform(ivLFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp, leftFoot);
+				getFootTransform(ivRFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp, rightFoot);
 				ivStartFootLeft = State(leftFoot.getOrigin().x(),
 										leftFoot.getOrigin().y(),
 										tf::getYaw(leftFoot.getRotation()),
@@ -513,8 +513,8 @@ namespace footstep_planner{
 			{
 				tf::Transform leftFoot;
 				tf::Transform rightFoot;
-				getFootTransform(leftFoot, ivLFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp);
-				getFootTransform(rightFoot, ivRFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp);
+				getFootTransform(ivLFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp, leftFoot);
+				getFootTransform(ivRFootID, ivMapPtr->getFrameID(), ivRobotHeader.stamp, rightFoot);
 				ivStartFootLeft = State(leftFoot.getOrigin().x(),
 										leftFoot.getOrigin().y(),
 										tf::getYaw(leftFoot.getRotation()),
@@ -574,10 +574,10 @@ namespace footstep_planner{
 
 		{
 			boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
-			getFootTransform(supportFoot,
-							 supportFootLink,
+			getFootTransform(supportFootLink,
 							 ivMapPtr->getFrameID(),
-							 ivRobotHeader.stamp);
+							 ivRobotHeader.stamp,
+							 supportFoot);
 		}
 		// perform a greedy footstep adjustment to place the robot's feed on the
 		// first footstep placement calculated by the planner
@@ -594,10 +594,10 @@ namespace footstep_planner{
 			ivFootstepService.call(footstepService);
 			{
 				boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
-				getFootTransform(supportFoot,
-								 supportFootLink,
+				getFootTransform(supportFootLink,
 								 ivMapPtr->getFrameID(),
-								 ivRobotHeader.stamp);
+								 ivRobotHeader.stamp,
+								 supportFoot);
 			}
 			reached = getGreedyFootstep(supportFoot, footPlacement, step);
 			step.leg = firstStepLeg;
@@ -623,10 +623,10 @@ namespace footstep_planner{
 			{
 				boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
 				// get real placement of the support foot
-				getFootTransform(supportFoot,
-								 supportFootLink,
+				getFootTransform(supportFootLink,
 								 ivMapPtr->getFrameID(),
-								 ivRobotHeader.stamp);
+								 ivRobotHeader.stamp,
+								 supportFoot);
 			}
 			// get next foot placement
 			ivDstarPtr->getMinSucc(current, &next);

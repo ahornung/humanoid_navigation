@@ -59,6 +59,7 @@ namespace footstep_planner{
 
 		void setLeg(Leg leg) { ivLeg = leg; };
 
+
 	private:
 
 		// translation and rotation parameters
@@ -70,41 +71,14 @@ namespace footstep_planner{
 	};
 
 
-	struct state_struct
-	{
-
-		State leftFoot;
-		State rightFoot;
-
-	};
-
-
-	struct stateInfo
-	{
-
-		float g;
-		float rhs;
-
-	};
-
-
-	struct state_hash
-	{
-
-		size_t operator ()(const State &s) const;
-
-	};
-
-
-	typedef std::priority_queue<State, std::vector<State>, std::greater<State> > openlist_type;
-	typedef boost::unordered_map<State, stateInfo, state_hash, std::equal_to<State> > statehash_type;
-	typedef boost::unordered_map<State, float, state_hash, std::equal_to<State> > openhash_type;
-
-
 	class Dstar
 	{
 
 	public:
+
+		typedef std::priority_queue<State, std::vector<State>, std::greater<State> > openlist_type;
+		typedef boost::unordered_map<State, State::state_info, State::state_hash, std::equal_to<State> > statehash_type;
+		typedef boost::unordered_map<State, float, State::state_hash, std::equal_to<State> > openhash_type;
 
 		typedef std::vector<State>::const_iterator stateIterator;
 
@@ -218,11 +192,9 @@ namespace footstep_planner{
 
 		State::key calculateKey(const State& u) const;
 
-		bool  comp(const State& top, const State& start);
-
-
 	};
 
 } // end of namespace
+
 
 #endif

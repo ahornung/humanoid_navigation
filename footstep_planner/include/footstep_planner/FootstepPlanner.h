@@ -25,6 +25,7 @@
 #define FOOTSTEPPLANNER_H_
 
 #include <assert.h>
+#include <footstep_planner/Astar.h>
 #include <footstep_planner/Dstar.h>
 #include <footstep_planner/helper.h>
 #include <footstep_planner/Heuristic.h>
@@ -44,7 +45,9 @@
 #include <XmlRpcValue.h>
 #include <XmlRpcException.h>
 
-namespace footstep_planner{
+
+namespace footstep_planner
+{
 
 	/**
 	 * @brief The Footstep Planner class, offering the public interface to
@@ -57,6 +60,7 @@ namespace footstep_planner{
 	public:
 
 		enum PlanningMode { MERE_PLANNING=0, ROBOT_NAVIGATION=1 };
+		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, ASTAR_PATH=2 };
 
 		FootstepPlanner();
 		virtual ~FootstepPlanner();
@@ -113,9 +117,6 @@ namespace footstep_planner{
 		/// Sets a new 2D grid, also updates the map of its Dstar-planner
 		void setMap(boost::shared_ptr<GridMap2D> gridMap);
 
-		/// return true if the foot in state u would collide with an obstacle
-		bool occupied(const State& u);
-
 		void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goalPose);
 		void startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& startPose);
 		void robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
@@ -125,18 +126,17 @@ namespace footstep_planner{
 
 		PlanningMode getPlanningMode() const { return ivMode; };
 
+
 	private:
 
 		boost::shared_ptr<Dstar>     ivDstarPtr;
 		boost::shared_ptr<GridMap2D> ivMapPtr;
-		roslib::Header ivRobotHeader;
+		boost::mutex ivRobotPoseUpdateMutex;
 
 		State ivStartFootLeft;
 		State ivStartFootRight;
 		State ivGoalFootLeft;
 		State ivGoalFootRight;
-
-		boost::mutex ivRobotPoseUpdateMutex;
 
 		int    ivCollisionCheckAccuracy;
 		bool   ivDstarSetUp;
@@ -166,6 +166,8 @@ namespace footstep_planner{
 		std::string ivRFootID;
 		std::string ivLFootID;
 
+		roslib::Header ivRobotHeader;
+
 		ros::NodeHandle    ivNh;
 		ros::Publisher     ivExpandedStatesVisPub;
 		ros::Publisher	   ivFootstepPathVisPub;
@@ -178,7 +180,9 @@ namespace footstep_planner{
 		void broadcastFootstepPathVis();
 		void broadcastExpandedNodesVis();
 		void broadcastPathVis();
+		bool dstarPlanning();
 		void executeFootsteps();
+		void footstepToMarker(const State& step, visualization_msgs::Marker& printOut);
 		void getFootPositions(const State& robot, State& footLeft, State& footRight);
 		void getFootTransform(tf::Transform& footstep,
 							  const std::string& from,
@@ -188,12 +192,15 @@ namespace footstep_planner{
 							   const tf::Transform& footPlacement,
 							   humanoid_nav_msgs::StepTarget& footstep);
 		void navigate();
-		bool dstarPlanning();
+
+		/// return true if the foot in state u would collide with an obstacle
+		bool occupied(const State& u);
+
 		void performPathAdjustment();
 
-		void footstepToMarker(const State& step, visualization_msgs::Marker& printOut);
 
 	};
+
 }
 
 #endif /* FootstepPlanner_H_ */

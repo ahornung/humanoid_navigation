@@ -140,15 +140,20 @@ namespace footstep_planner{
 
 		// initialize the heuristic
 		boost::shared_ptr<Heuristic> h;
+		float footWidth;
 		switch (heuristic)
 		{
-		case 0: // euclidean distance
+		case EUCLIDEAN: // euclidean distance
 			h.reset(new EuclideanHeuristic(roundingThreshold));
 			break;
-		case 1: // euclidean distance + step costs estimation
+		case EUCLIDEAN_STEPCOST: // euclidean distance + step costs estimation
 			h.reset(new EuclStepCostHeuristic(roundingThreshold, stepCosts, maxStepWidth));
 			break;
-		case 2: // euclidean distance + step costs estimation based on precalculated subgoals
+		case ASTAR_PATH: // euclidean distance + step costs estimation based on precalculated subgoals
+			footWidth = ivFootsizeX;
+			if (ivFootsizeX < ivFootsizeY)
+				footWidth = ivFootsizeY;
+			h.reset(new AstarHeuristic(stepCosts, maxStepWidth, footWidth));
 			break;
 		default:
 			ROS_ERROR("No heuristic available, exiting.");

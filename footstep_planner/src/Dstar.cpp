@@ -26,22 +26,9 @@
 
 #include <footstep_planner/Dstar.h>
 
-namespace footstep_planner{
 
-	size_t
-	state_hash::operator ()(const State &s)
-	const
-	{
-
-		return 124 * s.getX() + 34245*s.getY() + 1306*s.getTheta() + s.getLeg();
-
-	//	float x = round(s.getX(), Dstar::cvRoundingThreshold);
-	//	float y = round(s.getY(), Dstar::cvRoundingThreshold);
-	//	float angle = round(s.getTheta(), Dstar::cvRoundingThreshold);
-	//	return 124 * x + 34245 * y + 1306 * angle + s.getLeg();
-
-	}
-
+namespace footstep_planner
+{
 
 	/*
 	 * #############################################################################
@@ -241,7 +228,7 @@ namespace footstep_planner{
 		// set the goal state; NOTE: the state's leg is set to right
 		ivGoal = goal;
 
-		stateInfo tmp;
+		State::state_info tmp;
 		tmp.g = INFINITY;
 		tmp.rhs =  0;
 		ivStateHash[ivGoal] = tmp;
@@ -284,13 +271,13 @@ namespace footstep_planner{
 
 	//	if (ivStateHash.find(u) != ivStateHash.end()) return;
 	//
-		stateInfo tmp;
+		State::state_info tmp;
 		tmp.g = tmp.rhs = INFINITY;
 
 		//	ivStateHash[u] = tmp;
 		// new insertion and search in one (if not exists):
 
-		ivStateHash.insert(std::pair<State, stateInfo>(u,tmp));
+		ivStateHash.insert(std::pair<State, State::state_info>(u,tmp));
 
 
 
@@ -483,22 +470,6 @@ namespace footstep_planner{
 		}
 
 		return 0;
-
-	}
-
-
-	bool
-	Dstar::comp(const State& top, const State& start)
-	{
-
-		State::key keyTop = top.getKey();
-		State::key keyStart = calculateKey(start);
-
-		if (keyTop.first + FLOAT_COMP_THR < keyStart.first)
-			return true;
-		else if (keyTop.first - FLOAT_COMP_THR > keyStart.first)
-			return false;
-		return keyTop.second + FLOAT_COMP_THR < keyStart.second;
 
 	}
 
@@ -918,7 +889,7 @@ namespace footstep_planner{
 		// set the goal state; NOTE: the state's leg is set to right
 		ivGoal = goal;
 
-		stateInfo tmp;
+		State::state_info tmp;
 		tmp.g = INFINITY;
 		tmp.rhs =  0;
 		ivStateHash[ivGoal] = tmp;
@@ -1355,6 +1326,21 @@ namespace footstep_planner{
 		else if (ivKey.first - FLOAT_COMP_THR > s2Key.first)
 			return false;
 		return ivKey.second < s2Key.second;
+
+	}
+
+
+	size_t
+	State::state_hash::operator ()(const State &s)
+	const
+	{
+
+		return 124 * s.getX() + 34245*s.getY() + 1306*s.getTheta() + s.getLeg();
+
+	//	float x = round(s.getX(), Dstar::cvRoundingThreshold);
+	//	float y = round(s.getY(), Dstar::cvRoundingThreshold);
+	//	float angle = round(s.getTheta(), Dstar::cvRoundingThreshold);
+	//	return 124 * x + 34245 * y + 1306 * angle + s.getLeg();
 
 	}
 

@@ -69,6 +69,7 @@ namespace footstep_planner{
 		std::string toString();
 		std::string toShortString();
 
+
 	private:
 
 		// global information of location and orientation of the robot defining a
@@ -80,6 +81,25 @@ namespace footstep_planner{
 
 		// the key value of the state used by the d* lite search
 		key ivKey;
+
+
+	public:
+
+		struct state_info
+		{
+
+			float g;
+			float rhs;
+
+		};
+
+
+		struct state_hash
+		{
+
+			size_t operator ()(const State &s) const;
+
+		};
 
 	};
 }

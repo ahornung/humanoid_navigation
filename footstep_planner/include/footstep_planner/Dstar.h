@@ -30,8 +30,6 @@
 #include <boost/tr1/unordered_map.hpp>
 #include <footstep_planner/helper.h>
 #include <footstep_planner/Heuristic.h>
-#include <footstep_planner/State.h>
-#include <gridmap_2d/GridMap2D.h>
 #include <math.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <queue>
@@ -40,8 +38,8 @@
 #include <tf/transform_datatypes.h>
 #include <vector>
 
-namespace footstep_planner{
-
+namespace footstep_planner
+{
 
 	class Footstep
 	{
@@ -131,8 +129,6 @@ namespace footstep_planner{
 
 		/// receive the successor state with the smallest g value
 		bool  getMinSucc(const State u, State* succ);
-		/// return true if the foot in state u would collide with an obstacle
-		bool  occupied(const State& u) const;
 		void  updateDistanceMap(boost::shared_ptr<GridMap2D> map);
 
 		static int cvRoundingThreshold;
@@ -183,6 +179,8 @@ namespace footstep_planner{
 		bool  isCloseToStart(const State& s) const;
 		bool  isValid(const State& u) const;
 		float keyHashCode(const State& u) const;
+		/// return true if the foot in state u would collide with an obstacle
+		bool  occupied(const State& u) const;
 		bool  reachable(const State& from, const State& to) const;
 		void  remove(const State& u);
 		void  setG(const State& u, float g);

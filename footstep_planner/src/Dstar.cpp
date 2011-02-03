@@ -215,15 +215,15 @@ namespace footstep_planner
 		ivStartStateLeft = startFootLeft;
 		ivStartStateRight = startFootRight;
 
-	//	// set the state the search wants to reach
-	//	float leftFootDist = ivMapPtr->distanceMapAt(ivStartStateLeft.getX(), ivStartStateLeft.getY());
-	//	float rightFootDist = ivMapPtr->distanceMapAt(ivStartStateRight.getX(), ivStartStateRight.getY());
-	//	if (leftFootDist > rightFootDist)
-	//		ivStart = ivStartStateLeft;
-	//	else
-	//		ivStart = ivStartStateRight;
-		// NOTE: the state's leg is set to left
-		ivStart = ivStartStateLeft;
+		// set the state the search wants to reach
+		float leftFootDist = ivMapPtr->distanceMapAt(ivStartStateLeft.getX(), ivStartStateLeft.getY());
+		float rightFootDist = ivMapPtr->distanceMapAt(ivStartStateRight.getX(), ivStartStateRight.getY());
+		if (leftFootDist > rightFootDist)
+			ivStart = ivStartStateLeft;
+		else
+			ivStart = ivStartStateRight;
+//		// NOTE: the state's leg is set to left
+//		ivStart = ivStartStateLeft;
 
 		// set the goal state; NOTE: the state's leg is set to right
 		ivGoal = goal;
@@ -278,8 +278,6 @@ namespace footstep_planner
 		// new insertion and search in one (if not exists):
 
 		ivStateHash.insert(std::pair<State, State::state_info>(u,tmp));
-
-
 
 	}
 
@@ -372,17 +370,6 @@ namespace footstep_planner
 		std::vector<State> s;
 		std::vector<State>::iterator i;
 
-		ROS_INFO("from goal (%.3f, %.3f, %.3f, %i)", ivGoal.getX(), ivGoal.getY(), ivGoal.getTheta(), ivGoal.getLeg());
-		ROS_INFO("to start (%.3f, %.3f, %.3f, %i)", ivStart.getX(), ivStart.getY(), ivStart.getTheta(), ivStart.getLeg());
-		ROS_INFO("start foot right (%.3f, %.3f, %.3f, %i)", ivStartStateRight.getX(),
-															ivStartStateRight.getY(),
-															ivStartStateRight.getTheta(),
-															ivStartStateRight.getLeg());
-		ROS_INFO("start foot left (%.3f, %.3f, %.3f, %i)", ivStartStateLeft.getX(),
-														   ivStartStateLeft.getY(),
-														   ivStartStateLeft.getTheta(),
-														   ivStartStateLeft.getLeg());
-
 		int k=0;
 		while ((!ivOpenList.empty()) &&
 				(ivOpenList.top() < ivStart || getRhs(ivStart) > getG(ivStart)))
@@ -413,8 +400,6 @@ namespace footstep_planner
 			ivExpandedStates.push_back(u);
 
 			bool closeToStart = isCloseToStart(u);
-			ROS_INFO("current state (%.3f, %.3f, %.3f, %i)", u.getX(), u.getY(), u.getTheta(), u.getLeg());
-			ROS_INFO("close to start: %i (1 == yes)", closeToStart);
 
 			if (closeToStart)
 			{
@@ -549,8 +534,8 @@ namespace footstep_planner
 		float csum;
 
 		u.setKey(calculateKey(u));
-	//	cur  = ivOpenHash.find(u);
 		csum = keyHashCode(u);
+	//	cur  = ivOpenHash.find(u);
 		// return if cell is already in list. TODO: this should be
 		// uncommented except it introduces a bug, I suspect that there is a
 		// bug somewhere else and having duplicates in the openList queue
@@ -850,14 +835,14 @@ namespace footstep_planner
 		ivStartStateLeft = startFootLeft;
 		ivStartStateRight = startFootRight;
 
-	//	float leftFootDist = ivMapPtr->distanceMapAt(startFootLeft.getX(), startFootLeft.getY());
-	//	float rightFootDist = ivMapPtr->distanceMapAt(startFootRight.getX(), startFootRight.getY());
-	//	if (leftFootDist <= rightFootDist)
-	//		ivStart = ivStartStateLeft;
-	//	else
-	//		ivStart = ivStartStateRight;
-		// NOTE: the state's leg is set to left
-		ivStart = ivStartStateLeft;
+		float leftFootDist = ivMapPtr->distanceMapAt(startFootLeft.getX(), startFootLeft.getY());
+		float rightFootDist = ivMapPtr->distanceMapAt(startFootRight.getX(), startFootRight.getY());
+		if (leftFootDist <= rightFootDist)
+			ivStart = ivStartStateLeft;
+		else
+			ivStart = ivStartStateRight;
+//		// NOTE: the state's leg is set to left
+//		ivStart = ivStartStateLeft;
 
 		ivKM += ivHeuristicConstPtr->getHValue(ivLast, ivStart);
 		ivStart.setKey(calculateKey(ivStart));

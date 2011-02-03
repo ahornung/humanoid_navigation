@@ -25,11 +25,6 @@
 
 namespace footstep_planner{
 
-	/*
-	 * FootstepPlanner::FootstepPlanner()
-	 * --------------------------
-	 * Constructor.
-	 */
 	FootstepPlanner::FootstepPlanner()
 		: ivDstarSetUp(false),
 		  ivStartPoseSet(false),
@@ -184,20 +179,10 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * FootstepPlanner::~FootstepPlanner()
-	 * --------------------------
-	 * Destructor.
-	 */
 	FootstepPlanner::~FootstepPlanner()
 	{}
 
 
-	/*
-	 * void FootstepPlanner::goalCallback(const geometry_msgs::PoseStampedConstPtr& goal)
-	 * --------------------------
-	 * Callback function for updating the goal pose.
-	 */
 	void
 	FootstepPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goalPose)
 	{
@@ -220,12 +205,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::robotFakePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& initialpose)
-	 * --------------------------
-	 * Callback function for updating the robot's pose if the pose is set manually
-	 * (e.g. via rviz).
-	 */
 	void
 	FootstepPlanner::startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& startPose)
 	{
@@ -249,11 +228,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::mapCallback(const nav_msgs::OccupancyGridConstPtr& gridMap)
-	 * --------------------------
-	 * Callback function for updating the robots pose (received for example via 2D laser orientation).
-	 */
 	void
 	FootstepPlanner::robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose)
 	{
@@ -271,11 +245,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::mapCallback(const nav_msgs::OccupancyGridConstPtr& gridMap)
-	 * --------------------------
-	 * Callback function for updating the map.
-	 */
 	void
 	FootstepPlanner::mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap)
 	{
@@ -283,25 +252,8 @@ namespace footstep_planner{
 		boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancyMap));
 		setMap(gridMap);
 
-
-	//	geometry_msgs::PoseStampedPtr start(new geometry_msgs::PoseStamped);
-	//	start->pose.position.x = 0.2;
-	//	start->pose.position.y = 0.9;
-	//	tf::quaternionTFToMsg(tf::createQuaternionFromYaw(0), start->pose.orientation);
-	//	start->header = occupancyMap->header;
-	//	geometry_msgs::PoseStampedPtr goal(new geometry_msgs::PoseStamped);
-	//	goal->pose.position.x = 0.655;
-	//	goal->pose.position.y = 0.9;
-	//	goal->header = occupancyMap->header;
-	//	tf::quaternionTFToMsg(tf::createQuaternionFromYaw(0), goal->pose.orientation);
-	//	plan(start, goal);
-	////	ROS_INFO("---------------------------------------------------------------");
-	////	start->pose.position.x = 0.2;
-	////	start->pose.position.y = 0.9;
-	////	setStart(start);
-	//	exit(0);
-
 	}
+
 
 	bool
 	FootstepPlanner::setGoal(float x, float y, float theta)
@@ -424,11 +376,10 @@ namespace footstep_planner{
 			ROS_INFO("Planning mode is set to robot navigation.");
 			return false;
 		}
-		if (!ivGoalPoseSet and !ivStartPoseSet)
-		{
-			ROS_ERROR("Either no start pose or no robot pose has been received yet.");
-			return false;
-		}
+
+		// all checks should have been performed before
+		assert(ivGoalPoseSet);
+		assert(ivStartPoseSet);
 		assert(ivMapPtr);
 
 		ivDstarPtr->reset();
@@ -488,11 +439,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::navigate()
-	 * --------------------------
-	 * Navigates the robot from his basic pose to the goal pose.
-	 */
 	void
 	FootstepPlanner::navigate()
 	{
@@ -501,22 +447,10 @@ namespace footstep_planner{
 		if (ivMode == ROBOT_NAVIGATION && ivExecutingFootsteps)
 			return;
 
-		// check if all necessary information for the planning task has been received
-		if (ivMode == MERE_PLANNING && !ivStartPoseSet)
-		{
-			ROS_ERROR("No start pose received yet.");
-			return;
-		}
-		else if (ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet)
-		{
-			ROS_ERROR("No robot pose received yet.");
-			return;
-		}
-		if (!ivGoalPoseSet)
-		{
-			ROS_ERROR("No goal pose set yet.");
-			return;
-		}
+		// all checks should have been performed before
+		assert(!(ivMode == MERE_PLANNING && !ivStartPoseSet));
+		assert(!(ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet));
+		assert(ivGoalPoseSet);
 		assert(ivMapPtr);
 
 		// start the planning task
@@ -607,13 +541,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::executeFootsteps()
-	 * --------------------------
-	 * Perform the calculated footsteps and initialize a replanning if the
-	 * environment changes or deviation to the calculated path due to unclean
-	 * performed footsteps is too big.
-	 */
 	void
 	FootstepPlanner::executeFootsteps()
 	{
@@ -733,130 +660,6 @@ namespace footstep_planner{
 	}
 
 
-	///*
-	// * bool FootstepPlanner::getGreadyFootstep(tf::Transform& supportFoot,
-	// *                                         tf::Transform& footPlacement,
-	// *                                         humanoid_nav_msgs::StepTarget& footstep)
-	// * --------------------------
-	// * Check if 'footPlacement' can be reached from 'supportFoot' by any footstep
-	// * (i.e. not only the discretized footsteps).
-	// */
-	//bool
-	//FootstepPlanner::getGreedyFootstep(tf::Transform& supportFoot,
-	//                                   tf::Transform& footPlacement,
-	//                                   humanoid_nav_msgs::StepTarget& footstep)
-	//{
-	//
-	//	bool xInRange = false;
-	//	bool yInRange = false;
-	//	bool thetaInRange = false;
-	//
-	//	tf::Transform current;
-	//	tf::Vector3 translation;
-	//
-	//	tf::Quaternion rotation = footPlacement.getRotation().inverse() * supportFoot.getRotation();
-	//	if (footstep.leg == humanoid_nav_msgs::StepTarget::right)
-	//		translation = tf::Vector3(0, ivFootSeparation/2, 0);
-	//	else // leg == rightLeg
-	//		translation = tf::Vector3(0, -ivFootSeparation/2, 0);
-	//	current = footPlacement * tf::Transform(rotation, translation);
-	//	current *= tf::Transform(tf::createQuaternionFromYaw(0.0), translation);
-	//	current = supportFoot.inverse() * current;
-	//
-	//	float diffX = current.getOrigin().x();
-	//	float diffY = current.getOrigin().y();
-	//	float diffAngle = -tf::getYaw(rotation);
-	//
-	//	if (diffX <= ivFootMaxStepX + ivFootstepAccuracyX &&
-	//		diffX >= -ivFootMaxStepX - ivFootstepAccuracyX)
-	//	{
-	//		xInRange = true;
-	//	}
-	//	else
-	//	{
-	//		if (diffX > ivFootMaxStepX )
-	//			footstep.pose.x = ivFootMaxStepX;
-	//		else if (diffX < -ivFootMaxStepX)
-	//			footstep.pose.x = -ivFootMaxStepX;
-	//		else
-	//			footstep.pose.x = diffX;
-	//	}
-	//	if (footstep.leg == humanoid_nav_msgs::StepTarget::right)
-	//		{
-	//		if (diffY >= -ivFootMaxStepY - ivFootstepAccuracyY &&
-	//			diffY <= ivFootMaxInverseStepY + ivFootstepAccuracyY)
-	//		{
-	//			yInRange = true;
-	//		}
-	//		else
-	//		{
-	//			if (diffY < -ivFootMaxStepY)
-	//				footstep.pose.y = -ivFootMaxStepY;
-	//			else if (diffY > ivFootMaxInverseStepY)
-	//				footstep.pose.y = ivFootMaxInverseStepY;
-	//			else
-	//				footstep.pose.y = diffY;
-	//		}
-	//		if (diffAngle >= -ivFootMaxStepTheta - ivFootstepAccuracyTheta &&
-	//			diffAngle <= ivFootMaxInverseStepTheta + ivFootstepAccuracyTheta)
-	//		{
-	//			thetaInRange = true;
-	//		}
-	//		else
-	//		{
-	//			if (diffAngle < -ivFootMaxStepTheta)
-	//				footstep.pose.theta = -ivFootMaxStepTheta;
-	//			else if (diffAngle > ivFootMaxInverseStepTheta)
-	//				footstep.pose.theta = ivFootMaxInverseStepTheta;
-	//			else
-	//				footstep.pose.theta = diffAngle;
-	//		}
-	//	}
-	//	else // leg =left
-	//	{
-	//		if (diffY <= ivFootMaxStepY + ivFootstepAccuracyY &&
-	//			diffY >= -ivFootMaxInverseStepY - ivFootstepAccuracyY)
-	//		{
-	//			yInRange = true;
-	//		}
-	//		else
-	//		{
-	//			if (diffY > ivFootMaxStepY)
-	//				footstep.pose.y = ivFootMaxStepY;
-	//			else if (diffY < -ivFootMaxInverseStepY)
-	//				footstep.pose.y = -ivFootMaxInverseStepY;
-	//			else
-	//				footstep.pose.y = diffY;
-	//		}
-	//		if (diffAngle <= ivFootMaxStepTheta + ivFootstepAccuracyTheta &&
-	//			diffAngle >= -ivFootMaxInverseStepTheta - ivFootstepAccuracyTheta)
-	//		{
-	//			thetaInRange = true;
-	//		}
-	//		else
-	//		{
-	//			if (diffAngle > ivFootMaxStepTheta)
-	//				footstep.pose.theta = ivFootMaxStepTheta;
-	//			else if (diffAngle < -ivFootMaxInverseStepTheta)
-	//				footstep.pose.theta = -ivFootMaxInverseStepTheta;
-	//			else
-	//				footstep.pose.theta = diffAngle;
-	//		}
-	//	}
-	//
-	//	return xInRange && yInRange && thetaInRange;
-	//
-	//}
-
-
-	/*
-	 * bool FootstepPlanner::getGreadyFootstep(humanoid_nav_msgs::StepTarget& footstep,
-	 *                                         tf::Transform& supportFoot,
-	 *                                         tf::Transform& footPlacement)
-	 * --------------------------
-	 * Check if 'footPlacement' can be reached from 'supportFoot' by any footstep
-	 * (i.e. not only the discretized footsteps).
-	 */
 	bool
 	FootstepPlanner::getGreedyFootstep(const tf::Transform& supportFoot,
 									   const tf::Transform& footPlacement,
@@ -961,11 +764,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * bool FootstepPlanner::getFootPositions(const State& robot, State& leftFoot, State& rightFoot)
-	 * --------------------------
-	 * ...
-	 */
 	void
 	FootstepPlanner::getFootPositions(const State& robot, State& footLeft, State& footRight)
 	{
@@ -988,10 +786,10 @@ namespace footstep_planner{
 
 
 	void
-	FootstepPlanner::getFootTransform(tf::Transform& foot,
-									  const std::string& from,
+	FootstepPlanner::getFootTransform(const std::string& from,
 									  const std::string& to,
-									  const ros::Time& time)
+									  const ros::Time& time,
+									  tf::Transform& foot)
 	{
 
 		tf::StampedTransform stampedFootTransform;
@@ -1004,11 +802,6 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * bool FootstepPlanner::occupied(const State& u)
-	 * --------------------------
-	 * Check whether this state collides with an obstacle or not.
-	 */
 	bool
 	FootstepPlanner::occupied(const State& u)
 	{
@@ -1034,20 +827,13 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::broadcastFootstepPathVis()
-	 * --------------------------
-	 * Publishes the footstep path.
-	 */
 	void
 	FootstepPlanner::broadcastFootstepPathVis()
 	{
 
-		if (!ivStartPoseSet and !ivRobotPoseSet)
-		{
-			ROS_ERROR("Either no start pose or no robot pose has been received yet.");
-			return;
-		}
+		// checks should have been performed before
+		assert(!(ivMode == MERE_PLANNING && !ivStartPoseSet));
+		assert(!(ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet));
 
 		visualization_msgs::Marker marker;
 		visualization_msgs::MarkerArray markerMsg;
@@ -1100,20 +886,13 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::broadcastPathVis()
-	 * --------------------------
-	 * Publishes the calculated zig-zag state path.
-	 */
 	void
 	FootstepPlanner::broadcastPathVis()
 	{
 
-		if (!ivStartPoseSet and !ivRobotPoseSet)
-		{
-			ROS_ERROR("Either no start pose or no robot pose has been received yet.");
-			return;
-		}
+		// checks should have been performed before
+		assert(!(ivMode == MERE_PLANNING && !ivStartPoseSet));
+		assert(!(ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet));
 
 		nav_msgs::Path pathMsg;
 		geometry_msgs::PoseStamped state;
@@ -1162,20 +941,13 @@ namespace footstep_planner{
 	}
 
 
-	/*
-	 * void FootstepPlanner::broadcastExpandedNodesVis()
-	 * --------------------------
-	 * Publishes the expanded states of the search as point cloud.
-	 */
 	void
 	FootstepPlanner::broadcastExpandedNodesVis()
 	{
 
-		if (!ivStartPoseSet and !ivRobotPoseSet)
-		{
-			ROS_ERROR("Either no start pose or no robot pose has been received yet.");
-			return;
-		}
+		// checks should have been performed before
+		assert(!(ivMode == MERE_PLANNING && !ivStartPoseSet));
+		assert(!(ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet));
 
 		sensor_msgs::PointCloud cloudMsg;
 		geometry_msgs::Point32 point;
@@ -1206,11 +978,9 @@ namespace footstep_planner{
 	FootstepPlanner::footstepToMarker(const State& footstep, visualization_msgs::Marker& marker)
 	{
 
-		if (!ivStartPoseSet and !ivRobotPoseSet)
-		{
-			ROS_ERROR("Either no start pose or no robot pose has been received yet.");
-			return;
-		}
+		// checks should have been performed before
+		assert(!(ivMode == MERE_PLANNING && !ivStartPoseSet));
+		assert(!(ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet));
 
 		if (ivMode == MERE_PLANNING)
 		{

@@ -197,17 +197,17 @@ namespace footstep_planner
 		tf::TransformListener ivTransformListener;
 
 		/**
-		 * @brief Publishes the calculated footstep path under "footstep_planning/path" as visualization_msgs::MarkerArray.
+		 * @brief Publishes the calculated footstep path under "~/path" as visualization_msgs::MarkerArray.
 		 */
 		void broadcastFootstepPathVis();
 
 		/**
-		 * @brief Publishes the expanded states of the planner under "footstep_planning/expanded_states" as sensor_msgs::PointCloud.
+		 * @brief Publishes the expanded states of the planner under "~/expanded_states" as sensor_msgs::PointCloud.
 		 */
 		void broadcastExpandedNodesVis();
 
 		/**
-		 * @brief Publishes the calculated path under "footstep_planning/footsteps_array" as nav_msgs::Path.
+		 * @brief Publishes the calculated path under "~/footsteps_array" as nav_msgs::Path.
 		 */
 		void broadcastPathVis();
 

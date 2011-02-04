@@ -126,7 +126,7 @@ namespace footstep_planner
 		      const int   collisionCheckAccuracy,
 		      const int   roundingThreshold,
 		      const int   plannerMaxSteps,
-		      const boost::shared_ptr<const Heuristic> heuristicConstPtr);
+		      const boost::shared_ptr<Heuristic> heuristicConstPtr);
 		virtual ~Dstar();
 
 		/**
@@ -184,7 +184,7 @@ namespace footstep_planner
 		 * @brief Update the distance map. Formerly unoccupied states are set
 		 * locally inconsistent and vice versa.
 		 */
-		void  updateDistanceMap(const boost::shared_ptr<const GridMap2D> map);
+		void  updateDistanceMap(boost::shared_ptr<GridMap2D> map);
 
 		static int cvRoundingThreshold;
 
@@ -212,9 +212,9 @@ namespace footstep_planner
 		const int   ivCollisionCheckAccuracy;
 		const int	ivPlannerMaxSteps;
 
-		const boost::shared_ptr<const Heuristic> ivHeuristicConstPtr;
+		const boost::shared_ptr<Heuristic> ivHeuristicConstPtr;
 
-		boost::shared_ptr<const GridMap2D> ivMapPtr;
+		boost::shared_ptr<GridMap2D> ivMapPtr;
 
 		/**
 		 * @brief The Open list of states containing these states that are

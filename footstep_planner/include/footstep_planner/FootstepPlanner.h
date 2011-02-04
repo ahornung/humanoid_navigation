@@ -148,7 +148,7 @@ namespace footstep_planner
 	private:
 
 		boost::shared_ptr<Dstar> ivDstarPtr;
-		boost::shared_ptr<const GridMap2D> ivMapPtr;
+		boost::shared_ptr<GridMap2D> ivMapPtr;
 		boost::mutex ivRobotPoseUpdateMutex;
 
 		State ivStartFootLeft;

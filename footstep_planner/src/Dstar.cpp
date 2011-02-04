@@ -56,7 +56,7 @@ namespace footstep_planner
 		         const int   collisionCheckAccuracy,
 		         const int   roundingThreshold,
 		         const int   plannerMaxSteps,
-		         const boost::shared_ptr<const Heuristic> heuristicConstPtr)
+		         const boost::shared_ptr<Heuristic> heuristicConstPtr)
 		: ivFootstepSet(footstepSet),
 		  ivFootSeparation(footSeparation),
 		  ivFootOriginShiftX(footOriginShiftX),
@@ -136,7 +136,7 @@ namespace footstep_planner
 
 
 	void
-	Dstar::updateDistanceMap(const boost::shared_ptr<const GridMap2D> map)
+	Dstar::updateDistanceMap(boost::shared_ptr<GridMap2D> map)
 	{
 
 		bool exists = ivMapPtr;

@@ -248,7 +248,7 @@ namespace footstep_planner
 
 
 	void
-	AstarHeuristic::setMap(const boost::shared_ptr<const GridMap2D> map)
+	AstarHeuristic::setMap(boost::shared_ptr<GridMap2D> map)
 	{
 
 		ivMapPtr.reset();

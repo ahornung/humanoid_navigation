@@ -102,7 +102,7 @@ namespace footstep_planner
 		virtual float getHValue(const State& from, const State& to) const;
 
 		bool astarPlanning(const State& from, const State& to);
-		void setMap(const boost::shared_ptr<const GridMap2D> map);
+		void setMap(boost::shared_ptr<GridMap2D> map);
 
 
 	private:

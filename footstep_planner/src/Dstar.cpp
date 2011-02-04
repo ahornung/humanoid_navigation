@@ -36,75 +36,54 @@ namespace footstep_planner
 	 * #############################################################################
 	 */
 
-	/*
-	 * int Dstar::cvRoundingThreshold
-	 * --------------------------
-	 * Initialization of class variable.
-	 */
 	int
 	Dstar::cvRoundingThreshold = 5;
 
 
-	/*
-	 * void Dstar::Dstar()
-	 * --------------------------
-	 * Constructor sets constants.
-	 */
 	Dstar::Dstar(const std::vector<Footstep>& footstepSet,
-				 const float footSeparation,
-				 const float footOriginXShift,
-				 const float footOriginYShift,
-				 const float footWidth,
-				 const float footHeight,
-				 const float maxShiftX,
-				 const float maxShiftY,
-				 const float maxTurn,
-				 const float maxInverseShiftY,
-				 const float maxInnerTurn,
-				 const float maxStepWidth,
-				 const float stepCost,
-				 const int   collCheckAccuracy,
-				 const int   stateEqualityCutoff,
-				 const int   plannerMaxSteps,
-				 const boost::shared_ptr<const Heuristic>& heuristicConstPtr)
+		         const float footSeparation,
+		         const float footOriginShiftX,
+		         const float footOriginShiftY,
+		         const float footsizeX,
+		         const float footsizeY,
+		         const float footMaxStepX,
+		         const float footMaxStepY,
+		         const float footMaxStepTheta,
+		         const float footMaxInverseStepY,
+		         const float footMaxInverseStepTheta,
+		         const float maxStepWidth,
+		         const float stepCosts,
+		         const int   collisionCheckAccuracy,
+		         const int   roundingThreshold,
+		         const int   plannerMaxSteps,
+		         const boost::shared_ptr<const Heuristic> heuristicConstPtr)
 		: ivFootstepSet(footstepSet),
 		  ivFootSeparation(footSeparation),
-		  ivFootOriginShiftX(footOriginXShift),
-		  ivFootOriginShiftY(footOriginYShift),
-		  ivFootsizeX(footWidth),
-		  ivFootsizeY(footHeight),
-		  ivMaxShiftX(maxShiftX),
-		  ivMaxShiftY(maxShiftY),
-		  ivMaxTurn(maxTurn),
-		  ivMaxInverseShiftY(maxInverseShiftY),
-		  ivMaxInnerTurn(maxInnerTurn),
+		  ivFootOriginShiftX(footOriginShiftX),
+		  ivFootOriginShiftY(footOriginShiftY),
+		  ivFootsizeX(footsizeX),
+		  ivFootsizeY(footsizeY),
+		  ivFootMaxStepX(footMaxStepX),
+		  ivFootMaxStepY(footMaxStepY),
+		  ivFootMaxStepTheta(footMaxStepTheta),
+		  ivFootMaxInverseStepY(footMaxInverseStepY),
+		  ivFootMaxInverseStepTheta(footMaxInverseStepTheta),
 		  ivMaxStepWidth(maxStepWidth),
-		  ivStepCost(stepCost),
-		  ivCollisionCheckAccuracy(collCheckAccuracy),
+		  ivStepCosts(stepCosts),
+		  ivCollisionCheckAccuracy(collisionCheckAccuracy),
 		  ivPlannerMaxSteps(plannerMaxSteps),
 		  ivHeuristicConstPtr(heuristicConstPtr)
 	{
 
-		cvRoundingThreshold = stateEqualityCutoff;
+		cvRoundingThreshold = roundingThreshold;
 
 	}
 
 
-	/*
-	 * Dstar::~Dstar()
-	 * --------------------------
-	 * Destructor.
-	 */
 	Dstar::~Dstar()
 	{}
 
 
-	/*
-	 * float Dstar::keyHashCode(const State u)
-	 * --------------------------
-	 * Returns the key hash code for the state u. This is used to compare states
-	 * that have been updated.
-	 */
 	float
 	Dstar::keyHashCode(const State& u) const
 	{
@@ -115,12 +94,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::isValid(const State u)
-	 * --------------------------
-	 * Returns true if state u is on the open list or not by checking if
-	 * it is in the hash table.
-	 */
 	bool
 	Dstar::isValid(const State& u) const
 	{
@@ -137,11 +110,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::occupied(const State& u)
-	 * --------------------------
-	 * Check whether this state collides with an obstacle or not.
-	 */
 	bool
 	Dstar::occupied(const State& u) const
 	{
@@ -167,19 +135,21 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::updateDistanceMap(const State& u)
-	 * --------------------------
-	 * Update the distance map and the locally inconsistent states.
-	 */
 	void
-	Dstar::updateDistanceMap(boost::shared_ptr<GridMap2D> map)
+	Dstar::updateDistanceMap(const boost::shared_ptr<const GridMap2D> map)
 	{
 
 		bool exists = ivMapPtr;
 
 		ivMapPtr.reset();
 		ivMapPtr = map;
+
+		if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::ASTAR_PATH)
+		{
+			boost::shared_ptr<AstarHeuristic> h;
+			h = boost::dynamic_pointer_cast<AstarHeuristic>(ivHeuristicConstPtr);
+			h->setMap(map);
+		}
 
 		if (exists)
 		{
@@ -189,13 +159,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::init(float sX, float sY, float gX, float gY)
-	 * --------------------------
-	 * Init dstar with start and goal coordinates, rest is as per
-	 * [S. Koenig, 2002].
-	 * Returns true iff the initialization was successful otherwise false
-	 */
 	bool
 	Dstar::setUp(const State& startFootLeft, const State& startFootRight, const State& goal)
 	{
@@ -260,11 +223,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::addState(const State u)
-	 * --------------------------
-	 * Checks if a cell is in the hash table, if not it is added.
-	 */
 	void
 	Dstar::addState(const State& u)
 	{
@@ -282,11 +240,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * float Dstar::getG(const State u)
-	 * --------------------------
-	 * Returns the G value for state u.
-	 */
 	float
 	Dstar::getG(const State& u) const
 	{
@@ -299,11 +252,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * float Dstar::getRHS(const State u)
-	 * --------------------------
-	 * Returns the rhs value for state u.
-	 */
 	float
 	Dstar::getRhs(const State& u) const
 	{
@@ -319,11 +267,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::setG(const State u, float g)
-	 * --------------------------
-	 * Sets the G value for state u
-	 */
 	void
 	Dstar::setG(const State& u, float g)
 	{
@@ -336,11 +279,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::setRHS(const State u, float rhs)
-	 * --------------------------
-	 * Sets the rhs value for state u
-	 */
 	void
 	Dstar::setRhs(const State& u, float rhs)
 	{
@@ -353,16 +291,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * int Dstar::computeShortestPath()
-	 * --------------------------
-	 * As per [S. Koenig, 2002] except for 2 main modifications:
-	 * 1. We stop planning after a number of steps, 'maxsteps' we do this
-	 *    because this algorithm can plan forever if the start is
-	 *    surrounded by obstacles.
-	 * 2. We lazily remove states from the open list so we never have to
-	 *    iterate through it.
-	 */
 	int
 	Dstar::computeShortestPath()
 	{
@@ -459,12 +387,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::updateRhs(const State& predecessor, const State& successor, float g_old)
-	 * --------------------------
-	 * Function for the optimized D* lite according to [S. Koenig, 2002]
-	 * figure 4 {26'-27'}.
-	 */
 	void
 	Dstar::updateRhs(const State& predecessor, const State& successor, float g_old)
 	{
@@ -499,11 +421,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::update(State u)
-	 * --------------------------
-	 * As per [S. Koenig, 2002] (optimized version).
-	 */
 	void
 	Dstar::update(State& u)
 	{
@@ -521,11 +438,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::insert(State& u)
-	 * --------------------------
-	 * Inserts state u into openList and openHash. This functionality equals update.
-	 */
 	void
 	Dstar::insert(State& u)
 	{
@@ -548,12 +460,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::remove(const State& u)
-	 * --------------------------
-	 * Removes state u from openHash. The state is removed from the
-	 * openList lazily (in computeShortestPath) to save computation time.
-	 */
 	void
 	Dstar::remove(const State& u)
 	{
@@ -566,11 +472,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * std::pair<float,float> Dstar::calculateKey(State& u)
-	 * --------------------------
-	 * As per [S. Koenig, 2002]
-	 */
 	State::key
 	Dstar::calculateKey(const State& u) const
 	{
@@ -586,11 +487,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * float Dstar::cost(const State& a, const State& b)
-	 * --------------------------
-	 * Returns the cost of moving from state a to state b.
-	 */
 	float
 	Dstar::cost(const State& a, const State& b) const
 	{
@@ -599,17 +495,11 @@ namespace footstep_planner
 			return 0;
 
 		float dist = euclideanDistance(a.getX(), a.getY(), b.getX(), b.getY(), cvRoundingThreshold);
-		return dist + ivStepCost;
+		return dist + ivStepCosts;
 
 	}
 
 
-	/*
-	 * void Dstar::getSucc(const State& u, std::vector<State>* s)
-	 * --------------------------
-	 * Returns a list of successor states for state u unless the state is occupied
-	 * in which case it has no successors.
-	 */
 	void
 	Dstar::getSuccessors(const State& u, std::vector<State>* s)
 	{
@@ -635,13 +525,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::getPred(const State& u, std::vector<State>* s)
-	 * --------------------------
-	 * Returns a list of all the predecessor states for state u e.g. all the states
-	 * the robot ends at after performing the set of footsteps. Invalid predecessors
-	 * are discarded.
-	 */
 	void
 	Dstar::getPredecessors(const State& u, std::vector<State>* s)
 	{
@@ -667,13 +550,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::isCloseToStart(const State& s)
-	 * --------------------------
-	 * Check if s is close to the specified start state. This check is necessary
-	 * since the set of footstep might not be adequate enough to reach the start
-	 * directly.
-	 */
 	bool
 	Dstar::isCloseToStart(const State& s) const
 	{
@@ -682,26 +558,6 @@ namespace footstep_planner
 			return reachable(ivStartStateLeft, s);
 		else // leg == LEFT
 			return reachable(ivStartStateRight, s);
-
-	//	tf::Transform state(tf::createQuaternionFromYaw(s.getTheta()),
-	//						tf::Point(s.getX(), s.getY(), 0));
-	//	tf::Transform supportFoot;
-	//	if (ivStart.getLeg() == RIGHT)
-	//	{
-	//		supportFoot = tf::Transform(tf::createQuaternionFromYaw(ivStartStateLeft.getTheta()),
-	//		                            tf::Point(ivStartStateLeft.getX(),
-	//		                                      ivStartStateLeft.getY(),
-	//		                                      0));
-	//	}
-	//	else
-	//	{
-	//		supportFoot = tf::Transform(tf::createQuaternionFromYaw(ivStartStateRight.getTheta()),
-	//									tf::Point(ivStartStateRight.getX(),
-	//											  ivStartStateRight.getY(),
-	//											  0));
-	//	}
-	//
-	//	return closeSteps(s.getLeg(), supportFoot, state);
 
 	}
 
@@ -725,20 +581,20 @@ namespace footstep_planner
 		float diffY = footstep.getOrigin().y();
 		float diffTheta = tf::getYaw(footstep.getRotation());
 
-		if (diffX <= ivMaxShiftX+FLOAT_COMP_THR &&  diffX >= -ivMaxShiftX-FLOAT_COMP_THR)
+		if (diffX <= ivFootMaxStepX+FLOAT_COMP_THR &&  diffX >= -ivFootMaxStepX-FLOAT_COMP_THR)
 			xInRange = true;
 		if (from.getLeg() == RIGHT)
 		{
-			if (diffY <= ivMaxShiftY+FLOAT_COMP_THR && diffY >= -ivMaxInverseShiftY-FLOAT_COMP_THR)
+			if (diffY <= ivFootMaxStepY+FLOAT_COMP_THR && diffY >= -ivFootMaxInverseStepY-FLOAT_COMP_THR)
 				yInRange = true;
-			if (diffTheta <= ivMaxTurn+ANGLE_COMP_THR && diffTheta >= -ivMaxInnerTurn-ANGLE_COMP_THR)
+			if (diffTheta <= ivFootMaxStepTheta+ANGLE_COMP_THR && diffTheta >= -ivFootMaxInverseStepTheta-ANGLE_COMP_THR)
 				thetaInRange = true;
 		}
 		else // leg == LEFT
 		{
-			if (diffY >= -ivMaxShiftY-FLOAT_COMP_THR && diffY <= ivMaxInverseShiftY+FLOAT_COMP_THR)
+			if (diffY >= -ivFootMaxStepY-FLOAT_COMP_THR && diffY <= ivFootMaxInverseStepY+FLOAT_COMP_THR)
 				yInRange = true;
-			if (diffTheta >= -ivMaxTurn-ANGLE_COMP_THR && diffTheta <= ivMaxInnerTurn+ANGLE_COMP_THR)
+			if (diffTheta >= -ivFootMaxStepTheta-ANGLE_COMP_THR && diffTheta <= ivFootMaxInverseStepTheta+ANGLE_COMP_THR)
 				thetaInRange = true;
 		}
 
@@ -747,12 +603,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::closeSteps(Leg stepLeg, tf::Transform& supportFoot, tf::Transform& footPlacement)
-	 * --------------------------
-	 * Check if 'footPlacement' can be reached from 'supportFoot' by any footstep
-	 * (i.e. not only the discretized footsteps).
-	 */
 	bool
 	Dstar::closeSteps(Leg stepLeg, tf::Transform& supportFoot, tf::Transform& footPlacement)
 	{
@@ -781,20 +631,20 @@ namespace footstep_planner
 		float diffY = current.getOrigin().y();
 		float diffAngle = -tf::getYaw(rotation);
 
-		if (diffX <= ivMaxShiftX+FLOAT_COMP_THR && diffX >= -ivMaxShiftX-FLOAT_COMP_THR)
+		if (diffX <= ivFootMaxStepX+FLOAT_COMP_THR && diffX >= -ivFootMaxStepX-FLOAT_COMP_THR)
 			xInRange = true;
 		if (stepLeg == RIGHT)
 		{
-			if (diffY >= -ivMaxShiftY-FLOAT_COMP_THR && diffY <= ivMaxInverseShiftY+FLOAT_COMP_THR)
+			if (diffY >= -ivFootMaxStepY-FLOAT_COMP_THR && diffY <= ivFootMaxInverseStepY+FLOAT_COMP_THR)
 				yInRange = true;
-			if (diffAngle >= -ivMaxTurn-FLOAT_COMP_THR && diffAngle <= ivMaxInnerTurn+FLOAT_COMP_THR)
+			if (diffAngle >= -ivFootMaxStepTheta-FLOAT_COMP_THR && diffAngle <= ivFootMaxInverseStepTheta+FLOAT_COMP_THR)
 				thetaInRange = true;
 		}
 		else // leg == LEFT
 		{
-			if (diffY <= ivMaxShiftY+FLOAT_COMP_THR && diffY >= -ivMaxInverseShiftY-FLOAT_COMP_THR)
+			if (diffY <= ivFootMaxStepY+FLOAT_COMP_THR && diffY >= -ivFootMaxInverseStepY-FLOAT_COMP_THR)
 				yInRange = true;
-			if (diffAngle <= ivMaxTurn+FLOAT_COMP_THR && diffAngle >= -ivMaxInnerTurn-FLOAT_COMP_THR)
+			if (diffAngle <= ivFootMaxStepTheta+FLOAT_COMP_THR && diffAngle >= -ivFootMaxInverseStepTheta-FLOAT_COMP_THR)
 				thetaInRange = true;
 		}
 
@@ -803,13 +653,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::isCloseToGoal(const State& s)
-	 * --------------------------
-	 * Check if s is close to the specified goal state. This check is necessary
-	 * since the set of footstep might not be adequate enough to reach the goal
-	 * directly.
-	 */
 	bool
 	Dstar::isCloseToGoal(const State& s) const
 	{
@@ -819,11 +662,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::updateStart(float x, float y, float theta)
-	 * --------------------------
-	 * Update the position of the robot, this does not force a replan.
-	 */
 	void
 	Dstar::updateStart(const State& startFootLeft, const State& startFootRight)
 	{
@@ -852,15 +690,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void Dstar::updateGoal(float x, float y, float theta)
-	 * --------------------------
-	 * This is somewhat of a hack, to change the position of the goal we
-	 * first save all of the non-empty on the map, clear the map, move the
-	 * goal, and re-add all of non-empty cells. Since most of these cells
-	 * are not between the start and goal this does not seem to hurt
-	 * performance too much. Also it frees up a memory we likely no longer use.
-	 */
 	void
 	Dstar::setGoal(const State& goal)
 	{
@@ -889,14 +718,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool Dstar::replan()
-	 * --------------------------
-	 * Updates the costs for all cells and computes the shortest path to
-	 * goal. Returns true if a path is found, false otherwise. The path is
-	 * computed by doing a greedy search over the cost+g values of each
-	 * state.
-	 */
 	bool
 	Dstar::replan()
 	{
@@ -909,6 +730,19 @@ namespace footstep_planner
 
 		ivPath.clear();
 		ivExpandedStates.clear();
+
+		if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::ASTAR_PATH)
+		{
+			boost::shared_ptr<AstarHeuristic> h;
+			h = boost::dynamic_pointer_cast<AstarHeuristic>(ivHeuristicConstPtr);
+			// NOTE: start state is set to left leg
+			bool success = h->astarPlanning(ivStartStateLeft, ivGoal);
+			if (!success)
+			{
+				ROS_ERROR("Failed to generate A* path");
+				return false;
+			}
+		}
 
 		ROS_INFO("Start path planning.");
 		int res = computeShortestPath();
@@ -958,10 +792,6 @@ namespace footstep_planner
 
 		// move other foot next to last moved foot
 		Footstep neutralStep;
-		if (cur.getLeg() == LEFT)
-			neutralStep.setLeg(RIGHT);
-		else
-			neutralStep.setLeg(LEFT);
 		neutralStep.performMeOnThisState(cur, &cur, ivFootSeparation);
 		if (!occupied(cur))
 			ivPath.push_back(cur);
@@ -1004,16 +834,11 @@ namespace footstep_planner
 
 
 	/*
-	 * #############################################################################
+	 * #########################################################################
 	 * ### class Footstep
-	 * #############################################################################
+	 * #########################################################################
 	 */
 
-	/*
-	 * Footstep::Footstep()
-	 * --------------------------
-	 * Constructor.
-	 */
 	Footstep::Footstep()
 	{
 
@@ -1025,37 +850,15 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * Footstep::Footstep(float x, float y, float theta, Leg leg)
-	 * --------------------------
-	 * Constructor.
-	 */
 	Footstep::Footstep(float x, float y, float theta, Leg leg)
-	 : ivX(x), ivY(y), ivTheta(theta), ivLeg(leg)
-	{
-
-		ivX = x;
-		ivY = y;
-		ivTheta = theta;
-		ivLeg = leg;
-
-	}
+		: ivX(x), ivY(y), ivTheta(theta), ivLeg(leg)
+	{}
 
 
-	/*
-	 * Footstep::Footstep()
-	 * --------------------------
-	 * Destructor.
-	 */
 	Footstep::~Footstep()
 	{}
 
 
-	/*
-	 * void action::performMeOnThisState(const State& current, State* successor, float footSeparation) const
-	 * --------------------------
-	 * Perform footstep on current state.
-	 */
 	void
 	Footstep::performMeOnThisState(const State& current, State* successor, float footSeparation)
 	const
@@ -1108,11 +911,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * void action::revertMeOnThisState(const State& successor, State* current, float footSeparation) const
-	 * --------------------------
-	 * Revert footstep on current state.
-	 */
 	void
 	Footstep::revertMeOnThisState(const State& current, State* predecessor, float footSeparation)
 	const
@@ -1172,11 +970,6 @@ namespace footstep_planner
 	 * #############################################################################
 	 */
 
-	/*
-	 * State::State()
-	 * --------------------------
-	 * Basis constructor.
-	 */
 	State::State()
 	{
 
@@ -1189,11 +982,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * State::State(float x, float y, float theta, std::string leg)
-	 * --------------------------
-	 * Constructor.
-	 */
 	State::State(float x, float y, float theta, Leg leg)
 	{
 
@@ -1206,20 +994,10 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * State::~State()
-	 * --------------------------
-	 * Destructor.
-	 */
 	State::~State()
 	{}
 
 
-	/*
-	 * bool State::operator ==(const State& s2)
-	 * --------------------------
-	 * Equality of the states.
-	 */
 	bool
 	State::operator == (const State &s2)
 	const
@@ -1240,11 +1018,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool State::operator !=(const State& s2)
-	 * --------------------------
-	 * Inequality of the states.
-	 */
 	bool
 	State::operator != (const State &s2)
 	const
@@ -1255,11 +1028,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool State::operator >(const State& s2)
-	 * --------------------------
-	 * Greater than comparison of the f-values.
-	 */
 	bool
 	State::operator > (const State &s2)
 	const
@@ -1275,11 +1043,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool State::operator <=(const State& s2)
-	 * --------------------------
-	 * Less than or equal comparison of the f-values.
-	 */
 	bool
 	State::operator <= (const State &s2)
 	const
@@ -1295,11 +1058,6 @@ namespace footstep_planner
 	}
 
 
-	/*
-	 * bool State::operator <(const State& s2)
-	 * --------------------------
-	 * Less than comparison of the f-values.
-	 */
 	bool
 	State::operator < (const State &s2)
 	const

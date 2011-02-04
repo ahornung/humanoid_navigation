@@ -36,8 +36,12 @@ namespace footstep_planner
 	 * #########################################################################
 	 */
 
-	AstarHeuristic::AstarHeuristic(float stepCosts, float maxStepWidth, float distanceThreshold)
-		: ivDistanceThreshold(distanceThreshold),
+	AstarHeuristic::AstarHeuristic(HeuristicType type,
+	                               float stepCosts,
+	                               float maxStepWidth,
+	                               float distanceThreshold)
+		: Heuristic(type),
+	      ivDistanceThreshold(distanceThreshold),
 		  ivMaxStepWidth(maxStepWidth),
 		  ivStepCosts(stepCosts)
 	{}
@@ -244,7 +248,7 @@ namespace footstep_planner
 
 
 	void
-	AstarHeuristic::setMap(boost::shared_ptr<GridMap2D> map)
+	AstarHeuristic::setMap(const boost::shared_ptr<const GridMap2D> map)
 	{
 
 		ivMapPtr.reset();

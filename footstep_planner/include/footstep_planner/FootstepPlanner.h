@@ -59,7 +59,6 @@ namespace footstep_planner
 	public:
 
 		enum PlanningMode { MERE_PLANNING=0, ROBOT_NAVIGATION=1 };
-		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, ASTAR_PATH=2 };
 
 		FootstepPlanner();
 		virtual ~FootstepPlanner();
@@ -148,8 +147,8 @@ namespace footstep_planner
 
 	private:
 
-		boost::shared_ptr<Dstar>     ivDstarPtr;
-		boost::shared_ptr<GridMap2D> ivMapPtr;
+		boost::shared_ptr<Dstar> ivDstarPtr;
+		boost::shared_ptr<const GridMap2D> ivMapPtr;
 		boost::mutex ivRobotPoseUpdateMutex;
 
 		State ivStartFootLeft;
@@ -221,7 +220,8 @@ namespace footstep_planner
 		/**
 		 * @brief Performs the calculated footsteps. Initializes a replanning if the
 		 * environment changes or the deviation to the calculated path due to unclean
-		 * performed footsteps is too large.
+		 * performed footsteps is too large. Only used if parameter planning_mode is
+		 * set to 1.
 		 */
 		void executeFootsteps();
 
@@ -245,15 +245,18 @@ namespace footstep_planner
 							  tf::Transform& foot);
 
 		/**
-		 * @brief Calculates for a given support foot and the desired footstep placement the most
-		 * applicable footstep. If the robot (limited by its step size) could not perform the
-		 * necessary step, choose the step that gets closest to the placement.
+		 * @brief Calculates for a given support foot and the desired foot placement
+		 * the most applicable footstep. If the robot (limited by its step size)
+		 * could not perform the necessary step, choose the step that gets closest
+		 * to the placement.
 		 *
 		 * @param supportFoot the robot's current support foot
-		 * @param footPlacement the placement where to put the other foot (referred to the support foot)
+		 * @param footPlacement the placement where to put the other foot (referred
+		 * to the support foot)
 		 * @param footstep the most applicable footstep to be used
 		 *
-		 * @return false if the calculated footstep comes up to the defined limitations of the robot
+		 * @return false if the calculated footstep comes up to the defined limitations
+		 * of the robot
 		 */
 		bool getGreedyFootstep(const tf::Transform& supportFoot,
 							   const tf::Transform& footPlacement,
@@ -266,7 +269,7 @@ namespace footstep_planner
 		void navigate();
 
 		/**
-		 * @return true if a footstep placement in state u collides with an obstacle
+		 * @return true if a foot placement in state u collides with an obstacle
 		 */
 		bool occupied(const State& u);
 

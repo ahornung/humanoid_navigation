@@ -54,8 +54,8 @@ namespace footstep_planner
 		SearchNode(const gridcell& cell, const State::key& key, const SearchNode* const predecessor);
 		virtual ~SearchNode();
 
-		bool   operator  >(const SearchNode& s) const;
-		bool   operator ==(const SearchNode& s) const;
+		bool operator  >(const SearchNode& s) const;
+		bool operator ==(const SearchNode& s) const;
 
 		const gridcell& getCell() const { return ivCell; };
 		const State::key& getKey() const { return ivKey; };
@@ -95,16 +95,14 @@ namespace footstep_planner
 
 		typedef std::list<SearchNode::gridcell>::const_iterator gridcellListIter;
 
-		AstarHeuristic(float stepCosts, float maxStepWidth, float distanceThreshold);
+
+		AstarHeuristic(HeuristicType type, float stepCosts, float maxStepWidth, float distanceThreshold);
 		virtual ~AstarHeuristic();
 
 		virtual float getHValue(const State& from, const State& to) const;
 
 		bool astarPlanning(const State& from, const State& to);
-		void setMap(boost::shared_ptr<GridMap2D> map);
-
-		gridcellListIter getPathBegin() const { return ivPath.begin(); };
-		gridcellListIter getPathEnd() const { return ivPath.end(); };
+		void setMap(const boost::shared_ptr<const GridMap2D> map);
 
 
 	private:
@@ -126,6 +124,9 @@ namespace footstep_planner
 		void  getSuccessors(SearchNode::gridcell c, std::vector<SearchNode::gridcell>& successors);
 		bool  isCloseToGoal(const SearchNode::gridcell& cell) const;
 		bool  occupied(const SearchNode::gridcell& c) const;
+
+		gridcellListIter getPathBegin() const { return ivPath.begin(); };
+		gridcellListIter getPathEnd() const { return ivPath.end(); };
 
 	};
 

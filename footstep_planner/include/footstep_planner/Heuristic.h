@@ -27,23 +27,32 @@
 #include <footstep_planner/helper.h>
 #include <footstep_planner/State.h>
 
-namespace footstep_planner{
+namespace footstep_planner
+{
 
-	/*
-	 * class Heuristic
-	 * --------------------------
-	 * An abstract super class providing methods necessary to be used as heuristic
-	 * function within the D* lite algorithm.
+	/**
+	 * @brief An abstract super class providing methods necessary to be used as
+	 * heuristic function within Dstar.
 	 */
 	class Heuristic
 	{
 
 	public:
 
-	  Heuristic();
-	  virtual ~Heuristic();
+		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, ASTAR_PATH=2 };
+
+
+		Heuristic(HeuristicType type);
+		virtual ~Heuristic();
 
 		virtual float getHValue(const State& from, const State& to) const = 0;
+
+		HeuristicType getHeuristicType() const { return ivHeuristicType; };
+
+
+	private:
+
+		const HeuristicType ivHeuristicType;
 
 	};
 
@@ -53,14 +62,15 @@ namespace footstep_planner{
 
 	public:
 
-	  EuclideanHeuristic(int roundingThreshold);
-	  virtual ~EuclideanHeuristic();
+		EuclideanHeuristic(HeuristicType type, int roundingThreshold);
+		virtual ~EuclideanHeuristic();
 
-	  virtual float getHValue(const State& from, const State& to) const;
+		virtual float getHValue(const State& from, const State& to) const;
+
 
 	private:
 
-	  const int ivRoundingThreshold;
+		const int ivRoundingThreshold;
 
 	};
 
@@ -70,16 +80,20 @@ namespace footstep_planner{
 
 	public:
 
-	  EuclStepCostHeuristic(int roundingThreshold, float stepCosts, float maxStepWidth);
-	  virtual ~EuclStepCostHeuristic();
+		EuclStepCostHeuristic(HeuristicType type,
+		                      int roundingThreshold,
+		                      float stepCosts,
+		                      float maxStepWidth);
+		virtual ~EuclStepCostHeuristic();
 
-	  virtual float getHValue(const State& from, const State& to) const;
+		virtual float getHValue(const State& from, const State& to) const;
+
 
 	private:
 
-	  const int   ivRoundingThreshold;
-	  const float ivStepCosts;
-	  const float ivMaxStepWidth;
+		const int   ivRoundingThreshold;
+		const float ivStepCosts;
+		const float ivMaxStepWidth;
 
 	};
 }

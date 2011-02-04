@@ -29,8 +29,9 @@
 namespace footstep_planner{
 
 	/**
-	 * @brief Representation of the robot's pose (i.e. location and orientation) in the
-	 * search space. More precisely the state points to the robot's supporting leg.
+	 * @brief Representation of the robot's pose (i.e. location and orientation)
+	 * in the search space. More precisely the state points to the robot's
+	 * supporting leg.
 	 *
 	 */
 	class State
@@ -40,8 +41,11 @@ namespace footstep_planner{
 
 		typedef std::pair<float,float> key;
 
-		// Con-/destructor
 		State();
+		/**
+		 * @brief x, y and theta represent the global position and orientation
+		 * of the robot's support leg defined by leg.
+		 */
 		State(float x, float y, float theta, Leg leg);
 		virtual ~State();
 
@@ -51,40 +55,43 @@ namespace footstep_planner{
 		bool operator <=(const State& s2) const;
 		bool operator  <(const State& s2) const;
 
+		void setLeg(Leg leg) { ivLeg = leg; };
+		void setTheta(float theta) { ivGlobalTheta = theta; };
 		void setX(float x) { ivGlobalX = x; };
 		void setY(float y) { ivGlobalY = y; };
-		void setTheta(float theta) { ivGlobalTheta = theta; };
-		void setLeg(Leg leg) { ivLeg = leg; };
 
-		void setKey(float f, float g) { ivKey = key(f,g); };
+		void setKey(float f, float g) { ivKey = key(f, g); };
 		void setKey(key key) { ivKey = key; };
 
-		float	getX() const { return ivGlobalX; };
-		float	getY() const { return ivGlobalY; };
-		float	getTheta() const { return ivGlobalTheta; };
-		Leg 	getLeg() const { return ivLeg; };
+		key   getKey() const { return ivKey; };
+		Leg   getLeg() const { return ivLeg; };
+		float getTheta() const { return ivGlobalTheta; };
+		float getX() const { return ivGlobalX; };
+		float getY() const { return ivGlobalY; };
 
-		key getKey() const { return ivKey; };
-
-		std::string toString();
-		std::string toShortString();
 
 
 	private:
 
-		// global information of location and orientation of the robot defining a
-		// search state
-		float	ivGlobalX;
-		float	ivGlobalY;
-		float	ivGlobalTheta;
-		Leg		ivLeg;
+		float ivGlobalX;
+		float ivGlobalY;
+		float ivGlobalTheta;
+		/// support leg
+		Leg	  ivLeg;
 
-		// the key value of the state used by the d* lite search
+		/**
+		 * @brief key.first = min{g(s), rhs(s)} + h(s_start, s) + km,
+		 * key.second = min{g(s), rhs(s)}
+		 */
 		key ivKey;
 
 
 	public:
 
+		/**
+		 * @brief The states currently known g and rhs value. Stored in the state
+		 * hash.
+		 */
 		struct state_info
 		{
 
@@ -93,7 +100,9 @@ namespace footstep_planner{
 
 		};
 
-
+		/**
+		 * @brief Hash function of the state hash.
+		 */
 		struct state_hash
 		{
 

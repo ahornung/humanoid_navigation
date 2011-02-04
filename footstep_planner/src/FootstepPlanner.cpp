@@ -139,17 +139,26 @@ namespace footstep_planner{
 		float footWidth;
 		switch (heuristic)
 		{
-		case EUCLIDEAN: // euclidean distance
-			h.reset(new EuclideanHeuristic(roundingThreshold));
+		case Heuristic::EUCLIDEAN:
+			// euclidean distance
+			h.reset(new EuclideanHeuristic(Heuristic::EUCLIDEAN, roundingThreshold));
 			break;
-		case EUCLIDEAN_STEPCOST: // euclidean distance + step costs estimation
-			h.reset(new EuclStepCostHeuristic(roundingThreshold, stepCosts, maxStepWidth));
+		case Heuristic::EUCLIDEAN_STEPCOST:
+			// euclidean distance + step costs estimation
+			h.reset(new EuclStepCostHeuristic(Heuristic::EUCLIDEAN_STEPCOST,
+			                                  roundingThreshold,
+			                                  stepCosts,
+			                                  maxStepWidth));
 			break;
-		case ASTAR_PATH: // euclidean distance + step costs estimation based on precalculated subgoals
+		case Heuristic::ASTAR_PATH:
+			// euclidean distance + step costs estimation based on precalculated subgoals
 			footWidth = ivFootsizeX;
 			if (ivFootsizeX < ivFootsizeY)
 				footWidth = ivFootsizeY;
-			h.reset(new AstarHeuristic(stepCosts, maxStepWidth, footWidth));
+			h.reset(new AstarHeuristic(Heuristic::ASTAR_PATH,
+			                           stepCosts,
+			                           maxStepWidth,
+			                           footWidth));
 			break;
 		default:
 			ROS_ERROR("No heuristic available, exiting.");
@@ -362,6 +371,7 @@ namespace footstep_planner{
 	FootstepPlanner::setMap(boost::shared_ptr<GridMap2D> gridMap)
 	{
 
+		ivMapPtr.reset();
 		ivMapPtr = gridMap;
 		ivDstarPtr->updateDistanceMap(ivMapPtr);
 
@@ -581,7 +591,7 @@ namespace footstep_planner{
 							 supportFoot);
 		}
 		// perform a greedy footstep adjustment to place the robot's feed on the
-		// first footstep placement calculated by the planner
+		// first foot placement calculated by the planner
 		bool reached = getGreedyFootstep(supportFoot, footPlacement, step);
 		footstepService.request.step = step;
 		ivFootstepService.call(footstepService);
@@ -671,7 +681,7 @@ namespace footstep_planner{
 		bool yInRange = false;
 		bool thetaInRange = false;
 
-		// calculate the necessary footstep to reach the footstep placement
+		// calculate the necessary footstep to reach the foot placement
 		tf::Transform footstepTransform;
 		Leg supportLeg;
 		if (footstep.leg == humanoid_nav_msgs::StepTarget::right)

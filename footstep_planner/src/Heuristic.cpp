@@ -25,7 +25,8 @@
 
 namespace footstep_planner{
 
-	Heuristic::Heuristic()
+	Heuristic::Heuristic(HeuristicType type)
+		: ivHeuristicType(type)
 	{}
 
 
@@ -33,8 +34,8 @@ namespace footstep_planner{
 	{}
 
 
-	EuclideanHeuristic::EuclideanHeuristic(int roundingThreshold)
-		: ivRoundingThreshold(roundingThreshold)
+	EuclideanHeuristic::EuclideanHeuristic(HeuristicType type, int roundingThreshold)
+		: Heuristic(type), ivRoundingThreshold(roundingThreshold)
 	{}
 
 
@@ -55,8 +56,12 @@ namespace footstep_planner{
 	}
 
 
-	EuclStepCostHeuristic::EuclStepCostHeuristic(int roundingThreshold, float stepCosts, float maxStepWidth)
-		: ivRoundingThreshold(roundingThreshold),
+	EuclStepCostHeuristic::EuclStepCostHeuristic(HeuristicType type,
+	                                             int roundingThreshold,
+	                                             float stepCosts,
+	                                             float maxStepWidth)
+		: Heuristic(type),
+	      ivRoundingThreshold(roundingThreshold),
 		  ivStepCosts(stepCosts),
 		  ivMaxStepWidth(maxStepWidth)
 	{}

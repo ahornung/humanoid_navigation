@@ -34,20 +34,21 @@ namespace footstep_planner{
 		  ivLFootID("/LFoot_link")
 	{
 
+		// private NodeHandle for parameters and private messages (debug / info)
+		ros::NodeHandle privateNh("~");
+
+
 		ivExecutingFootsteps = false;
 		ivLastMarkerMsgSize  = 0;
 
 		// ..publishers
-		// TODO: move to private namespace
-		ivExpandedStatesVisPub = ivNh.advertise<sensor_msgs::PointCloud>("footstep_planning/expanded_states", 1);
-		ivFootstepPathVisPub = ivNh.advertise<visualization_msgs::MarkerArray>("footstep_planning/footsteps_array", 1);
-		ivStartPoseVisPub = ivNh.advertise<geometry_msgs::PoseStamped>("footstep_planning/start", 1);
-		ivPathVisPub = ivNh.advertise<nav_msgs::Path>("footstep_planning/path", 1);
+		ivExpandedStatesVisPub = privateNh.advertise<sensor_msgs::PointCloud>("expanded_states", 1);
+		ivFootstepPathVisPub = privateNh.advertise<visualization_msgs::MarkerArray>("footsteps_array", 1);
+		ivStartPoseVisPub = privateNh.advertise<geometry_msgs::PoseStamped>("start", 1);
+		ivPathVisPub = privateNh.advertise<nav_msgs::Path>("path", 1);
 		// ..and services
 		ivFootstepService = ivNh.serviceClient<humanoid_nav_msgs::StepTargetService>("cmd_step_srv");
 
-		// private NodeHandle for parameters:
-		ros::NodeHandle privateNh("~");
 
 		int    mode;
 		int    heuristic;

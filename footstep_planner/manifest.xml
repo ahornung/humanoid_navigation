@@ -2,8 +2,6 @@
   <description brief="Footstep planning for humanoid robots">
 
      A footstep planner for humanoid robots using dynamic replanning based on D* Lite.
-     D* Lite (Koenig et al. 2002) partly based on the <a href="http://code.google.com/p/dstarlite/">
-     implementation by J. Neufeld</a>.
 
   </description>
   <author>Johannes Garimort, Armin Hornung</author>

@@ -106,10 +106,10 @@ public:
 
 
 protected:
-	cv::Mat m_binaryMap;
-	cv::Mat m_distMap;
+	cv::Mat m_binaryMap;	///< binary occupancy map. 255: free, 0 occupied.
+	cv::Mat m_distMap;		///< distance map (in meter)
 	nav_msgs::MapMetaData m_mapInfo;
-	std::string m_frameId;
+	std::string m_frameId;	///< "map" frame where ROS OccupancyGrid originated from
 
 };
 

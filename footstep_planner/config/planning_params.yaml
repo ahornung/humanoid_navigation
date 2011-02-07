@@ -12,7 +12,7 @@ planning_mode: 0
 # - 2 (euclidean distance + step cost estimation based on precalculated subgoals
 #      NOTE: this heuristic overestimates the real step costs if the robot is
 #      able to step over obstacles)
-heuristic: 1
+heuristic: 2
 
 # node expansions before we give up
 planner_max_steps: 180000

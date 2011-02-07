@@ -142,6 +142,7 @@ namespace footstep_planner{
 		case Heuristic::EUCLIDEAN:
 			// euclidean distance
 			h.reset(new EuclideanHeuristic(Heuristic::EUCLIDEAN, roundingThreshold));
+			ROS_INFO("FootstepPlanner heuristic: euclidean distance");
 			break;
 		case Heuristic::EUCLIDEAN_STEPCOST:
 			// euclidean distance + step costs estimation
@@ -149,6 +150,7 @@ namespace footstep_planner{
 			                                  roundingThreshold,
 			                                  stepCosts,
 			                                  maxStepWidth));
+			ROS_INFO("FootstepPlanner heuristic: euclidean distance w. step costs");
 			break;
 		case Heuristic::ASTAR_PATH:
 			// euclidean distance + step costs estimation based on precalculated subgoals
@@ -159,6 +161,7 @@ namespace footstep_planner{
 			                           stepCosts,
 			                           maxStepWidth,
 			                           footWidth));
+			ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance w. step costs");
 			break;
 		default:
 			ROS_ERROR("No heuristic available, exiting.");

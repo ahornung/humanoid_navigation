@@ -37,7 +37,6 @@ namespace footstep_planner{
 		// private NodeHandle for parameters and private messages (debug / info)
 		ros::NodeHandle privateNh("~");
 
-
 		ivExecutingFootsteps = false;
 		ivLastMarkerMsgSize  = 0;
 
@@ -48,7 +47,6 @@ namespace footstep_planner{
 		ivPathVisPub = privateNh.advertise<nav_msgs::Path>("path", 1);
 		// ..and services
 		ivFootstepService = ivNh.serviceClient<humanoid_nav_msgs::StepTargetService>("cmd_step_srv");
-
 
 		int    mode;
 		int    heuristic;
@@ -545,6 +543,8 @@ namespace footstep_planner{
 				ivDstarPtr->updateStart(ivStartFootLeft, ivStartFootRight);
 			}
 		}
+		// TODO: catch failed heuristic update
+		ivDstarPtr->updateHeuristicValues();
 
 		// start the planning task
 		bool success = ivDstarPtr->replan();

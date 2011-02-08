@@ -178,13 +178,34 @@ namespace footstep_planner
 		/**
 		 * @brief Receive the successor state with the smallest g value.
 		 */
-		bool  getMinSucc(const State u, State* succ);
+		bool getMinSucc(const State u, State* succ);
 
 		/**
 		 * @brief Update the distance map. Formerly unoccupied states are set
 		 * locally inconsistent and vice versa.
 		 */
-		void  updateDistanceMap(boost::shared_ptr<GridMap2D> map);
+		void updateDistanceMap(boost::shared_ptr<GridMap2D> map);
+
+		/**
+		 * @brief Update somehow the heuristic function from outside; here: used
+		 * to calculate a new subgoal path for the A* heuristic.
+		 */
+		bool updateHeuristicValues();
+
+		/**
+		 * @return Costs of the footstep path.
+		 */
+		float getPathCosts() { return ivPathCosts; };
+
+		/**
+		 * @return Number of expanded states.
+		 */
+		int getNumExpandedStates() { return ivExpandedStates.size(); };
+
+		/**
+		 * @return Number of necessary footsteps.
+		 */
+		int getNumFootsteps() { return ivPath.size(); };
 
 		static int cvRoundingThreshold;
 
@@ -195,6 +216,7 @@ namespace footstep_planner
 		std::vector<State> ivPath;
 
 		float ivKM;
+		float ivPathCosts;
 		State ivGoal;
 		State ivLast;
 		State ivStart;

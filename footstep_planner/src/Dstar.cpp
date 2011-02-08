@@ -77,6 +77,9 @@ namespace footstep_planner
 
 		cvRoundingThreshold = roundingThreshold;
 
+		ivKM = 0;
+		ivPathCosts = 0;
+
 	}
 
 
@@ -160,6 +163,28 @@ namespace footstep_planner
 
 
 	bool
+	Dstar::updateHeuristicValues()
+	{
+
+		if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::ASTAR_PATH)
+		{
+			boost::shared_ptr<AstarHeuristic> h;
+			h = boost::dynamic_pointer_cast<AstarHeuristic>(ivHeuristicConstPtr);
+			// NOTE: start state is set to left leg
+			bool success = h->astarPlanning(ivStartStateLeft, ivGoal);
+			if (!success)
+			{
+				ROS_ERROR("Failed to generate A* path");
+				return false;
+			}
+		}
+
+		return true;
+
+	}
+
+
+	bool
 	Dstar::setUp(const State& startFootLeft, const State& startFootRight, const State& goal)
 	{
 
@@ -191,6 +216,9 @@ namespace footstep_planner
 		// set the goal state; NOTE: the state's leg is set to right
 		ivGoal = goal;
 
+		// update the heuristic values
+		updateHeuristicValues();
+
 		State::state_info tmp;
 		tmp.g = INFINITY;
 		tmp.rhs =  0;
@@ -218,6 +246,7 @@ namespace footstep_planner
 		while (!ivOpenList.empty())
 			ivOpenList.pop();
 
+		ivPathCosts = 0;
 		ivKM = 0;
 
 	}
@@ -731,18 +760,7 @@ namespace footstep_planner
 		ivPath.clear();
 		ivExpandedStates.clear();
 
-		if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::ASTAR_PATH)
-		{
-			boost::shared_ptr<AstarHeuristic> h;
-			h = boost::dynamic_pointer_cast<AstarHeuristic>(ivHeuristicConstPtr);
-			// NOTE: start state is set to left leg
-			bool success = h->astarPlanning(ivStartStateLeft, ivGoal);
-			if (!success)
-			{
-				ROS_ERROR("Failed to generate A* path");
-				return false;
-			}
-		}
+		ivPathCosts = 0;
 
 		ROS_INFO("Start path planning.");
 		int res = computeShortestPath();
@@ -763,6 +781,7 @@ namespace footstep_planner
 		}
 
 		State cur = ivStart;
+		State succ = cur;
 
 		// reset start state to its initialized original values because the start
 		// values might have changed during the planning process
@@ -781,12 +800,15 @@ namespace footstep_planner
 
 			ivPath.push_back(cur);
 
-			if (!getMinSucc(cur, &cur))
+			if (!getMinSucc(cur, &succ))
 			{
 				ROS_ERROR("No successor state. Extracting path failed.");
 				ivPath.clear();
 				return false;
 			}
+			ivPathCosts += cost(cur, succ);
+
+			cur = succ;
 		}
 		ivPath.push_back(cur);
 

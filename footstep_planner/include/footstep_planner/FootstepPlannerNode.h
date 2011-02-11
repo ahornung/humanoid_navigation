@@ -28,7 +28,7 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-
+#include <footstep_planner/PlanFootsteps.h>
 #include <footstep_planner/FootstepPlanner.h>
 
 namespace footstep_planner{
@@ -47,6 +47,7 @@ namespace footstep_planner{
 		FootstepPlanner ivFootstepPlanner;
 
 		ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivStartPoseSub, ivRobotPoseSub;
+		ros::ServiceServer ivFootstepPlanService;
 	};
 
 }

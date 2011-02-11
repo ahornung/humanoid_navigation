@@ -1,10 +1,10 @@
 <package>
   <description brief="Footstep planning for humanoid robots">
 
-     A footstep planner for humanoid robots using dynamic replanning based on D* Lite.
-     Details can be found in the corresponding paper "Humanoid Navigation with Dynamic Footstep Plans"
+     <p>A footstep planner for humanoid robots using dynamic replanning based on D* Lite.</p>
+     <p>Details can be found in the corresponding paper <em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
      by J. Garimort, A. Hornung, and M. Bennewitz; published in 
-     Proc. of the IEEE International Conference on Robotics &amp; Automation (ICRA), 2011
+     Proc. of the IEEE International Conference on Robotics &amp; Automation (ICRA), 2011</p>
 
   </description>
   <author>Johannes Garimort, Armin Hornung</author>
@@ -20,8 +20,10 @@
   <depend package="map_server"/>
   <depend package="tf"/>
   <depend package="visualization_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="opencv2"/>
   <depend package="roscpp"/>
+  <depend package="rospy"/>
   <depend package="gridmap_2d"/>
 
 </package>

@@ -194,7 +194,7 @@ namespace footstep_planner
 			return false;
 		}
 
-		ROS_INFO("D* lite initializing");
+		ROS_DEBUG("D* lite initializing");
 
 		// reset the planner
 		reset();
@@ -333,7 +333,6 @@ namespace footstep_planner
 		{
 			if (k++ > ivPlannerMaxSteps)
 			{
-				ROS_ERROR("At maxsteps. Path planning failed.");
 				return -1;
 			}
 
@@ -767,7 +766,7 @@ namespace footstep_planner
 
 		if (res < 0)
 		{
-			ROS_ERROR("Path planning failed.");
+			ROS_ERROR("Path planning failed (at maxsteps).");
 			return false;
 		}
 		else if (isinf(getG(ivStart)))

@@ -31,7 +31,8 @@ namespace footstep_planner{
 		  ivGoalPoseSet(false),
 		  ivRobotPoseSet(false),
 		  ivRFootID("/RFoot_link"),
-		  ivLFootID("/LFoot_link")
+		  ivLFootID("/LFoot_link"),
+		  ivMarkerNamespace("")
 	{
 
 		// private NodeHandle for parameters and private messages (debug / info)
@@ -47,6 +48,7 @@ namespace footstep_planner{
 		ivPathVisPub = privateNh.advertise<nav_msgs::Path>("path", 1);
 		// ..and services
 		ivFootstepService = ivNh.serviceClient<humanoid_nav_msgs::StepTargetService>("cmd_step_srv");
+
 
 		int    mode;
 		int    heuristic;
@@ -417,6 +419,31 @@ namespace footstep_planner{
 		}
 
 	}
+
+    bool
+    FootstepPlanner::planService(PlanFootsteps::Request &req, PlanFootsteps::Response &resp)
+    {
+    	bool result = plan(req.start.x, req.start.y, req.start.theta,
+    						req.goal.x, req.goal.y, req.goal.theta);
+
+    	resp.costs = ivDstarPtr->getPathCosts();
+    	resp.footsteps.reserve(ivDstarPtr->getNumFootsteps());
+
+
+    	for (Dstar::stateIterator it = ivDstarPtr->getPathBegin(); it != ivDstarPtr->getPathEnd(); ++it){
+    		// TODO: differentiate between left and right here? => add foot to footstep srv!
+    		geometry_msgs::Pose2D foot;
+    		foot.x = it->getX();
+    		foot.y = it->getY();
+    		foot.theta = it->getTheta();
+
+    		resp.footsteps.push_back(foot);
+    	}
+
+    	resp.result = result;
+
+    	return result;
+    }
 
 
 	bool
@@ -885,7 +912,7 @@ namespace footstep_planner{
 		{
 			for(int j = markerCounter; j < ivLastMarkerMsgSize; j++)
 			{
-				marker.ns = "footstep_planning";
+				marker.ns = ivMarkerNamespace;
 				marker.id = j;
 				marker.action = visualization_msgs::Marker::DELETE;
 
@@ -1003,7 +1030,7 @@ namespace footstep_planner{
 		}
 		else if (ivMode == ROBOT_NAVIGATION)
 			marker.header = ivRobotHeader;
-		marker.ns = "footstep_planning";
+		marker.ns = ivMarkerNamespace;
 		marker.type = visualization_msgs::Marker::CUBE;
 		marker.action = visualization_msgs::Marker::ADD;
 

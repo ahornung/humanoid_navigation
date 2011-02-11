@@ -32,6 +32,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <footstep_planner/PlanFootsteps.h>
 #include <humanoid_nav_msgs/StepTargetService.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -83,6 +84,9 @@ namespace footstep_planner
 		 * @return success of planning
 		 */
 		bool plan();
+
+		/// Service handle to plan footsteps
+		bool planService(PlanFootsteps::Request &req, PlanFootsteps::Response &resp);
 
 		/**
 		 * @brief Sets a new (static) goal location. The coordinates need to be in the map coordinate frame.
@@ -165,6 +169,9 @@ namespace footstep_planner
 		Dstar::stateIterator getExpandedBegin() const { return ivDstarPtr->getExpandedBegin(); };
 		Dstar::stateIterator getExpandedEnd() const { return ivDstarPtr->getExpandedEnd(); };
 
+		/// sets the namespace for the published visualization markers
+		void setMarkerNamespace(const std::string& ns) { ivMarkerNamespace = ns; };
+
 
 	private:
 
@@ -204,6 +211,7 @@ namespace footstep_planner
 
 		std::string ivRFootID;
 		std::string ivLFootID;
+		std::string ivMarkerNamespace;
 
 		roslib::Header ivRobotHeader;
 

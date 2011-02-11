@@ -36,6 +36,9 @@ namespace footstep_planner{
 		if (ivFootstepPlanner.getPlanningMode() == FootstepPlanner::ROBOT_NAVIGATION)
 			ivRobotPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 1, &FootstepPlanner::robotPoseCallback, &ivFootstepPlanner);
 
+		// service:
+		ivFootstepPlanService = nh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
+
 
 
 	}

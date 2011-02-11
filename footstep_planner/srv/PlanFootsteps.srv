@@ -1,0 +1,6 @@
+geometry_msgs/Pose2D start
+geometry_msgs/Pose2D goal
+---
+bool result
+geometry_msgs/Pose2D[] footsteps
+float64 costs

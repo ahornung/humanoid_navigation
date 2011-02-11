@@ -195,17 +195,17 @@ namespace footstep_planner
 		/**
 		 * @return Costs of the footstep path.
 		 */
-		float getPathCosts() { return ivPathCosts; };
+		float getPathCosts() const { return ivPathCosts; };
 
 		/**
 		 * @return Number of expanded states.
 		 */
-		int getNumExpandedStates() { return ivExpandedStates.size(); };
+		size_t getNumExpandedStates() const { return ivExpandedStates.size(); };
 
 		/**
 		 * @return Number of necessary footsteps.
 		 */
-		int getNumFootsteps() { return ivPath.size(); };
+		size_t getNumFootsteps() const { return ivPath.size(); };
 
 		static int cvRoundingThreshold;
 

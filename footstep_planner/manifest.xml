@@ -2,6 +2,9 @@
   <description brief="Footstep planning for humanoid robots">
 
      A footstep planner for humanoid robots using dynamic replanning based on D* Lite.
+     Details can be found in the corresponding paper "Humanoid Navigation with Dynamic Footstep Plans"
+     by J. Garimort, A. Hornung, and M. Bennewitz; published in 
+     Proc. of the IEEE International Conference on Robotics &amp; Automation (ICRA), 2011
 
   </description>
   <author>Johannes Garimort, Armin Hornung</author>

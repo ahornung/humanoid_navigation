@@ -144,6 +144,27 @@ namespace footstep_planner
 		 */
 		PlanningMode getPlanningMode() const { return ivMode; };
 
+		/**
+		 * @return Costs of the planned footstep path.
+		 */
+		float getPathCosts() const { return ivDstarPtr->getPathCosts(); };
+
+		/**
+		 * @return Number of expanded states.
+		 */
+		size_t getNumExpandedStates() const { return ivDstarPtr->getNumExpandedStates(); };
+
+		/**
+		 * @return Number of planned footsteps.
+		 */
+		size_t getNumFootsteps() const { return ivDstarPtr->getNumFootsteps(); };
+
+		Dstar::stateIterator getPathBegin() const { return ivDstarPtr->getPathBegin(); };
+		Dstar::stateIterator getPathEnd() const { return ivDstarPtr-> getPathEnd(); };
+
+		Dstar::stateIterator getExpandedBegin() const { return ivDstarPtr->getExpandedBegin(); };
+		Dstar::stateIterator getExpandedEnd() const { return ivDstarPtr->getExpandedEnd(); };
+
 
 	private:
 

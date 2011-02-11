@@ -6,7 +6,7 @@
    </p>
   </description>
   <author>Maintained by Armin Hornung</author>
-  <license>BSD,GPL,GPL 3</license>  
+  <license>BSD,GPL 3</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/humanoid_navigation</url>
   <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs -->

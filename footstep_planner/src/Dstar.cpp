@@ -790,7 +790,7 @@ namespace footstep_planner
 		while(!isCloseToGoal(cur))
 		{
 			// NOTE: the robot is not supposed to perform more than 100 footsteps
-			if (k++ > 100)
+			if (k++ > 10000)
 			{
 				ROS_ERROR("Extracting path failed.");
 				ivPath.clear();

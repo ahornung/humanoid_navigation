@@ -64,7 +64,7 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
 
 	// iterate over map, store in image
 	// (0,0) is lower left corner of OccupancyGrid
-	for(unsigned int j = 0; j < m_mapInfo.height; ++j)	{
+	for(unsigned int j = 0; j < m_mapInfo.height; ++j){
 		for(unsigned int i = 0; i < m_mapInfo.width; ++i){
 			if (*mapDataIter > map_occ_thres){
 				// m_mapInfo.height-1-i
@@ -80,6 +80,18 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
 	m_distMap = m_distMap * m_mapInfo.resolution;
 
 	ROS_INFO("GridMap2D created with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
+}
+
+void GridMap2D::setMap(const cv::Mat& binaryMap){
+	m_binaryMap = binaryMap.clone();
+	m_distMap = cv::Mat(m_binaryMap.size(), CV_32FC1);
+
+	cv::distanceTransform(m_binaryMap, m_distMap, CV_DIST_L2, CV_DIST_MASK_PRECISE);
+	// distance map now contains distance in meters:
+	m_distMap = m_distMap * m_mapInfo.resolution;
+
+	ROS_INFO("GridMap2D copied from existing cv::Mat with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
+
 }
 
 // See costmap2D for mapToWorld / worldToMap implementations:

@@ -1050,6 +1050,7 @@ namespace footstep_planner{
 		marker.scale.y = ivFootsizeY; // - 0.01;
 		marker.scale.z = ivFootsizeZ;
 
+		// TODO: make color configurable?
 		if (footstep.getLeg() == RIGHT)
 		{
 			marker.color.r = 0.0f;
@@ -1061,7 +1062,7 @@ namespace footstep_planner{
 			marker.color.g = 0.0f;
 		}
 		marker.color.b = 0.0;
-		marker.color.a = 0.2;
+		marker.color.a = 0.25;
 
 		marker.lifetime = ros::Duration();
 

@@ -95,7 +95,12 @@ public:
 	/// @return true if map is occupied at cell <mx, my>
 	bool isOccupiedAtCell(unsigned int mx, unsigned int my) const;
 
+	/// Initialize map from a ROS OccupancyGrid message
 	void setMap(const nav_msgs::OccupancyGridConstPtr& gridMap);
+
+	/// Initialize from an existing cv::Map. mapInfo (in particular resultion) remains the same!
+	void setMap(const cv::Mat& binaryMap);
+
 	inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
 	inline float getResolution() const {return m_mapInfo.resolution; };
 	/// returns the tf frame ID of the map (usually "/map")
@@ -112,5 +117,7 @@ protected:
 	std::string m_frameId;	///< "map" frame where ROS OccupancyGrid originated from
 
 };
+
+typedef boost::shared_ptr< GridMap2D> GridMap2DPtr;
 
 #endif /* GRIDMAP2D_H_ */

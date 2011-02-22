@@ -762,6 +762,9 @@ namespace footstep_planner
 		ivPathCosts = 0;
 
 		ROS_INFO("Start path planning.");
+
+
+		ros::Time startTime = ros::Time::now();
 		int res = computeShortestPath();
 
 		if (res < 0)
@@ -817,7 +820,8 @@ namespace footstep_planner
 		if (!occupied(cur))
 			ivPath.push_back(cur);
 
-		ROS_INFO("Path successfully extracted.");
+		ros::Duration planningTime = ros::Time::now() - startTime;
+		ROS_INFO("Path successfully extracted. Complete planning time: %f s.", planningTime.toSec());
 
 		return true;
 

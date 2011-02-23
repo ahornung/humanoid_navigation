@@ -926,6 +926,35 @@ namespace footstep_planner{
 
 	}
 
+	void
+	FootstepPlanner::clearFootstepPathVis(unsigned numFootsteps){
+		visualization_msgs::Marker marker;
+		visualization_msgs::MarkerArray markerMsg;
+
+		if (ivMode == MERE_PLANNING)
+		{
+			marker.header.stamp = ros::Time::now();
+			marker.header.frame_id = ivMapPtr->getFrameID();
+		}
+		else if (ivMode == ROBOT_NAVIGATION)
+			marker.header = ivRobotHeader;
+
+		if (numFootsteps < 1){
+			numFootsteps = ivLastMarkerMsgSize;
+		}
+
+		for (unsigned i = 0; i < numFootsteps; i++){
+			marker.ns = ivMarkerNamespace;
+			marker.id = i;
+			marker.action = visualization_msgs::Marker::DELETE;
+
+			markerMsg.markers.push_back(marker);
+
+		}
+
+		ivFootstepPathVisPub.publish(markerMsg);
+	}
+
 
 	void
 	FootstepPlanner::broadcastPathVis()

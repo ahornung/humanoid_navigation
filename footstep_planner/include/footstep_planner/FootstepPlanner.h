@@ -173,6 +173,15 @@ namespace footstep_planner
 		void setMarkerNamespace(const std::string& ns) { ivMarkerNamespace = ns; };
 
 
+		/**
+		 * Sends out visualization_msgs Markers so that a previous
+		 * footstep visualization is cleared in RViz
+		 *
+		 * @param numFootsteps how many footsteps to clear (default 0: all of previous plan)
+		 */
+		void clearFootstepPathVis(unsigned numFootsteps = 0);
+
+
 	private:
 
 		boost::shared_ptr<Dstar> ivDstarPtr;

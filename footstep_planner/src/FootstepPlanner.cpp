@@ -601,16 +601,16 @@ namespace footstep_planner{
 		if (current.getLeg() == RIGHT)
 		{
 			supportFootLink = ivLFootID;
-			step.leg = (int)RIGHT;
-			firstStepLeg = (int)RIGHT;
-			secondStepLeg = (int)LEFT;
+			step.leg = humanoid_nav_msgs::StepTarget::right;
+			firstStepLeg = humanoid_nav_msgs::StepTarget::right;
+			secondStepLeg = humanoid_nav_msgs::StepTarget::left;
 		}
 		else	// supportLeg == LLEG
 		{
 			supportFootLink = ivRFootID;
-			step.leg = (int)LEFT;
-			firstStepLeg = (int)LEFT;
-			secondStepLeg = (int)RIGHT;
+			step.leg = humanoid_nav_msgs::StepTarget::left;
+			firstStepLeg = humanoid_nav_msgs::StepTarget::left;
+			secondStepLeg = humanoid_nav_msgs::StepTarget::right;
 		}
 
 		{
@@ -653,12 +653,12 @@ namespace footstep_planner{
 			if (current.getLeg() == RIGHT)
 			{
 				supportFootLink = ivRFootID;
-				step.leg = (int)LEFT;
+				step.leg = humanoid_nav_msgs::StepTarget::left;
 			}
 			else // supportLeg = LLEG
 			{
 				supportFootLink = ivLFootID;
-				step.leg = (int)RIGHT;
+				step.leg = humanoid_nav_msgs::StepTarget::right;
 			}
 
 			{
@@ -678,6 +678,7 @@ namespace footstep_planner{
 			if (!reached)
 			{
 				// TODO: start replanning
+				ROS_ERROR("Replanning on robot not implemented yet!");
 			}
 			else
 			{
@@ -688,9 +689,9 @@ namespace footstep_planner{
 		}
 
 		if (current.getLeg() == RIGHT)
-			step.leg = (int)LEFT;
+			step.leg = humanoid_nav_msgs::StepTarget::left;
 		else // supportLeg == LLEG
-			step.leg = (int)RIGHT;
+			step.leg = humanoid_nav_msgs::StepTarget::right;
 		step.pose.x = 0;
 		step.pose.y = 0;
 		footstepService.request.step = step;

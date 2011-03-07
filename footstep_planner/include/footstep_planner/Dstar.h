@@ -233,7 +233,6 @@ namespace footstep_planner
 		const float ivStepCosts;
 		const int   ivCollisionCheckAccuracy;
 		const int	ivPlannerMaxSteps;
-
 		const boost::shared_ptr<Heuristic> ivHeuristicConstPtr;
 
 		boost::shared_ptr<GridMap2D> ivMapPtr;

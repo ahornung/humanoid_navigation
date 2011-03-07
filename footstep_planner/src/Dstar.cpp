@@ -171,7 +171,7 @@ namespace footstep_planner
 			boost::shared_ptr<AstarHeuristic> h;
 			h = boost::dynamic_pointer_cast<AstarHeuristic>(ivHeuristicConstPtr);
 			// NOTE: start state is set to left leg
-			bool success = h->astarPlanning(ivStartStateLeft, ivGoal);
+			bool success = h->astarPlanning(ivStartStateRight, ivGoal);
 			if (!success)
 			{
 				ROS_ERROR("Failed to generate A* path");

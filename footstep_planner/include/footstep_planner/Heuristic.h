@@ -45,6 +45,10 @@ namespace footstep_planner
 		Heuristic(HeuristicType type);
 		virtual ~Heuristic();
 
+		/**
+		 * @return The heuristically determined path costs to get from
+		 * state 'from' to state 'to'.
+		 */
 		virtual float getHValue(const State& from, const State& to) const = 0;
 
 		HeuristicType getHeuristicType() const { return ivHeuristicType; };
@@ -57,6 +61,10 @@ namespace footstep_planner
 	};
 
 
+	/**
+	 * @brief Determining the heuristic value by the euclidean distance between
+	 * two states.
+	 */
 	class EuclideanHeuristic : public Heuristic
 	{
 
@@ -75,6 +83,11 @@ namespace footstep_planner
 	};
 
 
+	/**
+	 * @brief Determining the heuristic value by the euclidean distance between
+	 * two states and the costs of the expected step costs to get from one of the
+	 * states to the other.
+	 */
 	class EuclStepCostHeuristic : public Heuristic
 	{
 

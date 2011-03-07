@@ -13,6 +13,8 @@ planning_mode: 0
 #      NOTE: this heuristic overestimates the real step costs if the robot is
 #      able to step over obstacles)
 heuristic: 1
+# distance between subgoals is subgoal_distance times the maximum step width of the robot
+subgoal_distance: 3.0
 
 # node expansions before we give up
 planner_max_steps: 180000

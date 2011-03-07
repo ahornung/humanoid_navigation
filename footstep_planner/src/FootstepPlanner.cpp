@@ -52,6 +52,7 @@ namespace footstep_planner{
 
 		int    mode;
 		int    heuristic;
+		double subgoalDistance;
 		double stepCosts;
 		int    roundingThreshold;
 		int    plannerMaxSteps;
@@ -60,6 +61,7 @@ namespace footstep_planner{
 		// - planner settings
 		privateNh.param("planning_mode", mode, 0);
 		privateNh.param("heuristic", heuristic, 0);
+		privateNh.param("subgoal_distance", subgoalDistance, 3.0);
 		privateNh.param("planner_max_steps", plannerMaxSteps, 180000);
 		privateNh.param("step_costs", stepCosts, 0.05);
 		privateNh.param("accuracy/rounding_threshold", roundingThreshold, 2);
@@ -160,7 +162,8 @@ namespace footstep_planner{
 			h.reset(new AstarHeuristic(Heuristic::ASTAR_PATH,
 			                           stepCosts,
 			                           maxStepWidth,
-			                           footWidth));
+			                           footWidth,
+			                           subgoalDistance));
 			ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance w. step costs");
 			break;
 		default:
@@ -570,8 +573,6 @@ namespace footstep_planner{
 				ivDstarPtr->updateStart(ivStartFootLeft, ivStartFootRight);
 			}
 		}
-		// TODO: catch failed heuristic update
-		ivDstarPtr->updateHeuristicValues();
 
 		// start the planning task
 		bool success = ivDstarPtr->replan();

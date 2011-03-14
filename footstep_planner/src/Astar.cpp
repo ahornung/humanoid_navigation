@@ -40,12 +40,14 @@ namespace footstep_planner
 	                               float stepCosts,
 	                               float maxStepSize,
 	                               float distanceThreshold,
-	                               float subgoalDistance)
+	                               float subgoalDistance,
+	        		               int   roundingThreshold)
 		: Heuristic(type),
 	      ivDistanceThreshold(distanceThreshold),
 		  ivMaxStepSize(maxStepSize),
 		  ivStepCosts(stepCosts),
-		  ivSubgoalDistance(subgoalDistance)
+		  ivSubgoalDistance(subgoalDistance),
+		  ivRoundingThreshold(roundingThreshold)
 	{}
 
 
@@ -67,7 +69,6 @@ namespace footstep_planner
 			return INFINITY;
 		}
 
-		float x, y;
 		coordinate subgoal;
 		float minDistance = INFINITY;
 		float h = INFINITY;
@@ -75,35 +76,34 @@ namespace footstep_planner
 		// receive the nearest subgoal for state 'from'
 		for(; iter != ivSubgoalGoalDistances.end(); iter++)
 		{
-			x = from.getX() - iter->first.first;
-			y = from.getY() - iter->first.second;
+			float x = from.getX() - iter->first.first;
+			float y = from.getY() - iter->first.second;
 			float distanceSqr = x*x + y*y;
 			if (minDistance > distanceSqr)
 			{
 				minDistance = distanceSqr;
-				subgoal = iter->first;
-				h = iter->second;
+				// define the successor of the nearest subgoal as new subgoal
+				iter++;
+				if (iter != ivSubgoalGoalDistances.end())
+				{
+					subgoal = iter->first;
+					h = iter->second;
+				}
+				else
+				{
+					subgoal = coordinate(to.getX(), to.getY());
+					h = 0;
+				}
+				iter--;
 			}
 		}
-		// check if state 'to' might be the nearest subgoal..
-		x = from.getX() - to.getX();
-		y = from.getY() - to.getY();
-		if (minDistance > (x*x + y*y))
-		{
-			// ..then the h value is 0
-			h = 0;
-		}
-		// otherwise receive distances to the nearest subgoal
-		else
-		{
-			x = from.getX() - subgoal.first;
-			y = from.getY() - subgoal.second;
-		}
-
 		// calculate expected step costs to the nearest subgoal
-		float distance = sqrt(x*x + y*y) + h;
-		int expectedSteps = (int)(distance*2 / ivMaxStepSize);
+		float distance = euclideanDistance(from.getX(), from.getY(),
+		                                   subgoal.first, subgoal.second,
+		                                   ivRoundingThreshold);
+		distance += h;
 
+		int expectedSteps = (int)(distance*1.5 / ivMaxStepSize);
 		return distance + expectedSteps * ivStepCosts;
 
 	}
@@ -121,8 +121,8 @@ namespace footstep_planner
 
 		ivSubgoalGoalDistances.clear();
 
-		openlist_type    openList;
-		closedlist_type  closedList;
+		openlist_type     openList;
+		closedlist_type   closedList;
 		distancelist_type distanceList;
 		closedlist_type::const_iterator closedListIter;
 		std::vector<SearchNode::gridcell> successors;
@@ -132,8 +132,7 @@ namespace footstep_planner
 		ivMapPtr->worldToMap(from.getX(), from.getY(), ivStart.first, ivStart.second);
 		ivMapPtr->worldToMap(to.getX(), to.getY(), ivGoal.first, ivGoal.second);
 
-		State::key key(0, cost(ivStart, ivGoal));
-		SearchNode::searchnode_ptr cur(new SearchNode(ivStart, key));
+		SearchNode::searchnode_ptr cur(new SearchNode(ivStart, State::key(0, 0)));
 		openList.push(cur);
 
 		bool success = false;
@@ -184,47 +183,52 @@ namespace footstep_planner
 
 
 	bool
-	AstarHeuristic::extractPath(SearchNode::searchnode_ptr extractionStart)
+	AstarHeuristic::extractPath(const SearchNode::searchnode_ptr extractionStart)
 	{
 
 		double wx, wy;
 
-		SearchNode::searchnode_ptr cur = extractionStart;
-
+		float pathLength = 0;
 		float resolution = ivMapPtr->getResolution();
-		float pathLength = extractionStart->getKey().first;
 
-		float stepDistance = 0;
-		const float subgoalMinDistance = ivMaxStepSize * ivSubgoalDistance / resolution;
+		SearchNode::searchnode_ptr cur = extractionStart;
+		const float maxPathLength = cur->getKey().second * resolution;
+
+		float gridStepDistance = 0;
+		const float minSubgoalGridDistance = ivMaxStepSize * ivSubgoalDistance / resolution;
 
 		ivMapPtr->mapToWorld(cur->getCell().first, cur->getCell().second, wx, wy);
-		std::pair<coordinate,float> subgoal(coordinate(wx, wy), pathLength * resolution);
+		std::pair<coordinate,float> subgoal(coordinate(wx, wy), pathLength);
 		ivSubgoalGoalDistances.push_front(subgoal);
+		coordinate prevSubgoalCoord = subgoal.first;
 
 		bool finished = false;
-		do
+		while (cur->getPredecessor() && not finished)
 		{
 			SearchNode::gridcell curCell = cur->getCell();
 			SearchNode::gridcell predCell = cur->getPredecessor()->getCell();
 
-			int x = predCell.first - curCell.first;
-			int y = predCell.second - curCell.second;
-			stepDistance += sqrt(x*x + y*y);
-			if (stepDistance > subgoalMinDistance)
+			gridStepDistance += cost(curCell, predCell);
+			if (gridStepDistance > minSubgoalGridDistance)
 			{
-				pathLength -= stepDistance;
-				ivMapPtr->mapToWorld(cur->getCell().first, cur->getCell().second, wx, wy);
-				subgoal = std::pair<coordinate,float>(coordinate(wx, wy),
-				                                      pathLength * resolution);
-				ivSubgoalGoalDistances.push_front(subgoal);
-				stepDistance = 0;
+				gridStepDistance = 0;
 
-				if (pathLength <= subgoalMinDistance)
+				ivMapPtr->mapToWorld(predCell.first, predCell.second, wx, wy);
+				pathLength += euclideanDistance(prevSubgoalCoord.first,
+				                                prevSubgoalCoord.second,
+				                                wx,
+				                                wy,
+				                                ivRoundingThreshold);
+				subgoal = std::pair<coordinate,float>(coordinate(wx, wy), pathLength);
+				ivSubgoalGoalDistances.push_front(subgoal);
+				prevSubgoalCoord = subgoal.first;
+
+				if (pathLength > (maxPathLength - minSubgoalGridDistance * resolution))
 					finished = true;
 			}
 
 			cur = cur->getPredecessor();
-		} while (cur->getPredecessor() != NULL && not finished);
+		}
 
 		return true;
 

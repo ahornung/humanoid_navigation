@@ -187,15 +187,9 @@ namespace footstep_planner
 		void updateDistanceMap(boost::shared_ptr<GridMap2D> map);
 
 		/**
-		 * @brief Update somehow the heuristic function from outside; here: used
-		 * to calculate a new subgoal path for the A* heuristic.
-		 */
-		bool updateHeuristicValues();
-
-		/**
 		 * @return Costs of the footstep path.
 		 */
-		float getPathCosts() const { return ivPathCosts; };
+		float getPathCosts() { return ivPathCosts; };
 
 		/**
 		 * @return Number of expanded states.
@@ -363,6 +357,12 @@ namespace footstep_planner
 		 * @brief Update state u as per [S. Koenig, 2002] (optimized version).
 		 */
 		void update(State& u);
+
+		/**
+		 * @brief Update somehow the heuristic function from outside; here: used
+		 * to calculate a new subgoal path for the A* heuristic.
+		 */
+		bool updateHeuristicValues();
 
 		/**
 		 * @brief Method for the optimized D* lite as per [S. Koenig, 2002]

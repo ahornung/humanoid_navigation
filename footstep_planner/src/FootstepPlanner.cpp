@@ -102,7 +102,7 @@ namespace footstep_planner{
 		int size, sizeY, sizeT;
 		try
 		{
-					size = xDiscretizationList.size();
+			size = xDiscretizationList.size();
 			sizeY = yDiscretizationList.size();
 			sizeT = thetaDiscretizationList.size();
 
@@ -163,7 +163,8 @@ namespace footstep_planner{
 			                           stepCosts,
 			                           maxStepWidth,
 			                           footWidth,
-			                           subgoalDistance));
+			                           subgoalDistance,
+			                           roundingThreshold));
 			ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance w. step costs");
 			break;
 		default:

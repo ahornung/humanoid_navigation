@@ -172,7 +172,6 @@ namespace footstep_planner
 		/// sets the namespace for the published visualization markers
 		void setMarkerNamespace(const std::string& ns) { ivMarkerNamespace = ns; };
 
-
 		/**
 		 * Sends out visualization_msgs Markers so that a previous
 		 * footstep visualization is cleared in RViz

@@ -66,6 +66,7 @@ namespace footstep_planner
 
 			/// gridcell.first and gridcell.second correspond to x and y of the grid cell
 			typedef std::pair<unsigned int, unsigned int> gridcell;
+
 			typedef boost::shared_ptr<const SearchNode> searchnode_ptr;
 
 
@@ -84,7 +85,7 @@ namespace footstep_planner
 		private:
 
 			gridcell   ivCell;
-			/// key.first represents the g value, key.second represents the h value
+			/// key.first represents the f value, key.second represents the g value
 			State::key ivKey;
 
 			searchnode_ptr ivPredecessor;
@@ -131,7 +132,12 @@ namespace footstep_planner
 		typedef std::list<std::pair<coordinate, float> > subgoaldistances_type;
 
 
-		AstarHeuristic(HeuristicType type, float stepCosts, float maxStepSize, float distanceThreshold, float subgoalDistance);
+		AstarHeuristic(HeuristicType type,
+		               float stepCosts,
+		               float maxStepSize,
+		               float distanceThreshold,
+		               float subgoalDistance,
+		               int   roundingThreshold);
 		virtual ~AstarHeuristic();
 
 		/// Returning the heuristic value for the two states.
@@ -149,6 +155,7 @@ namespace footstep_planner
 		const float ivMaxStepSize;
 		const float ivStepCosts;
 		const float ivSubgoalDistance;
+		const float ivRoundingThreshold;
 
 		subgoaldistances_type ivSubgoalGoalDistances;
 
@@ -158,8 +165,7 @@ namespace footstep_planner
 		SearchNode::gridcell ivGoal;
 
 		/**
-		 * @return The costs to get from one grid cell simply based on the
-		 * euclidean distance.
+		 * @return The costs to get from one grid cell to a neighbored grid cell.
 		 */
 		float cost(const SearchNode::gridcell& c1, const SearchNode::gridcell& c2) const;
 
@@ -168,12 +174,12 @@ namespace footstep_planner
 		 *
 		 * @return True if the extraction was successful.
 		 */
-		bool  extractPath(SearchNode::searchnode_ptr extractionStart);
+		bool  extractPath(const SearchNode::searchnode_ptr extractionStart);
 
 		/// Receive the successor grid cells.
 		void  getSuccessors(SearchNode::gridcell c, std::vector<SearchNode::gridcell>& successors);
 
-		/// @return The distance between two grid cells.
+		/// @return The euclidean distance between two grid cells.
 		float gridDistance(const SearchNode::gridcell& c1, const SearchNode::gridcell& c2) const;
 
 		/// @return True if grid cell is close to the goal cell.

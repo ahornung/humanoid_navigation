@@ -170,13 +170,16 @@ namespace footstep_planner
 		{
 			boost::shared_ptr<AstarHeuristic> h;
 			h = boost::dynamic_pointer_cast<AstarHeuristic>(ivHeuristicConstPtr);
-			// NOTE: start state is set to left leg
-			bool success = h->astarPlanning(ivStartStateRight, ivGoal);
+			// NOTE: start state is set to left leg; IMPORTANT: planning from goal to start!
+			bool success = h->astarPlanning(ivGoal, ivStart);
+
 			if (!success)
 			{
-				ROS_ERROR("Failed to generate A* path");
+				ROS_ERROR("Failed to generate A* subgoal path");
 				return false;
 			}
+
+			ROS_INFO("Finished generating A* subgoal path");
 		}
 
 		return true;
@@ -194,7 +197,7 @@ namespace footstep_planner
 			return false;
 		}
 
-		ROS_DEBUG("D* lite initializing");
+		ROS_INFO("D* lite initializing");
 
 		// reset the planner
 		reset();
@@ -216,7 +219,7 @@ namespace footstep_planner
 		// set the goal state; NOTE: the state's leg is set to right
 		ivGoal = goal;
 
-		// update the heuristic values
+		// update the heuristic values; NOTE: be sure 'ivStart' has been set before
 		updateHeuristicValues();
 
 		State::state_info tmp;
@@ -332,9 +335,7 @@ namespace footstep_planner
 				(ivOpenList.top() < ivStart || getRhs(ivStart) > getG(ivStart)))
 		{
 			if (k++ > ivPlannerMaxSteps)
-			{
 				return -1;
-			}
 
 			State u;
 
@@ -763,13 +764,12 @@ namespace footstep_planner
 
 		ROS_INFO("Start path planning.");
 
-
 		ros::Time startTime = ros::Time::now();
 		int res = computeShortestPath();
 
 		if (res < 0)
 		{
-			ROS_ERROR("Path planning failed (at maxsteps).");
+			ROS_ERROR("Path planning failed.");
 			return false;
 		}
 		else if (isinf(getG(ivStart)))
@@ -789,7 +789,7 @@ namespace footstep_planner
 		// values might have changed during the planning process
 		ivStart = ivLast;
 
-		int k=0;
+		int k = 0;
 		while(!isCloseToGoal(cur))
 		{
 			// NOTE: the robot is not supposed to perform more than 100 footsteps
@@ -816,12 +816,11 @@ namespace footstep_planner
 
 		// move other foot next to last moved foot
 		Footstep neutralStep;
-		neutralStep.performMeOnThisState(cur, &cur, ivFootSeparation);
-		if (!occupied(cur))
-			ivPath.push_back(cur);
+		neutralStep.performMeOnThisState(cur, &succ, ivFootSeparation);
+		if (!occupied(succ))
+			ivPath.push_back(succ);
 
-		ros::Duration planningTime = ros::Time::now() - startTime;
-		ROS_INFO("Path successfully extracted. Complete planning time: %f s.", planningTime.toSec());
+		ROS_INFO("Path successfully extracted.");
 
 		return true;
 
@@ -1038,7 +1037,7 @@ namespace footstep_planner
 		float diffX = round(ivGlobalX, Dstar::cvRoundingThreshold) - round(s2.getX(), Dstar::cvRoundingThreshold);
 		float diffY = round(ivGlobalY, Dstar::cvRoundingThreshold) - round(s2.getY(), Dstar::cvRoundingThreshold);
 
-		return (((diffX*diffX + diffY*diffY)) < (FLOAT_COMP_THR_SQR) && diffAngle < ANGLE_COMP_THR);
+		return (((diffX*diffX + diffY*diffY) < FLOAT_COMP_THR_SQR) && (diffAngle < ANGLE_COMP_THR));
 
 	}
 

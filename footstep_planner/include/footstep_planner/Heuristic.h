@@ -47,7 +47,8 @@ namespace footstep_planner
 
 		/**
 		 * @return The heuristically determined path costs to get from
-		 * state 'from' to state 'to'.
+		 * state 'from' to state 'to' where 'to' is supposed to be the goal of
+		 * the planning task.
 		 */
 		virtual float getHValue(const State& from, const State& to) const = 0;
 

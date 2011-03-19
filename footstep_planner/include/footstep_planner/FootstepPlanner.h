@@ -185,6 +185,7 @@ namespace footstep_planner
 
 		boost::shared_ptr<Dstar> ivDstarPtr;
 		boost::shared_ptr<GridMap2D> ivMapPtr;
+		boost::shared_ptr<AstarHeuristic> ivAstarHeuristic; // keep a ptr here for visualization
 		boost::mutex ivRobotPoseUpdateMutex;
 
 		State ivStartFootLeft;
@@ -228,6 +229,7 @@ namespace footstep_planner
 		ros::Publisher	   ivFootstepPathVisPub;
 		ros::Publisher     ivStartPoseVisPub;
 		ros::Publisher	   ivPathVisPub;
+		ros::Publisher	   ivHeuristicPathVisPub;
 		ros::ServiceClient ivFootstepService;
 
 		tf::TransformListener ivTransformListener;
@@ -246,6 +248,11 @@ namespace footstep_planner
 		 * @brief Publishes the calculated path under "~/footsteps_array" as nav_msgs::Path.
 		 */
 		void broadcastPathVis();
+
+		/**
+		 * @brief Publishes the heuristic path nav_msgs::Path.
+		 */
+		void broadcastHeuristicPathVis();
 
 		/**
 		 * @brief Administrates the underlying Dstar. Initiates the (re)planning.

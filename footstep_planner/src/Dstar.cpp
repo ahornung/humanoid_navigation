@@ -731,6 +731,7 @@ namespace footstep_planner
 
 		// set the goal state; NOTE: the state's leg is set to right
 		ivGoal = goal;
+		updateHeuristicValues();
 
 		State::state_info tmp;
 		tmp.g = INFINITY;
@@ -769,7 +770,7 @@ namespace footstep_planner
 
 		if (res < 0)
 		{
-			ROS_ERROR("Path planning failed.");
+			ROS_ERROR("Path planning failed, reached max expansions(%d)", ivPlannerMaxSteps);
 			return false;
 		}
 		else if (isinf(getG(ivStart)))

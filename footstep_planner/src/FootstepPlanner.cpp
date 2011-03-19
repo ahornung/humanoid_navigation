@@ -46,6 +46,7 @@ namespace footstep_planner{
 		ivFootstepPathVisPub = privateNh.advertise<visualization_msgs::MarkerArray>("footsteps_array", 1);
 		ivStartPoseVisPub = privateNh.advertise<geometry_msgs::PoseStamped>("start", 1);
 		ivPathVisPub = privateNh.advertise<nav_msgs::Path>("path", 1);
+		ivHeuristicPathVisPub = privateNh.advertise<nav_msgs::Path>("heuristic_path", 1);
 		// ..and services
 		ivFootstepService = ivNh.serviceClient<humanoid_nav_msgs::StepTargetService>("cmd_step_srv");
 
@@ -156,15 +157,17 @@ namespace footstep_planner{
 			break;
 		case Heuristic::ASTAR_PATH:
 			// euclidean distance + step costs estimation based on precalculated subgoals
-			footWidth = ivFootsizeX;
-			if (ivFootsizeX < ivFootsizeY)
-				footWidth = ivFootsizeY;
+			footWidth = ivFootsizeY; // this width should be the smaller of the foot's dimensions
 			h.reset(new AstarHeuristic(Heuristic::ASTAR_PATH,
-			                           stepCosts,
-			                           maxStepWidth,
-			                           footWidth,
-			                           subgoalDistance,
-			                           roundingThreshold));
+                    stepCosts,
+                    maxStepWidth,
+                    footWidth,
+                    subgoalDistance,
+                    roundingThreshold));
+
+			// keep a local ptr for visualization
+			ivAstarHeuristic = boost::dynamic_pointer_cast<AstarHeuristic>(h);
+
 			ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance w. step costs");
 			break;
 		default:
@@ -419,6 +422,7 @@ namespace footstep_planner{
 		}
 		else
 		{
+			broadcastExpandedNodesVis();
 			return false;
 		}
 
@@ -454,8 +458,6 @@ namespace footstep_planner{
 	FootstepPlanner::plan(float startX, float startY, float startTheta,
 						  float goalX, float goalY, float goalTheta)
 	{
-
-		// TODO: Also add a service (wrapper) for this functionality
 
 		if (ivMode != MERE_PLANNING)
 		{
@@ -499,6 +501,7 @@ namespace footstep_planner{
 		// start the planning task
 		if (!dstarPlanning())
 		{
+			broadcastExpandedNodesVis();
 			return;
 		}
 
@@ -574,6 +577,8 @@ namespace footstep_planner{
 				ivDstarPtr->updateStart(ivStartFootLeft, ivStartFootRight);
 			}
 		}
+
+		broadcastHeuristicPathVis();
 
 		// start the planning task
 		bool success = ivDstarPtr->replan();
@@ -960,6 +965,37 @@ namespace footstep_planner{
 
 
 	void
+	FootstepPlanner::broadcastHeuristicPathVis()
+	{
+
+		if (!ivAstarHeuristic)
+			return;
+
+		nav_msgs::Path pathMsg;
+		geometry_msgs::PoseStamped state;
+
+		if (ivMode == MERE_PLANNING)
+		{
+			state.header.stamp = ros::Time::now();
+			state.header.frame_id = ivMapPtr->getFrameID();
+		}
+		else if (ivMode == ROBOT_NAVIGATION)
+			state.header = ivRobotHeader;
+
+		AstarHeuristic::subgoal_iter pathIter = ivAstarHeuristic->getPathBegin();
+		for(; pathIter != ivAstarHeuristic->getPathEnd(); pathIter++)
+		{
+			state.pose.position.x = pathIter->first.first;
+			state.pose.position.y = pathIter->first.second;
+			pathMsg.poses.push_back(state);
+		}
+		pathMsg.header = state.header;
+		ivHeuristicPathVisPub.publish(pathMsg);
+
+	}
+
+
+	void
 	FootstepPlanner::broadcastPathVis()
 	{
 
@@ -969,7 +1005,6 @@ namespace footstep_planner{
 
 		nav_msgs::Path pathMsg;
 		geometry_msgs::PoseStamped state;
-		std::vector<geometry_msgs::PoseStamped> poses;
 
 		if (ivMode == MERE_PLANNING)
 		{
@@ -985,30 +1020,28 @@ namespace footstep_planner{
 		{
 			state.pose.position.x = ivStartFootRight.getX();
 			state.pose.position.y = ivStartFootRight.getY();
-			poses.push_back(state);
+			pathMsg.poses.push_back(state);
 			state.pose.position.x = ivStartFootLeft.getX();
 			state.pose.position.y = ivStartFootLeft.getY();
-			poses.push_back(state);
+			pathMsg.poses.push_back(state);
 		}
 		else // leg == LEFT
 		{
 			state.pose.position.x = ivStartFootLeft.getX();
 			state.pose.position.y = ivStartFootLeft.getY();
-			poses.push_back(state);
+			pathMsg.poses.push_back(state);
 			state.pose.position.x = ivStartFootRight.getX();
 			state.pose.position.y = ivStartFootRight.getY();
-			poses.push_back(state);
+			pathMsg.poses.push_back(state);
 		}
 
 		for(; pathIter != ivDstarPtr->getPathEnd(); pathIter++)
 		{
 			state.pose.position.x = pathIter->getX();
 			state.pose.position.y = pathIter->getY();
-			poses.push_back(state);
+			pathMsg.poses.push_back(state);
 		}
 		pathMsg.header = state.header;
-		pathMsg.poses = poses;
-
 		ivPathVisPub.publish(pathMsg);
 
 	}

@@ -29,8 +29,8 @@ namespace footstep_planner{
 		ros::NodeHandle nh;
 
 		// provide callbacks to interact with the footstep planner:
-		ivGoalPoseSub = nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
 		ivGridMapSub = nh.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepPlanner::mapCallback, &ivFootstepPlanner);
+		ivGoalPoseSub = nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
 		ivStartPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &FootstepPlanner::startPoseCallback, &ivFootstepPlanner);
 
 		if (ivFootstepPlanner.getPlanningMode() == FootstepPlanner::ROBOT_NAVIGATION)

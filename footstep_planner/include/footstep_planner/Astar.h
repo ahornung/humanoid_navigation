@@ -130,6 +130,7 @@ namespace footstep_planner
 
 		typedef std::pair<float, float> coordinate;
 		typedef std::list<std::pair<coordinate, float> > subgoaldistances_type;
+		typedef subgoaldistances_type::const_iterator subgoal_iter;
 
 
 		AstarHeuristic(HeuristicType type,
@@ -147,6 +148,9 @@ namespace footstep_planner
 		bool astarPlanning(const State& from, const State& to);
 
 		void setMap(boost::shared_ptr<GridMap2D> map);
+
+		subgoal_iter getPathBegin() const{ return ivSubgoalGoalDistances.begin();}
+		subgoal_iter getPathEnd() const{ return ivSubgoalGoalDistances.end();}
 
 
 	private:

@@ -23,18 +23,22 @@ planner_max_steps: 180000
 # costs to perform one footstep
 step_costs: 0.1
 
-# footstep collision check accuracy
-# - 0 (just the circumcircle of the foot)
-# - 1 (just the incircle of the foot)
-# - 2 (circumcircle and incircle recursivly checked for the hole foot)
-accuracy/collision_check: 2
-
-# number of decimal places for rounding floats
-accuracy/rounding_threshold: 2
-
-# the execution accuracy of each footstep; the more accurate a footstep should
-# fit into the calculated steps the more likely a replanning is necessary
-accuracy/footstep/x: 0.01
-accuracy/footstep/y: 0.01
-accuracy/footstep/theta: 0.15
+accuracy:
+  # footstep collision check accuracy
+  # - 0 (just the circumcircle of the foot)
+  # - 1 (just the incircle of the foot)
+  # - 2 (circumcircle and incircle recursivly checked for the hole foot)
+  collision_check: 2
+  
+  # number of decimal places for rounding floats
+  rounding_threshold: 2
+  
+  float_comp_threshold: 0.00001
+  float_comp_threshold: 0.087
+  
+  # the execution accuracy of each footstep; the more accurate a footstep should
+  # fit into the calculated steps the more likely a replanning is necessary
+  footstep/x: 0.01
+  footstep/y: 0.01
+  footstep/theta: 0.15
 

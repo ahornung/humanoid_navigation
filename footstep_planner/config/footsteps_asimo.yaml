@@ -8,15 +8,11 @@ footsteps/y:     [0.0, 0.00, 0.12, 0.00, 0.08,-0.02, 0.08, 0.08, 0.00,-0.02]
 footsteps/theta: [0.0, 0.00, 0.00, 0.70, 0.30,-0.40, 0.00, 0.30, 0.00, 0.00]
 
 ### foot settings ##############################################################
-foot/size/x: 0.16
-foot/size/y: 0.10
-foot/size/z: 0.015
-foot/separation: 0.14
-foot/origin_shift/x: 0.02
-foot/origin_shift/y: 0.0
-foot/max/step/x: 0.22
-foot/max/step/y: 0.12
-foot/max/step/theta: 0.7
-foot/max/inverse/step/x: 0.1
-foot/max/inverse/step/y: 0.02
-foot/max/inverse/step/theta: 0.4
+foot:
+  size: {x: 0.16, y: 0.10, z: 0.015}
+  separation: 0.14
+  origin_shift: {x: 0.02, y: 0.0}
+  max:
+    step: {x: 0.22, y: 0.12, theta: 0.7}
+    inverse:
+      step: {x: 0.1, y: 0.02, theta: 0.4}

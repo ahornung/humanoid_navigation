@@ -49,7 +49,7 @@ namespace footstep_planner
 	 * the expected step costs.
 	 * The grid cell path from which the subgoals are extracted is calculated
 	 * with an A* search.
-	 * NOTE: This heuristic potentially overestimates the real costs. Anyway if
+	 * @note This heuristic potentially overestimates the real costs. Anyway if
 	 * the robot -- due to a small step width -- cannot step over obstacles this
 	 * heuristic is also admissible.
 	 */
@@ -137,8 +137,7 @@ namespace footstep_planner
 		               float stepCosts,
 		               float maxStepSize,
 		               float distanceThreshold,
-		               float subgoalDistance,
-		               int   roundingThreshold);
+		               float subgoalDistance);
 		virtual ~AstarHeuristic();
 
 		/// Returning the heuristic value for the two states.
@@ -159,7 +158,6 @@ namespace footstep_planner
 		const float ivMaxStepSize;
 		const float ivStepCosts;
 		const float ivSubgoalDistance;
-		const float ivRoundingThreshold;
 
 		subgoaldistances_type ivSubgoalGoalDistances;
 

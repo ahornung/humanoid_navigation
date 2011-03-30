@@ -30,7 +30,9 @@
 
 #define FLOAT_COMP_THR 0.00001
 #define ANGLE_COMP_THR 0.087
-#define MAPGRID_OCCUPENCY_THR 70.0
+// faster results:
+//#define FLOAT_COMP_THR 0.01
+//#define ANGLE_COMP_THR 0.17
 
 namespace footstep_planner{
 
@@ -68,7 +70,7 @@ namespace footstep_planner{
 						 float width,
 						 int accuracy,
 						 const GridMap2D& distanceMap);
-	float euclideanDistance(float x1, float x2, float y1, float y2, int roundingThreshold);
+	float euclideanDistance(float x1, float x2, float y1, float y2);
 	/**
 	 * Calculate the footstep necessary to reach 'to' from 'from'.
 	 *

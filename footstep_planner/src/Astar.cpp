@@ -40,14 +40,12 @@ namespace footstep_planner
 	                               float stepCosts,
 	                               float maxStepSize,
 	                               float distanceThreshold,
-	                               float subgoalDistance,
-	        		               int   roundingThreshold)
+	                               float subgoalDistance)
 		: Heuristic(type),
 	      ivDistanceThreshold(distanceThreshold),
 		  ivMaxStepSize(maxStepSize),
 		  ivStepCosts(stepCosts),
-		  ivSubgoalDistance(subgoalDistance),
-		  ivRoundingThreshold(roundingThreshold)
+		  ivSubgoalDistance(subgoalDistance)
 	{}
 
 
@@ -99,8 +97,7 @@ namespace footstep_planner
 		}
 		// calculate expected step costs to the nearest subgoal
 		float distance = euclideanDistance(from.getX(), from.getY(),
-		                                   subgoal.first, subgoal.second,
-		                                   ivRoundingThreshold);
+		                                   subgoal.first, subgoal.second);
 		distance += h;
 
 		int expectedSteps = (int)(distance*1.5 / ivMaxStepSize);
@@ -217,8 +214,7 @@ namespace footstep_planner
 				pathLength += euclideanDistance(prevSubgoalCoord.first,
 				                                prevSubgoalCoord.second,
 				                                wx,
-				                                wy,
-				                                ivRoundingThreshold);
+				                                wy);
 				subgoal = std::pair<coordinate,float>(coordinate(wx, wy), pathLength);
 				ivSubgoalGoalDistances.push_front(subgoal);
 				prevSubgoalCoord = subgoal.first;

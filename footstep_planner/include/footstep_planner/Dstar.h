@@ -124,7 +124,6 @@ namespace footstep_planner
 		      const float maxStepWidth,
 		      const float stepCosts,
 		      const int   collisionCheckAccuracy,
-		      const int   roundingThreshold,
 		      const int   plannerMaxSteps,
 		      const boost::shared_ptr<Heuristic> heuristicConstPtr);
 		virtual ~Dstar();

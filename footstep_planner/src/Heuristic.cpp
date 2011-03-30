@@ -34,8 +34,8 @@ namespace footstep_planner{
 	{}
 
 
-	EuclideanHeuristic::EuclideanHeuristic(HeuristicType type, int roundingThreshold)
-		: Heuristic(type), ivRoundingThreshold(roundingThreshold)
+	EuclideanHeuristic::EuclideanHeuristic(HeuristicType type)
+		: Heuristic(type)
 	{}
 
 
@@ -51,17 +51,15 @@ namespace footstep_planner{
 		if (from == to)
 			return 0;
 
-		return euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY(), ivRoundingThreshold);
+		return euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY());
 
 	}
 
 
 	EuclStepCostHeuristic::EuclStepCostHeuristic(HeuristicType type,
-	                                             int roundingThreshold,
 	                                             float stepCosts,
 	                                             float maxStepWidth)
 		: Heuristic(type),
-	      ivRoundingThreshold(roundingThreshold),
 		  ivStepCosts(stepCosts),
 		  ivMaxStepWidth(maxStepWidth)
 	{}
@@ -79,7 +77,7 @@ namespace footstep_planner{
 		if (from == to)
 			return 0;
 
-		float distance = euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY(), ivRoundingThreshold);
+		float distance = euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY());
 		int expectedSteps = (int)(distance*1.5 / ivMaxStepWidth);
 
 		return distance + expectedSteps * ivStepCosts;

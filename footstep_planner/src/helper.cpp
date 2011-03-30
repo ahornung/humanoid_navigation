@@ -130,28 +130,7 @@ namespace footstep_planner{
 
 		if (isinf(x) && isinf(y))
 			return true;
-		return (fabs(x-y) < FLOAT_COMP_THR);
-
-	}
-
-
-	/*
-	 * float round(float f, short decimal)
-	 * --------------------------
-	 * Float rounding.
-	 */
-	float
-	round(float f, short decimal)
-	{
-
-		f = f*(pow(10,decimal));
-		if (f >= 0)
-			f = floor(f+0.5);
-		else
-			f = floor(f-0.5);
-		f = f/(pow(10,decimal));
-
-		return f;
+		return (std::abs(x-y) < FLOAT_COMP_THR);
 
 	}
 
@@ -162,11 +141,11 @@ namespace footstep_planner{
 	 * Calculates the euclidean distance between (x1,x2) and (y1,y2).
 	 */
 	float
-	euclideanDistance(float x1, float x2, float y1, float y2, int roundingThreshold)
+	euclideanDistance(float x1, float x2, float y1, float y2)
 	{
 
-		float x = round(x1, roundingThreshold) - round(y1, roundingThreshold);
-		float y = round(x2, roundingThreshold) - round(y2, roundingThreshold);
+		float x = x1 - y1;
+		float y = x2 - y2;
 
 		return sqrt(x*x + y*y);
 

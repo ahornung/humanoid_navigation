@@ -55,7 +55,6 @@ namespace footstep_planner{
 		int    heuristic;
 		double subgoalDistance;
 		double stepCosts;
-		int    roundingThreshold;
 		int    plannerMaxSteps;
 
 		// read parameters from config file:
@@ -63,9 +62,8 @@ namespace footstep_planner{
 		privateNh.param("planning_mode", mode, 0);
 		privateNh.param("heuristic", heuristic, 0);
 		privateNh.param("subgoal_distance", subgoalDistance, 3.0);
-		privateNh.param("planner_max_steps", plannerMaxSteps, 180000);
+		privateNh.param("planner_max_steps", plannerMaxSteps, 250000);
 		privateNh.param("step_costs", stepCosts, 0.05);
-		privateNh.param("accuracy/rounding_threshold", roundingThreshold, 2);
 		privateNh.param("accuracy/collision_check", ivCollisionCheckAccuracy, 2);
 		privateNh.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
 		privateNh.param("accuracy/footstep/y", ivFootstepAccuracyY, 0.01);
@@ -144,13 +142,12 @@ namespace footstep_planner{
 		{
 		case Heuristic::EUCLIDEAN:
 			// euclidean distance
-			h.reset(new EuclideanHeuristic(Heuristic::EUCLIDEAN, roundingThreshold));
+			h.reset(new EuclideanHeuristic(Heuristic::EUCLIDEAN));
 			ROS_INFO("FootstepPlanner heuristic: euclidean distance");
 			break;
 		case Heuristic::EUCLIDEAN_STEPCOST:
 			// euclidean distance + step costs estimation
 			h.reset(new EuclStepCostHeuristic(Heuristic::EUCLIDEAN_STEPCOST,
-			                                  roundingThreshold,
 			                                  stepCosts,
 			                                  maxStepWidth));
 			ROS_INFO("FootstepPlanner heuristic: euclidean distance w. step costs");
@@ -162,8 +159,7 @@ namespace footstep_planner{
                     stepCosts,
                     maxStepWidth,
                     footWidth,
-                    subgoalDistance,
-                    roundingThreshold));
+                    subgoalDistance));
 
 			// keep a local ptr for visualization
 			ivAstarHeuristic = boost::dynamic_pointer_cast<AstarHeuristic>(h);
@@ -190,7 +186,6 @@ namespace footstep_planner{
 								   maxStepWidth,
 								   stepCosts,
 								   ivCollisionCheckAccuracy,
-								   roundingThreshold,
 								   plannerMaxSteps,
 								   h));
 
@@ -206,6 +201,9 @@ namespace footstep_planner{
 	void
 	FootstepPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goalPose)
 	{
+		// TODO: check
+		// force reinitialization
+		ivDstarSetUp = false;
 
 		bool success = setGoal(goalPose);
 		if (success)
@@ -1055,27 +1053,29 @@ namespace footstep_planner{
 		assert(!(ivMode == MERE_PLANNING && !ivStartPoseSet));
 		assert(!(ivMode == ROBOT_NAVIGATION && !ivRobotPoseSet));
 
-		sensor_msgs::PointCloud cloudMsg;
-		geometry_msgs::Point32 point;
-		std::vector<geometry_msgs::Point32> points;
+		if (ivExpandedStatesVisPub.getNumSubscribers() > 0){
+			sensor_msgs::PointCloud cloudMsg;
+			geometry_msgs::Point32 point;
+			std::vector<geometry_msgs::Point32> points;
 
-		Dstar::stateIterator expandedStatesIter = ivDstarPtr->getExpandedBegin();
-		for(; expandedStatesIter != ivDstarPtr->getExpandedEnd(); expandedStatesIter++)
-		{
-			point.x = expandedStatesIter->getX();
-			point.y = expandedStatesIter->getY();
-			point.z = 0.01;
-			points.push_back(point);
-		}
-		if (ivMode == MERE_PLANNING){
-			cloudMsg.header.stamp = ros::Time::now();
-			cloudMsg.header.frame_id = ivMapPtr->getFrameID();
-		}
-		else if (ivMode == ROBOT_NAVIGATION)
-			cloudMsg.header = ivRobotHeader;
-		cloudMsg.points = points;
+			Dstar::stateIterator expandedStatesIter = ivDstarPtr->getExpandedBegin();
+			for(; expandedStatesIter != ivDstarPtr->getExpandedEnd(); expandedStatesIter++)
+			{
+				point.x = expandedStatesIter->getX();
+				point.y = expandedStatesIter->getY();
+				point.z = 0.01;
+				points.push_back(point);
+			}
+			if (ivMode == MERE_PLANNING){
+				cloudMsg.header.stamp = ros::Time::now();
+				cloudMsg.header.frame_id = ivMapPtr->getFrameID();
+			}
+			else if (ivMode == ROBOT_NAVIGATION)
+				cloudMsg.header = ivRobotHeader;
+			cloudMsg.points = points;
 
-		ivExpandedStatesVisPub.publish(cloudMsg);
+			ivExpandedStatesVisPub.publish(cloudMsg);
+		}
 
 	}
 

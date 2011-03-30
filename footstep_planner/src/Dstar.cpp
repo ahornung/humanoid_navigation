@@ -36,9 +36,6 @@ namespace footstep_planner
 	 * #############################################################################
 	 */
 
-	int
-	Dstar::cvRoundingThreshold = 5;
-
 
 	Dstar::Dstar(const std::vector<Footstep>& footstepSet,
 		         const float footSeparation,
@@ -54,7 +51,6 @@ namespace footstep_planner
 		         const float maxStepWidth,
 		         const float stepCosts,
 		         const int   collisionCheckAccuracy,
-		         const int   roundingThreshold,
 		         const int   plannerMaxSteps,
 		         const boost::shared_ptr<Heuristic> heuristicConstPtr)
 		: ivFootstepSet(footstepSet),
@@ -74,9 +70,6 @@ namespace footstep_planner
 		  ivPlannerMaxSteps(plannerMaxSteps),
 		  ivHeuristicConstPtr(heuristicConstPtr)
 	{
-
-		cvRoundingThreshold = roundingThreshold;
-
 		ivKM = 0;
 		ivPathCosts = 0;
 
@@ -523,7 +516,7 @@ namespace footstep_planner
 		if (a == b)
 			return 0;
 
-		float dist = euclideanDistance(a.getX(), a.getY(), b.getX(), b.getY(), cvRoundingThreshold);
+		float dist = euclideanDistance(a.getX(), a.getY(), b.getX(), b.getY());
 		return dist + ivStepCosts;
 
 	}
@@ -780,7 +773,8 @@ namespace footstep_planner
 		}
 		else
 		{
-			ROS_INFO("Path planning successful. Start extracting path now..");
+			ROS_INFO("Path planning successful after %f s, expanded %d states. Start extracting path now..",
+					(ros::Time::now()-startTime).toSec(), ivExpandedStates.size());
 		}
 
 		State cur = ivStart;
@@ -1031,12 +1025,12 @@ namespace footstep_planner
 		if (ivLeg != s2.getLeg())
 			return false;
 
-		float diffAngle = fabs(round(ivGlobalTheta, Dstar::cvRoundingThreshold) - round(s2.getTheta(), Dstar::cvRoundingThreshold));
+		float diffAngle = std::abs(ivGlobalTheta - s2.getTheta());
 		if (diffAngle > M_PI)
 			diffAngle = TWO_PI - diffAngle;
 
-		float diffX = round(ivGlobalX, Dstar::cvRoundingThreshold) - round(s2.getX(), Dstar::cvRoundingThreshold);
-		float diffY = round(ivGlobalY, Dstar::cvRoundingThreshold) - round(s2.getY(), Dstar::cvRoundingThreshold);
+		float diffX = ivGlobalX - s2.getX();
+		float diffY = ivGlobalY - s2.getY();
 
 		return (((diffX*diffX + diffY*diffY) < FLOAT_COMP_THR_SQR) && (diffAngle < ANGLE_COMP_THR));
 
@@ -1048,7 +1042,7 @@ namespace footstep_planner
 	const
 	{
 
-		return not (*this == s2);
+		return !(*this == s2);
 
 	}
 

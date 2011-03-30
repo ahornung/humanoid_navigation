@@ -71,15 +71,13 @@ namespace footstep_planner
 
 	public:
 
-		EuclideanHeuristic(HeuristicType type, int roundingThreshold);
+		EuclideanHeuristic(HeuristicType type);
 		virtual ~EuclideanHeuristic();
 
 		virtual float getHValue(const State& from, const State& to) const;
 
 
 	private:
-
-		const int ivRoundingThreshold;
 
 	};
 
@@ -95,7 +93,6 @@ namespace footstep_planner
 	public:
 
 		EuclStepCostHeuristic(HeuristicType type,
-		                      int roundingThreshold,
 		                      float stepCosts,
 		                      float maxStepWidth);
 		virtual ~EuclStepCostHeuristic();
@@ -105,7 +102,6 @@ namespace footstep_planner
 
 	private:
 
-		const int   ivRoundingThreshold;
 		const float ivStepCosts;
 		const float ivMaxStepWidth;
 

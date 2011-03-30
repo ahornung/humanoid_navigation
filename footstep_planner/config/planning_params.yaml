@@ -18,7 +18,7 @@ heuristic: 2
 subgoal_distance: 0.2
 
 # node expansions before we give up
-planner_max_steps: 180000
+planner_max_steps: 500000
 
 # costs to perform one footstep
 step_costs: 0.1
@@ -29,10 +29,7 @@ accuracy:
   # - 1 (just the incircle of the foot)
   # - 2 (circumcircle and incircle recursivly checked for the hole foot)
   collision_check: 2
-  
-  # number of decimal places for rounding floats
-  rounding_threshold: 2
-  
+   
   float_comp_threshold: 0.00001
   float_comp_threshold: 0.087
   

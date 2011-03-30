@@ -28,15 +28,11 @@
 #include <math.h>
 #include <tf/transform_datatypes.h>
 
-#define FLOAT_COMP_THR 0.001
-#define ANGLE_COMP_THR 0.087
-// faster results:
-//#define FLOAT_COMP_THR 0.01
-//#define ANGLE_COMP_THR 0.17
-
 namespace footstep_planner{
 
 	static const double TWO_PI = 2 * M_PI;
+	static const float FLOAT_COMP_THR = 0.001; // faster (check!): 0.01
+	static const float ANGLE_COMP_THR = 0.087; // faster (check!): 0.17
 	static const float  FLOAT_COMP_THR_SQR = FLOAT_COMP_THR * FLOAT_COMP_THR;
 
 

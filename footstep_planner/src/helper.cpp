@@ -60,7 +60,6 @@ namespace footstep_planner{
 
 	}
 
-	// new version of above, using GridMap2D
 
 	bool
 	collisionCheck(float x, float y, float theta, float height, float width, int accuracy,
@@ -118,38 +117,6 @@ namespace footstep_planner{
 
 	}
 
-
-	/*
-	 * bool close(float x, float y)
-	 * --------------------------
-	 * Float equality check.
-	 */
-	bool
-	close(float x, float y)
-	{
-
-		if (isinf(x) && isinf(y))
-			return true;
-		return (std::abs(x-y) < FLOAT_COMP_THR);
-
-	}
-
-
-	/*
-	 * float euclideanDistance(float x1, float x2, float y1, float y2, int roundingThreshold)
-	 * --------------------------
-	 * Calculates the euclidean distance between (x1,x2) and (y1,y2).
-	 */
-	float
-	euclideanDistance(float x1, float x2, float y1, float y2)
-	{
-
-		float x = x1 - y1;
-		float y = x2 - y2;
-
-		return sqrt(x*x + y*y);
-
-	}
 
 }
 

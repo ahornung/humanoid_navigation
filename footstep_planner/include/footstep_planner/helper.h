@@ -28,7 +28,7 @@
 #include <math.h>
 #include <tf/transform_datatypes.h>
 
-#define FLOAT_COMP_THR 0.00001
+#define FLOAT_COMP_THR 0.001
 #define ANGLE_COMP_THR 0.087
 // faster results:
 //#define FLOAT_COMP_THR 0.01
@@ -48,7 +48,38 @@ namespace footstep_planner{
 	};
 
 
-	bool  close(float x, float y);
+	/// float approximate equality check
+	inline bool close(float x, float y){
+		if (isinf(x) && isinf(y))
+			return true;
+		return (std::abs(x-y) < FLOAT_COMP_THR);
+	}
+
+
+
+	/// euclidean distance between two coordinates
+	inline float euclideanDistance(float x1, float x2, float y1, float y2){
+		float x = x1 - y1;
+		float y = x2 - y2;
+
+		return sqrt(x*x + y*y);
+	}
+
+	/**
+	 * Calculate the footstep necessary to reach 'to' from 'from'.
+	 *
+	 * @param supportLeg
+	 * @param footSeparation
+	 * @param from
+	 * @param to
+	 * @param footstep
+	 */
+	void  getFootstep(Leg supportLeg,
+					  float footSeparation,
+					  const tf::Transform& from,
+					  const tf::Transform& to,
+					  tf::Transform* footstep);
+
 	/**
 	 * Checking if a footstep (represented by its center and orientation (x, y, theta))
 	 * collides with an obstacle. The check is done by recursively testing if either
@@ -70,22 +101,7 @@ namespace footstep_planner{
 						 float width,
 						 int accuracy,
 						 const GridMap2D& distanceMap);
-	float euclideanDistance(float x1, float x2, float y1, float y2);
-	/**
-	 * Calculate the footstep necessary to reach 'to' from 'from'.
-	 *
-	 * @param supportLeg
-	 * @param footSeparation
-	 * @param from
-	 * @param to
-	 * @param footstep
-	 */
-	void  getFootstep(Leg supportLeg,
-					  float footSeparation,
-					  const tf::Transform& from,
-					  const tf::Transform& to,
-					  tf::Transform* footstep);
-	float round(float f, short decimal);
+
 }
 
 #endif

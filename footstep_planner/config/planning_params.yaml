@@ -13,6 +13,7 @@ planning_mode: 0
 #      NOTE: this heuristic overestimates the real step costs if the robot is
 #      able to step over obstacles)
 heuristic: 2
+
 # distance between subgoals along path when using heuristic 2.
 # The used distance is subgoal_distance times the maximum step width of the robot
 subgoal_distance: 0.2
@@ -20,22 +21,11 @@ subgoal_distance: 0.2
 # node expansions before we give up
 planner_max_steps: 500000
 
-# costs to perform one footstep
-step_costs: 0.1
-
 accuracy:
   # footstep collision check accuracy
   # - 0 (just the circumcircle of the foot)
   # - 1 (just the incircle of the foot)
   # - 2 (circumcircle and incircle recursivly checked for the hole foot)
   collision_check: 2
-   
-  float_comp_threshold: 0.00001
-  float_comp_threshold: 0.087
-  
-  # the execution accuracy of each footstep; the more accurate a footstep should
-  # fit into the calculated steps the more likely a replanning is necessary
-  footstep/x: 0.01
-  footstep/y: 0.01
-  footstep/theta: 0.15
+
 

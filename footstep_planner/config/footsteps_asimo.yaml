@@ -1,5 +1,8 @@
 # Footstep parameterization for a large humanoid, similar to ASIMO or HRP-2
 
+# costs to perform one footstep (in addition to distance costs, corresponds to 'meters')
+step_costs: 0.1
+
 ### footstep settings ##########################################################
 # Footstep displacement vectors (in meter / rad)
 # WARNING: data type has to be float/double, integers will cause an exception
@@ -16,3 +19,11 @@ foot:
     step: {x: 0.22, y: 0.12, theta: 0.7}
     inverse:
       step: {x: 0.1, y: 0.02, theta: 0.4}
+      
+accuracy:    
+  # the execution accuracy of each footstep; the more accurate a footstep should
+  # fit into the calculated steps the more likely a replanning is necessary
+  footstep/x: 0.01
+  footstep/y: 0.01
+  footstep/theta: 0.15
+

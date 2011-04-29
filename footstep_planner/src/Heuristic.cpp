@@ -78,7 +78,7 @@ namespace footstep_planner{
 			return 0;
 
 		float distance = euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY());
-		int expectedSteps = (int)(distance*1.5 / ivMaxStepWidth);
+		int expectedSteps = (int)(distance*2.0 / ivMaxStepWidth +0.5);
 
 		return distance + expectedSteps * ivStepCosts;
 

@@ -54,11 +54,8 @@ namespace footstep_planner{
 
 
 	/// euclidean distance between two coordinates
-	inline float euclideanDistance(float x1, float x2, float y1, float y2){
-		float x = x1 - y1;
-		float y = x2 - y2;
-
-		return sqrt(x*x + y*y);
+	inline float euclideanDistance(float x1, float y1, float x2, float y2){
+		return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
 	}
 
 	/**

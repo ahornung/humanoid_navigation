@@ -787,7 +787,7 @@ namespace footstep_planner
 		int k = 0;
 		while(!isCloseToGoal(cur))
 		{
-			// NOTE: the robot is not supposed to perform more than 100 footsteps
+			// NOTE: the robot is not supposed to perform more than 10000 footsteps
 			if (k++ > 10000)
 			{
 				ROS_ERROR("Extracting path failed.");

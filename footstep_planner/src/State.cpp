@@ -51,9 +51,9 @@ namespace footstep_planner
 	State::State(float x, float y, float theta, Leg leg)
 	{
 
-		ivGlobalX = x;
-		ivGlobalY = y;
-		ivGlobalTheta = theta;
+		setX(x);
+		setY(y);
+		setTheta(theta);
 		ivLeg = leg;
 		ivKey = key(INFINITY, INFINITY);
 

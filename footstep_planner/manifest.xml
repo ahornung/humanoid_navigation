@@ -21,7 +21,6 @@
   <depend package="tf"/>
   <depend package="visualization_msgs"/>
   <depend package="geometry_msgs"/>
-  <depend package="opencv2"/>
   <depend package="roscpp"/>
   <depend package="rospy"/>
   <depend package="gridmap_2d"/>

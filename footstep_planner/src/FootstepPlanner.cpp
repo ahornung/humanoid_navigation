@@ -60,8 +60,8 @@ namespace footstep_planner{
 		// read parameters from config file:
 		// - planner settings
 		privateNh.param("planning_mode", mode, 0);
-		privateNh.param("heuristic", heuristic, 0);
-		privateNh.param("subgoal_distance", subgoalDistance, 3.0);
+		privateNh.param("heuristic", heuristic, 2);
+		privateNh.param("subgoal_distance", subgoalDistance, 0.2);
 		privateNh.param("planner_max_steps", plannerMaxSteps, 250000);
 		privateNh.param("step_costs", stepCosts, 0.05);
 		privateNh.param("accuracy/collision_check", ivCollisionCheckAccuracy, 2);

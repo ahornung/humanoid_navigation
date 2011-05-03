@@ -1,8 +1,7 @@
 <launch>
 
-  <node name="map_server" pkg="map_server" type="map_server" args="$(find footstep_planner)/maps/empty.yaml" />
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find footstep_planner)/config/footstep_planning.vcg" />
-  
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find footstep_planner)/maps/sample.yaml" />
+  <include file="$(find footstep_planner)/launch/rviz_footstep_planning.launch" />  
   <include file="$(find footstep_planner)/launch/footstep_planner.launch" />
 
 </launch>

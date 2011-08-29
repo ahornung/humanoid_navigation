@@ -32,7 +32,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <footstep_planner/PlanFootsteps.h>
+#include <humanoid_nav_msgs/PlanFootsteps.h>
 #include <humanoid_nav_msgs/StepTargetService.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -86,7 +86,7 @@ namespace footstep_planner
 		bool plan();
 
 		/// Service handle to plan footsteps
-		bool planService(PlanFootsteps::Request &req, PlanFootsteps::Response &resp);
+		bool planService(humanoid_nav_msgs::PlanFootsteps::Request &req, humanoid_nav_msgs::PlanFootsteps::Response &resp);
 
 		/**
 		 * @brief Sets a new (static) goal location. The coordinates need to be in the map coordinate frame.

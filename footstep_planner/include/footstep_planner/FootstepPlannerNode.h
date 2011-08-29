@@ -28,7 +28,6 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <footstep_planner/PlanFootsteps.h>
 #include <footstep_planner/FootstepPlanner.h>
 
 namespace footstep_planner{

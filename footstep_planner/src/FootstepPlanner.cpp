@@ -427,7 +427,7 @@ namespace footstep_planner{
 	}
 
     bool
-    FootstepPlanner::planService(PlanFootsteps::Request &req, PlanFootsteps::Response &resp)
+    FootstepPlanner::planService(humanoid_nav_msgs::PlanFootsteps::Request &req, humanoid_nav_msgs::PlanFootsteps::Response &resp)
     {
     	bool result = plan(req.start.x, req.start.y, req.start.theta,
     						req.goal.x, req.goal.y, req.goal.theta);
@@ -438,10 +438,10 @@ namespace footstep_planner{
 
     	for (Dstar::stateIterator it = ivDstarPtr->getPathBegin(); it != ivDstarPtr->getPathEnd(); ++it){
     		// TODO: differentiate between left and right here? => add foot to footstep srv!
-    		geometry_msgs::Pose2D foot;
-    		foot.x = it->getX();
-    		foot.y = it->getY();
-    		foot.theta = it->getTheta();
+    		humanoid_nav_msgs::StepTarget foot;
+    		foot.pose.x = it->getX();
+    		foot.pose.y = it->getY();
+    		foot.pose.theta = it->getTheta();
 
     		resp.footsteps.push_back(foot);
     	}

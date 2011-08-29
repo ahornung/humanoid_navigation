@@ -1,8 +1,8 @@
 <stack>
   <description brief="Various packages for humanoid (biped) navigation.">
-		<p>This stack contains packages for humanoid (biped) navigation, 
-		developed at the <a href="http://hrl.informatik.uni-freiburg.de/">Humanoid Robots Lab</a> 
-    at the Albert-Ludwigs-Unversitaet in Freiburg, Germany.
+        <p>This stack contains packages for humanoid (biped) navigation, 
+        developed at the <a href="http://hrl.informatik.uni-freiburg.de/">Humanoid Robots Lab</a> 
+    at the Albert-Ludwigs-Universität in Freiburg, Germany.
    </p>
   </description>
   <author>Maintained by Armin Hornung</author>

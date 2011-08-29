@@ -19,7 +19,7 @@ roslib.load_manifest('footstep_planner')
 import rospy
 import sys
 
-from footstep_planner.srv import *
+from humanoid_nav_msgs.srv import *
 from geometry_msgs.msg import Pose2D
 
 if __name__ == '__main__':

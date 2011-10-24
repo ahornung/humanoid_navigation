@@ -1,31 +1,32 @@
-### planner settings ###########################################################
-# define whether the planner is used to simply calculate a footstep plan for a
-# given start and goal pose or if it is used to navigate a robot (real robot or
-# a simulated one) to a given goal pose
-# - 0 (calculate a footstep plan for a given start and goal pose)
-# - 1 (calculate a footstep plan to navigate a robot to a given goal pose)
-planning_mode: 0
+### planner environment settings ###############################################
+# the size of the used hash map (the bigger the better); should be something 
+# with 2^X (initially 2^16=65536)
+max_hash_size: 65536
 
 # the heuristic that should be used to estimate the step costs of a planning state
-# - 0 (euclidean distance of two states)
-# - 1 (euclidean distance + step cost estimation)
-# - 2 (euclidean distance + step cost estimation based on precalculated subgoals
-#      NOTE: this heuristic overestimates the real step costs if the robot is
-#      able to step over obstacles)
-heuristic: 2
-
-# distance between subgoals along path when using heuristic 2.
-# The used distance is subgoal_distance times the maximum step width of the robot
-subgoal_distance: 0.2
-
-# node expansions before we give up
-planner_max_steps: 500000
+# possible choices: EuclideanHeuristic, EuclStepCostHeuristic, PathCostHeuristic
+heuristic_type: EuclideanHeuristic
 
 accuracy:
   # footstep collision check accuracy
   # - 0 (just the circumcircle of the foot)
   # - 1 (just the incircle of the foot)
-  # - 2 (circumcircle and incircle recursivly checked for the hole foot)
+  # - 2 (circumcircle and incircle recursivly checked for the whole foot)
   collision_check: 2
+  cell_size: 0.01
+  num_angle_bins: 72
+  
+  
+### planner settings ###########################################################
 
+# define the planner of choice provided by the SBPL package
+# - ARAPlanner
+# - ADPlanner
+planner_type: ARAPlanner
 
+# search until a specific time limit is reached or first solution is found 
+search_until_first_solution: False
+# the maximum search time if search_until_first_solution is set to False
+allocated_time: 7.0
+initial_epsilon: 8.0
+forward_search: False

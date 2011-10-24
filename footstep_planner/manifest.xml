@@ -16,14 +16,15 @@
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lfootstep_planner"/>
   </export>  
   
-  <depend package="humanoid_nav_msgs"/>
+	<depend package="humanoid_nav_msgs"/>
+  <depend package="gridmap_2d"/>
   <depend package="map_server"/>
-  <depend package="tf"/>
-  <depend package="visualization_msgs"/>
-  <depend package="geometry_msgs"/>
   <depend package="roscpp"/>
   <depend package="rospy"/>
-  <depend package="gridmap_2d"/>
+  <depend package="sbpl"/>
+  <depend package="angles"/>
+  <depend package="tf"/>
+  <depend package="visualization_msgs"/>
 
 </package>
 

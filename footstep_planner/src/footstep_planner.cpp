@@ -24,7 +24,8 @@
 #include <footstep_planner/FootstepPlannerNode.h>
 #include <ros/ros.h>
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, "footstep_planner");
 
   footstep_planner::FootstepPlannerNode planner;

@@ -24,31 +24,32 @@
 #ifndef FOOTSTEPPLANNERNODE_H_
 #define FOOTSTEPPLANNERNODE_H_
 
+
 #include <ros/ros.h>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <footstep_planner/FootstepPlanner.h>
 
-namespace footstep_planner{
 
-
+namespace footstep_planner
+{
 	/**
 	 * @brief Wrapper class for FootstepPlanner, providing callbacks for
 	 * the node functionality.
 	 *
 	 */
-	class FootstepPlannerNode {
-	public:
-		FootstepPlannerNode();
-		virtual ~FootstepPlannerNode();
-	protected:
-		FootstepPlanner ivFootstepPlanner;
+	class FootstepPlannerNode
+	{
+    public:
+        FootstepPlannerNode();
+        virtual ~FootstepPlannerNode();
 
-		ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivStartPoseSub, ivRobotPoseSub;
-		ros::ServiceServer ivFootstepPlanService;
+    protected:
+        FootstepPlanner ivFootstepPlanner;
+
+        ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivStartPoseSub, ivRobotPoseSub;
+        ros::ServiceServer ivFootstepPlanService;
 	};
-
 }
-
 #endif /* FOOTSTEPPLANNERNODE_H_ */

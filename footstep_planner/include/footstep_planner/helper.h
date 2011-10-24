@@ -21,57 +21,124 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HELPER_H
-#define HELPER_H
+#ifndef HUMANOID_SBPL_HELPER_H_
+#define HUMANOID_SBPL_HELPER_H_
+
+#define DEBUG_HASH 0
+#define DEBUG_TIME 0
+
 
 #include <gridmap_2d/GridMap2D.h>
+#include <angles/angles.h>
+
 #include <math.h>
-#include <tf/transform_datatypes.h>
 
-namespace footstep_planner{
 
+namespace footstep_planner
+{
 	static const double TWO_PI = 2 * M_PI;
-	static const float FLOAT_COMP_THR = 0.001; // faster (check!): 0.01
-	static const float ANGLE_COMP_THR = 0.087; // faster (check!): 0.17
-	static const float  FLOAT_COMP_THR_SQR = FLOAT_COMP_THR * FLOAT_COMP_THR;
+
+    enum Leg { RIGHT=0, LEFT=1, NOLEG=2 };
 
 
-	enum Leg
+    struct State
+    {
+        double x;
+        double y;
+        double theta;
+        Leg leg;
+
+        bool operator ()(const State& a, const State& b);
+    };
+
+
+    /// euclidean distance between two coordinates
+    inline double euclidean_distance(int x1, int y1, int x2, int y2)
+    {
+        return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+    }
+
+
+    /// euclidean distance between two coordinates
+    inline double euclidean_distance(double x1, double y1, double x2, double y2)
+    {
+        return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+    }
+
+
+    /// returns the distance of two neighbored cell (with cell size 1)
+    inline double grid_cost(int x1, int y1, int x2, int y2, float cell_size)
+    {
+        int x = abs(x1 - x2);
+        int y = abs(y1 - y2);
+
+        float cost = 1;
+        if (x + y > 1)
+            cost = M_SQRT2;
+
+        return cost * cell_size;
+    }
+
+    inline double eight_way_cost(int x1, int y1, int x2, int y2, float cell_size)
+    {
+        double min = abs(x1 - x2);
+        double max = abs(y1 - y2);
+        if (min > max)
+        {
+            double temp = min;
+            min = max;
+            max = temp;
+        }
+        return ((M_SQRT2-1.0)*min + max) * cell_size;
+    }
+
+
+	inline int angle_cont_2_disc(double angle, int angle_bin_num)
 	{
-
-		NOLEG=0, RIGHT=1, LEFT=2
-
-	};
-
-
-	/// float approximate equality check
-	inline bool close(float x, float y){
-		if (isinf(x) && isinf(y))
-			return true;
-		return (std::abs(x-y) < FLOAT_COMP_THR);
+        double bin_size_half = TWO_PI / angle_bin_num / 2;
+        return (int)(angles::normalize_angle_positive(angle + bin_size_half) /
+                     TWO_PI * angle_bin_num);
 	}
 
 
-
-	/// euclidean distance between two coordinates
-	inline float euclideanDistance(float x1, float y1, float x2, float y2){
-		return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+	inline double angle_disc_2_cont(int angle, int angle_bin_num)
+	{
+        double bin_size = TWO_PI / angle_bin_num;
+        return angle * bin_size;
 	}
 
-	/**
-	 * Calculate the footstep necessary to reach 'to' from 'from'.
-	 *
-	 * @param supportLeg
-	 * @param footSeparation
-	 * @param from
-	 * @param to
-	 * @param footstep
-	 */
-	void  getFootstep(Leg supportLeg,
-					  float footSeparation,
-					  const tf::Transform& from,
-					  const tf::Transform& to,
-					  tf::Transform* footstep);
+
+	inline int cont_2_disc(double value, double cell_size)
+	{
+		return (int)floor(value / cell_size);
+	}
+
+
+	inline double disc_2_cont(int value, double cell_size)
+	{
+	    return (double(value) * cell_size + cell_size/2);
+	}
+
+
+	inline unsigned int int_hash(int key)
+	{
+        key += (key << 12);
+        key ^= (key >> 22);
+        key += (key << 4);
+        key ^= (key >> 9);
+        key += (key << 10);
+        key ^= (key >> 2);
+        key += (key << 7);
+        key ^= (key >> 12);
+        return key;
+	}
+
+
+    void get_footstep(Leg support_leg, double foot_separation,
+                      double from_x, double from_y, double from_theta,
+                      double to_x, double to_y, double to_theta,
+                      double* footstep_x, double* footstep_y,
+                      double* footstep_theta);
 
 	/**
 	 * Checking if a footstep (represented by its center and orientation (x, y, theta))
@@ -87,14 +154,9 @@ namespace footstep_planner{
 	 * @param distanceMap containing distance information to the nearest obstacle
 	 * @return true if the footstep collides with an obstacle
 	 */
-	bool  collisionCheck(float x,
-						 float y,
-						 float theta,
-						 float height,
-						 float width,
-						 int accuracy,
+	bool collision_check(double x, double y, double theta,
+                         double height, double width, int accuracy,
 						 const GridMap2D& distanceMap);
-
 }
 
-#endif
+#endif  /* HUMANOID_SBPL_HELPER_H_ */

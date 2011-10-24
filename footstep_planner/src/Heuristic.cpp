@@ -23,8 +23,8 @@
 
 #include <footstep_planner/Heuristic.h>
 
-namespace footstep_planner{
-
+namespace footstep_planner
+{
 	Heuristic::Heuristic(HeuristicType type)
 		: ivHeuristicType(type)
 	{}
@@ -34,8 +34,8 @@ namespace footstep_planner{
 	{}
 
 
-	EuclideanHeuristic::EuclideanHeuristic(HeuristicType type)
-		: Heuristic(type)
+	EuclideanHeuristic::EuclideanHeuristic()
+		: Heuristic(EUCLIDEAN)
 	{}
 
 
@@ -43,25 +43,22 @@ namespace footstep_planner{
 	{}
 
 
-	float
-	EuclideanHeuristic::getHValue(const State& from, const State& to)
+	double
+	EuclideanHeuristic::getHValue(const PlanningState& from, const PlanningState& to)
 	const
 	{
-
 		if (from == to)
 			return 0;
 
-		return euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY());
-
+		return euclidean_distance(from.getX(), from.getY(), to.getX(), to.getY());
 	}
 
 
-	EuclStepCostHeuristic::EuclStepCostHeuristic(HeuristicType type,
-	                                             float stepCosts,
-	                                             float maxStepWidth)
-		: Heuristic(type),
-		  ivStepCosts(stepCosts),
-		  ivMaxStepWidth(maxStepWidth)
+	EuclStepCostHeuristic::EuclStepCostHeuristic(int step_cost,
+	                                             int max_step_width)
+		: Heuristic(EUCLIDEAN_STEPCOST),
+		  ivStepCost(step_cost),
+		  ivMaxStepWidth(max_step_width)
 	{}
 
 
@@ -69,19 +66,17 @@ namespace footstep_planner{
 	{}
 
 
-	float
-	EuclStepCostHeuristic::getHValue(const State& from, const State& to)
+	double
+	EuclStepCostHeuristic::getHValue(const PlanningState& from, const PlanningState& to)
 	const
 	{
-
 		if (from == to)
 			return 0;
 
-		float distance = euclideanDistance(from.getX(), from.getY(), to.getX(), to.getY());
-		int expectedSteps = (int)(distance*2.0 / ivMaxStepWidth +0.5);
+        double dist = euclidean_distance(from.getX(), from.getY(),
+                                         to.getX(), to.getY());
+		int expectedSteps = (int)(dist / ivMaxStepWidth);
 
-		return distance + expectedSteps * ivStepCosts;
-
+		return dist + expectedSteps * ivStepCost;
 	}
-
 }

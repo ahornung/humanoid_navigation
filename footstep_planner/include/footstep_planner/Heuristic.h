@@ -21,11 +21,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HEURISTIC_H_
-#define HEURISTIC_H_
+#ifndef HUMANOID_SBPL_HEURISTIC_H
+#define HUMANOID_SBPL_HEURISTIC_H
 
 #include <footstep_planner/helper.h>
-#include <footstep_planner/State.h>
+#include <footstep_planner/PlanningState.h>
+
 
 namespace footstep_planner
 {
@@ -39,7 +40,7 @@ namespace footstep_planner
 
 	public:
 
-		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, ASTAR_PATH=2 };
+		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, PATH_COST=2 };
 
 
 		Heuristic(HeuristicType type);
@@ -50,7 +51,7 @@ namespace footstep_planner
 		 * state 'from' to state 'to' where 'to' is supposed to be the goal of
 		 * the planning task.
 		 */
-		virtual float getHValue(const State& from, const State& to) const = 0;
+		virtual double getHValue(const PlanningState& from, const PlanningState& to) const = 0;
 
 		HeuristicType getHeuristicType() const { return ivHeuristicType; };
 
@@ -71,10 +72,10 @@ namespace footstep_planner
 
 	public:
 
-		EuclideanHeuristic(HeuristicType type);
+		EuclideanHeuristic();
 		virtual ~EuclideanHeuristic();
 
-		virtual float getHValue(const State& from, const State& to) const;
+		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
 
 
 	private:
@@ -92,21 +93,18 @@ namespace footstep_planner
 
 	public:
 
-		EuclStepCostHeuristic(HeuristicType type,
-		                      float stepCosts,
-		                      float maxStepWidth);
+		EuclStepCostHeuristic(int step_cost, int max_step_width);
 		virtual ~EuclStepCostHeuristic();
 
-		virtual float getHValue(const State& from, const State& to) const;
+		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
 
 
 	private:
 
-		const float ivStepCosts;
-		const float ivMaxStepWidth;
+		const int ivStepCost;
+		const int ivMaxStepWidth;
 
 	};
 }
 
-
-#endif /* HEURISTIC_H_ */
+#endif /* HUMANOID_SBPL_HEURISTIC_H */

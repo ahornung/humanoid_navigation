@@ -13,7 +13,7 @@ ExpandedStates.Color\ Transformer=Flat Color
 ExpandedStates.Decay\ Time=0
 ExpandedStates.Enabled=0
 ExpandedStates.Position\ Transformer=XYZ
-ExpandedStates.Selectable=1
+ExpandedStates.Selectable=0
 ExpandedStates.Style=2
 ExpandedStates.Topic=/footstep_planner/expanded_states
 ExpandedStates..AxisAutocompute\ Value\ Bounds=1
@@ -106,8 +106,8 @@ TF.Update\ Interval=0
 Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::FixedOrientationOrthoViewController
-Camera\ Config=158.108 -0.319618 4.63064 0.0438617 -0.707107 -0 -0 0.707107
-Property\ Grid\ State=selection=HeuristcPath.Enabled;expanded=.Global Options,Axes.Enabled.Axes.StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Robot Model.Enabled.Robot Model.StatusTopStatus,Robot Model.Enabled.Robot: Robot ModelLinks,FootstepPath.Enabled.FootstepPath.Namespaces;scrollpos=0,0;splitterpos=135,271;ispageselected=1
+Camera\ Config=221.143 -0.110939 4.63064 -0.0727729 -0.707107 -0 -0 0.707107
+Property\ Grid\ State=selection=ExpandedStates.Enabled;expanded=.Global Options,Axes.Enabled.Axes.StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Robot Model.Enabled.Robot Model.StatusTopStatus,Robot Model.Enabled.Robot: Robot ModelLinks,FootstepPath.Enabled.FootstepPath.Namespaces;scrollpos=0,0;splitterpos=187,374;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz

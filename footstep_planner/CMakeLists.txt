@@ -12,9 +12,7 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
-#set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
@@ -22,15 +20,16 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp 
-	src/FootstepPlannerNode.cpp 
-	src/Dstar.cpp
-	src/Footstep.cpp 
-	src/State.cpp
-	src/Heuristic.cpp 
-	src/Astar.cpp 
-	src/helper.cpp
+set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
+    src/FootstepPlannerNode.cpp
+    src/FootstepPlannerEnvironment.cpp 
+    src/Footstep.cpp
+    src/PlanningState.cpp
+    src/Heuristic.cpp 
+    src/helper.cpp
+    src/PathCostHeuristic.cpp
 )
+
 rosbuild_add_library(${PROJECT_NAME} ${FOOTSTEP_PLANNER_FILES})
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()

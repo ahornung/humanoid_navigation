@@ -24,64 +24,60 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FOOTSTEP_H
-#define FOOTSTEP_H
+#ifndef HUMANOID_SBPL_FOOTSTEP_H_
+#define HUMANOID_SBPL_FOOTSTEP_H_
 
-#include <footstep_planner/State.h>
+#include <footstep_planner/PlanningState.h>
+
 
 namespace footstep_planner
 {
-
 	/**
 	 * @brief A class representing a footstep (i.e. a translation and rotation
 	 * of a specific foot) that can be performed by a humanoid robot.
 	 */
 	class Footstep
 	{
-
 	public:
+		Footstep(double x, double y, double theta,
+	             double cell_size, int num_angle_bins, int max_hash_size,
+	             double foot_separation);
+		~Footstep();
 
-		Footstep();
-		Footstep(float x, float y, float theta, Leg leg = NOLEG);
-		virtual ~Footstep();
+		PlanningState performMeOnThisState(const PlanningState& current) const;
 
-		/**
-		 * @brief Performs the footstep within the current state to receive the
-		 * successor state.
-		 *
-		 * @param current state of the support leg
-		 * @param successor state of the opposite leg (with respect to the support
-		 * leg) after performing the footstep
-		 * @param footSeparation standard separation of both feet in initial position
-		 */
-		void performMeOnThisState(const State& current, State* successor, float footSeparation) const;
+        PlanningState revertMeOnThisState(const PlanningState& current) const;
 
-		/**
-		 * @brief Reverts the footstep within the current state to receive the
-		 * predecessor state.
-		 *
-		 * @param current state of the support leg
-		 * @param predecessor state of the opposite leg (with respect to the support
-		 * leg) after reverting the footstep
-		 * @param footSeparation standard separation of both feet in initial position
-		 */
-		void revertMeOnThisState(const State& current, State* predecessor, float footSeparation) const;
-
+        void updateNumAngleBins(int num);
 
 	private:
+        typedef std::pair<double, double> shift_vector;
 
-		/// translation on the x axis (w.r. to the support leg)
-		float ivX;
-		/// translation on the y axis (w.r. to the support leg)
-		float ivY;
-		/// rotation (w.r. to the support leg)
-		float ivTheta;
-		/// support leg
-		Leg   ivLeg;
+		void init();
 
+        void calculateForwardStep(Leg leg, double global_theta,
+                                  double* footstep_x, double* footstep_y) const;
+        void calculateBackwardStep(Leg leg, double global_theta,
+                                   double* footstep_x, double* footstep_y) const;
+
+		double ivContX;
+		double ivContY;
+		double ivContTheta;
+
+		double ivCellSize;
+
+		int ivNumAngleBins;
+		int ivMaxHashSize;
+
+		double ivFootSeparation;
+
+		int ivTheta;
+
+        std::vector<shift_vector> ivSuccessorLeft;
+        std::vector<shift_vector> ivSuccessorRight;
+        std::vector<shift_vector> ivPredecessorLeft;
+        std::vector<shift_vector> ivPredecessorRight;
 	};
-
 } // end of namespace
 
-
-#endif
+#endif  // HUMANOID_SBPL_FOOTSTEP_H_

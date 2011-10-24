@@ -29,27 +29,26 @@
 
 namespace footstep_planner
 {
-
 	/*
 	 * #########################################################################
 	 * ### class Footstep
 	 * #########################################################################
 	 */
 
-	Footstep::Footstep()
+	Footstep::Footstep(double x, double y, double theta,
+                       double cell_size, int num_angle_bins,
+                       int max_hash_size, double foot_separation)
+		: ivContX(x),
+		  ivContY(y),
+		  ivContTheta(theta),
+		  ivCellSize(cell_size),
+		  ivNumAngleBins(num_angle_bins),
+		  ivMaxHashSize(max_hash_size),
+		  ivFootSeparation(foot_separation),
+		  ivTheta(angle_cont_2_disc(theta, num_angle_bins))
 	{
-
-		ivX = 0;
-		ivY = 0;
-		ivTheta = 0;
-		ivLeg = NOLEG;
-
+	    init();
 	}
-
-
-	Footstep::Footstep(float x, float y, float theta, Leg leg)
-		: ivX(x), ivY(y), ivTheta(theta), ivLeg(leg)
-	{}
 
 
 	Footstep::~Footstep()
@@ -57,107 +56,168 @@ namespace footstep_planner
 
 
 	void
-	Footstep::performMeOnThisState(const State& current, State* successor, float footSeparation)
-	const
+	Footstep::updateNumAngleBins(int num)
 	{
-
-		float globalX = current.getX();
-		float globalY = current.getY();
-		float globalTheta = current.getTheta();
-
-		float footSeparationHalf = footSeparation/2.0;
-
-		float thetaCos = cos(globalTheta);
-		float thetaSin = sin(globalTheta);
-
-		if (current.getLeg() == RIGHT)
-		{
-			float xShift = thetaCos*ivX - thetaSin*(ivY+footSeparationHalf);
-			float yShift = thetaSin*ivX + thetaCos*(ivY+footSeparationHalf);
-			globalX += xShift;
-			globalY += yShift;
-			globalTheta += ivTheta; // NOTE: new globalTheta
-
-			xShift = -sin(globalTheta) * footSeparationHalf;
-			yShift =  cos(globalTheta) * footSeparationHalf;
-			globalX += xShift;
-			globalY += yShift;
-
-			successor->setLeg(LEFT);
-		}
-		else // leg == LEFT
-		{
-			float xShift = thetaCos*ivX + thetaSin*(ivY+footSeparationHalf);
-			float yShift = thetaSin*ivX - thetaCos*(ivY+footSeparationHalf);
-			globalX += xShift;
-			globalY += yShift;
-			globalTheta -= ivTheta; // NOTE: new globalTheta
-
-			xShift =  sin(globalTheta) * footSeparationHalf;
-			yShift = -cos(globalTheta) * footSeparationHalf;
-			globalX += xShift;
-			globalY += yShift;
-
-			successor->setLeg(RIGHT);
-		}
-
-		successor->setX(globalX);
-		successor->setY(globalY);
-		successor->setTheta(globalTheta);
-
+	    ivNumAngleBins = num;
+	    ivTheta = angle_cont_2_disc(ivContTheta, num);
+	    init();
 	}
 
 
 	void
-	Footstep::revertMeOnThisState(const State& current, State* predecessor, float footSeparation)
-	const
+	Footstep::init()
 	{
+	    ivSuccessorLeft.clear();
+	    ivSuccessorRight.clear();
+	    ivPredecessorLeft.clear();
+	    ivPredecessorRight.clear();
 
-		float globalX = current.getX();
-		float globalY = current.getY();
-		float globalTheta = current.getTheta();
+        double shift_x;
+        double shift_y;
+        double global_theta;
 
-		float footSeparationHalf = footSeparation/2.0;
+        for (int a = 0; a < ivNumAngleBins; ++a)
+        {
+            global_theta = angle_disc_2_cont(a, ivNumAngleBins);
+            calculateForwardStep(RIGHT, global_theta, &shift_x, &shift_y);
+            ivSuccessorRight.push_back(shift_vector(shift_x, shift_y));
+            calculateBackwardStep(RIGHT, global_theta, &shift_x, &shift_y);
+            ivPredecessorRight.push_back(shift_vector(shift_x, shift_y));
+        }
 
-		if (current.getLeg() == LEFT)
-		{
-			float xShift =  sin(globalTheta)*(footSeparationHalf);
-			float yShift = -cos(globalTheta)*(footSeparationHalf);
-			globalX += xShift;
-			globalY += yShift;
-			globalTheta -= ivTheta;
-
-			float thetaCos = cos(globalTheta);
-			float thetaSin = sin(globalTheta);
-			xShift = -thetaCos*ivX + thetaSin*(ivY+footSeparationHalf);
-			yShift = -thetaSin*ivX - thetaCos*(ivY+footSeparationHalf);
-			globalX += xShift;
-			globalY += yShift;
-
-			predecessor->setLeg(RIGHT);
-		}
-		else // leg == RIGHT
-		{
-			float xShift = -sin(globalTheta)*(footSeparationHalf);
-			float yShift =  cos(globalTheta)*(footSeparationHalf);
-			globalX += xShift;
-			globalY += yShift;
-			globalTheta += ivTheta;
-
-			float thetaCos = cos(globalTheta);
-			float thetaSin = sin(globalTheta);
-			xShift = -thetaCos*ivX - thetaSin*(ivY+footSeparationHalf);
-			yShift = -thetaSin*ivX + thetaCos*(ivY+footSeparationHalf);
-			globalX += xShift;
-			globalY += yShift;
-
-			predecessor ->setLeg(LEFT);
-		}
-
-		predecessor->setX(globalX);
-		predecessor->setY(globalY);
-		predecessor->setTheta(globalTheta);
-
+        for (int a = 0; a < ivNumAngleBins; ++a)
+        {
+            global_theta = angle_disc_2_cont(a, ivNumAngleBins);
+            calculateForwardStep(LEFT, global_theta, &shift_x, &shift_y);
+            ivSuccessorLeft.push_back(shift_vector(shift_x, shift_y));
+            calculateBackwardStep(LEFT, global_theta, &shift_x, &shift_y);
+            ivPredecessorLeft.push_back(shift_vector(shift_x, shift_y));
+        }
 	}
 
+
+	PlanningState
+	Footstep::performMeOnThisState(const PlanningState& current)
+	const
+	{
+	    int angle;
+	    double x;
+        double y;
+        double theta;
+        Leg leg;
+
+	    angle = current.getTheta();
+        if (current.getLeg() == RIGHT)
+        {
+            shift_vector xy = ivSuccessorRight[angle];
+            x = xy.first;
+            y = xy.second;
+            theta = ivContTheta;
+            leg = LEFT;
+        }
+        else // leg == LEFT
+        {
+            shift_vector xy = ivSuccessorLeft[angle];
+            x = xy.first;
+            y = xy.second;
+            theta = -ivContTheta;
+            leg = RIGHT;
+        }
+
+        return PlanningState(current.getContX() + x, current.getContY() + y,
+                             current.getContTheta() + theta, leg,
+                             ivCellSize, ivNumAngleBins, ivMaxHashSize);
+	}
+
+
+    PlanningState
+    Footstep::revertMeOnThisState(const PlanningState& current)
+    const
+    {
+        int angle;
+        double x;
+        double y;
+        double theta;
+        Leg leg;
+
+        angle = current.getTheta();
+        if (current.getLeg() == LEFT)
+        {
+            shift_vector xy = ivPredecessorLeft[angle];
+            x = xy.first;
+            y = xy.second;
+            theta = -ivContTheta;
+            leg = RIGHT;
+        }
+        else // leg == RIGHT
+        {
+            shift_vector xy = ivPredecessorRight[angle];
+            x = xy.first;
+            y = xy.second;
+            theta = ivContTheta;
+            leg = LEFT;
+        }
+
+        return PlanningState(current.getContX() + x, current.getContY() + y,
+                			 current.getContTheta() + theta, leg,
+                             ivCellSize, ivNumAngleBins, ivMaxHashSize);
+    }
+
+
+	void
+	Footstep::calculateForwardStep(Leg leg, double global_theta,
+	                               double* shift_x, double* shift_y)
+	const
+	{
+        double foot_separation_half = ivFootSeparation/2;
+
+        double theta_cos = cos(global_theta);
+        double theta_sin = sin(global_theta);
+        if (leg == RIGHT)
+        {
+            *shift_x = theta_cos*ivContX - theta_sin*(ivContY+foot_separation_half);
+            *shift_y = theta_sin*ivContX + theta_cos*(ivContY+foot_separation_half);
+            global_theta += ivContTheta;
+            *shift_x += -sin(global_theta) * foot_separation_half;
+            *shift_y +=  cos(global_theta) * foot_separation_half;
+        }
+        else // leg == LEFT
+        {
+            *shift_x = theta_cos*ivContX + theta_sin*(ivContY+foot_separation_half);
+            *shift_y = theta_sin*ivContX - theta_cos*(ivContY+foot_separation_half);
+            global_theta -= ivContTheta;
+            *shift_x +=  sin(global_theta) * foot_separation_half;
+            *shift_y += -cos(global_theta) * foot_separation_half;
+        }
+	}
+
+
+	void
+    Footstep::calculateBackwardStep(Leg leg, double global_theta,
+                                    double* shift_x, double* shift_y)
+    const
+    {
+        double foot_separation_half = ivFootSeparation/2;
+
+        if (leg == LEFT)
+        {
+            *shift_x =  sin(global_theta) * foot_separation_half;
+            *shift_y = -cos(global_theta) * foot_separation_half;
+            global_theta -= ivContTheta;
+            double theta_cos = cos(global_theta);
+            double theta_sin = sin(global_theta);
+            *shift_x += -theta_cos*ivContX + theta_sin*(ivContY+foot_separation_half);
+            *shift_y += -theta_sin*ivContX - theta_cos*(ivContY+foot_separation_half);
+        }
+        else // leg == RIGHT
+        {
+            *shift_x = -sin(global_theta) * foot_separation_half;
+            *shift_y =  cos(global_theta) * foot_separation_half;
+            global_theta += ivContTheta;
+            double theta_cos = cos(global_theta);
+            double theta_sin = sin(global_theta);
+            *shift_x += -theta_cos*ivContX - theta_sin*(ivContY+foot_separation_half);
+            *shift_y += -theta_sin*ivContX + theta_cos*(ivContY+foot_separation_half);
+        }
+    }
 } // end of namespace

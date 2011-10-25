@@ -1,7 +1,7 @@
 <package>
   <description brief="Footstep planning for humanoid robots">
 
-     <p>A footstep planner for humanoid robots using dynamic replanning based on D* Lite.</p>
+     <p>A footstep planner for humanoid / biped robots. The planner builds on SBPL and has anytime (ARA*) as well as dynamic replanning (AD*) capabilities.</p>
      <p>Details can be found in the corresponding paper <em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
      by J. Garimort, A. Hornung, and M. Bennewitz; published in 
      Proc. of the IEEE International Conference on Robotics &amp; Automation (ICRA), 2011</p>

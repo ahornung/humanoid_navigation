@@ -9,11 +9,12 @@
   <license>BSD,GPL 3</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/humanoid_navigation</url>
-  <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs -->
-  <depend stack="geometry" /> <!-- tf -->
+  <depend stack="arm_navigation" /> <!-- sbpl -->
+  <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs, visualization_msgs -->
+  <depend stack="geometry" /> <!-- tf, angles -->
   <depend stack="navigation" /> <!-- map_server -->
-  <depend stack="ros" /> <!-- roscpp -->
+  <depend stack="ros" />
+  <depend stack="ros_comm" /> <!-- rospy, roscpp -->
   <depend stack="vision_opencv" /> <!-- opencv2 -->
-  <depend stack="visualization_common" /> <!-- visualization_msgs -->
 
 </stack>

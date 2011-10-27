@@ -129,7 +129,6 @@ namespace footstep_planner
         double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
         double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
         double ivMaxStepWidth;
-        double ivStepCost;
         int    ivCollisionCheckAccuracy;
         double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
         bool   ivEnvironmentSetUp, ivStartPoseSetUp, ivGoalPoseSetUp;

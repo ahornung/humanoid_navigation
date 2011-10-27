@@ -34,10 +34,10 @@ namespace footstep_planner
     class PathCostHeuristic : public Heuristic
     {
     public:
-        PathCostHeuristic(int max_step_width);
+        PathCostHeuristic(double cellSize, double max_step_width);
         virtual ~PathCostHeuristic();
 
-        double getHValue(const PlanningState& from,
+        virtual double getHValue(const PlanningState& from,
                          const PlanningState& to) const;
 
         bool calculateDistances(const PlanningState& start,

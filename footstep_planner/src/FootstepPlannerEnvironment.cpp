@@ -39,7 +39,7 @@ namespace footstep_planner
             int    max_inverse_footstep_x,
             int    max_inverse_footstep_y,
             int    max_inverse_footstep_theta,
-            int    step_cost,
+            double step_cost,
             int    collision_check_accuracy,
             int    hash_table_size,
             double cell_size,
@@ -65,7 +65,7 @@ namespace footstep_planner
           ivMaxInvFootstepX(max_inverse_footstep_x),
           ivMaxInvFootstepY(max_inverse_footstep_y),
           ivMaxInvFootstepTheta(max_inverse_footstep_theta),
-          ivStepCost(step_cost),
+          ivStepCost(mmScale * step_cost),
           ivCollisionCheckAccuracy(collision_check_accuracy),
           ivHashTableSize(hash_table_size),
           ivCellSize(cell_size),
@@ -221,8 +221,11 @@ namespace footstep_planner
         if (a == b)
             return 0;
 
-        double dist = euclidean_distance(a.getX(), a.getY(), b.getX(), b.getY());
-        return (int)(((dist + ivStepCost) * FLOAT_TO_INT_MULT) + 0.5);
+		double dist = euclidean_distance(  disc_2_cont(a.getX(), ivCellSize),
+									disc_2_cont(a.getY(), ivCellSize),
+									disc_2_cont(b.getX(), ivCellSize),
+									disc_2_cont(b.getY(), ivCellSize));
+		return int(mmScale * dist) + ivStepCost;
     }
 
 
@@ -456,12 +459,9 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetFromToHeuristic(int FromStateID,
                                                    int ToStateID)
     {
-        const PlanningState* state_from = ivStateId2State[FromStateID];
-        const PlanningState* state_to = ivStateId2State[ToStateID];
-        double heuristic_value = ivHeuristicConstPtr->getHValue(*state_from,
-                                                                *state_to);
 
-        return (int)((heuristic_value * FLOAT_TO_INT_MULT) + 0.5);
+    	return mmScale * ivHeuristicConstPtr->getHValue(*ivStateId2State[FromStateID],
+    												 	*ivStateId2State[ToStateID]);
     }
 
 

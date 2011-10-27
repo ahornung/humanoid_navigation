@@ -25,8 +25,9 @@
 
 namespace footstep_planner
 {
-	Heuristic::Heuristic(HeuristicType type)
-		: ivHeuristicType(type)
+	Heuristic::Heuristic(double cellSize, HeuristicType type)
+		: ivCellSize (cellSize),
+		  ivHeuristicType(type)
 	{}
 
 
@@ -34,8 +35,8 @@ namespace footstep_planner
 	{}
 
 
-	EuclideanHeuristic::EuclideanHeuristic()
-		: Heuristic(EUCLIDEAN)
+	EuclideanHeuristic::EuclideanHeuristic(double cellSize)
+		: Heuristic(cellSize, EUCLIDEAN)
 	{}
 
 
@@ -50,13 +51,19 @@ namespace footstep_planner
 		if (from == to)
 			return 0;
 
-		return euclidean_distance(from.getX(), from.getY(), to.getX(), to.getY());
+		// in meter
+		return euclidean_distance(disc_2_cont(from.getX(), ivCellSize),
+									disc_2_cont(from.getY(), ivCellSize),
+									disc_2_cont(to.getX(), ivCellSize),
+									disc_2_cont(to.getY(), ivCellSize));
+
 	}
 
 
-	EuclStepCostHeuristic::EuclStepCostHeuristic(int step_cost,
-	                                             int max_step_width)
-		: Heuristic(EUCLIDEAN_STEPCOST),
+	EuclStepCostHeuristic::EuclStepCostHeuristic(double cellSize,
+												 double step_cost,
+	                                             double max_step_width)
+		: Heuristic(cellSize, EUCLIDEAN_STEPCOST),
 		  ivStepCost(step_cost),
 		  ivMaxStepWidth(max_step_width)
 	{}
@@ -73,10 +80,13 @@ namespace footstep_planner
 		if (from == to)
 			return 0;
 
-        double dist = euclidean_distance(from.getX(), from.getY(),
-                                         to.getX(), to.getY());
-		int expectedSteps = (int)(dist / ivMaxStepWidth);
+		// in meter
+        double dist = euclidean_distance(disc_2_cont(from.getX(), ivCellSize),
+        									disc_2_cont(from.getY(), ivCellSize),
+        									disc_2_cont(to.getX(), ivCellSize),
+        									disc_2_cont(to.getY(), ivCellSize));
+		double expectedSteps = (dist / ivMaxStepWidth);
 
-		return dist + expectedSteps * ivStepCost;
+		return (dist + expectedSteps * ivStepCost);
 	}
 }

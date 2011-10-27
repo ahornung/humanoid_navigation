@@ -27,8 +27,8 @@
 
 namespace footstep_planner
 {
-    PathCostHeuristic::PathCostHeuristic(int max_step_width)
-        : Heuristic(PATH_COST),
+    PathCostHeuristic::PathCostHeuristic(double cellSize, double max_step_width)
+        : Heuristic(cellSize, PATH_COST),
           ivpGrid(NULL),
           ivGoal(NULL),
           ivMaxStepWidth(max_step_width)
@@ -61,9 +61,7 @@ namespace footstep_planner
         }
         assert(valid);
 
-        int cost = ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x,
-                                                                      from_y);
-        return cost / 1000.0;
+        return (double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y))/1000.0);
     }
 
 
@@ -109,7 +107,7 @@ namespace footstep_planner
 
         if (ivGridSearchPtr)
             ivGridSearchPtr->destroy();
-        ivGridSearchPtr.reset(new SBPL2DGridSearch(size.width, size.height, 1));
+        ivGridSearchPtr.reset(new SBPL2DGridSearch(size.width, size.height, ivMapPtr->getResolution()));
 
         if (ivpGrid)
             resetGrid();
@@ -128,6 +126,7 @@ namespace footstep_planner
                     ivpGrid[x][y] = 0;
             }
         }
+
     }
 
 

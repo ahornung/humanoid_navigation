@@ -52,10 +52,10 @@ namespace footstep_planner
         ivPathVisPub = nh_private.advertise<nav_msgs::Path>("path", 1);
         ivStartPoseVisPub = nh_private.advertise<geometry_msgs::PoseStamped>("start", 1);
 
-        double step_cost;
         int num_angle_bins;
         int max_hash_size;
         std::string heuristic_type;
+        double step_cost;
 
         // read parameters from config file:
         // - planner environment settings
@@ -64,7 +64,7 @@ namespace footstep_planner
         nh_private.param("accuracy/collision_check", ivCollisionCheckAccuracy, 2);
         nh_private.param("accuracy/cell_size", ivCellSize, 0.01);
         nh_private.param("accuracy/num_angle_bins", num_angle_bins, 64);
-        nh_private.param("step_cost", ivStepCost, 0.05);
+        nh_private.param("step_cost", step_cost, 0.05);
         nh_private.param("rfoot_frame_id", ivRFootID, ivRFootID);
         nh_private.param("lfoot_frame_id", ivLFootID, ivLFootID);
         nh_private.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
@@ -126,7 +126,7 @@ namespace footstep_planner
 
         // create footstep set
         ivFootstepSet.clear();
-        double max_x = 0, max_y = 0;
+        double max_step_width = 0;
         for(int i=0; i < size; i++)
         {
             double x = (double)discretization_list_x[i];
@@ -137,16 +137,13 @@ namespace footstep_planner
                        ivFootSeparation);
             ivFootstepSet.push_back(f);
 
-            if (x > max_x)
-                max_x = x;
-            if (y > max_y)
-                max_y = y;
+            double cur_step_width = sqrt(x*x + y*y);
+
+            if (cur_step_width > max_step_width)
+                max_step_width = cur_step_width;
         }
-        int max_step_width = sqrt(max_x*max_x + max_y*max_y);
 
         // discretise planner settings
-        max_step_width = cont_2_disc(max_step_width, ivCellSize);
-        step_cost = cont_2_disc(ivStepCost, ivCellSize);
         int max_footstep_x = cont_2_disc(ivMaxFootstepX, ivCellSize);
         int max_footstep_y = cont_2_disc(ivMaxFootstepY, ivCellSize);
         int max_footstep_theta = angle_cont_2_disc(ivMaxFootstepTheta,
@@ -162,18 +159,18 @@ namespace footstep_planner
         boost::shared_ptr<Heuristic> h;
         if (heuristic_type == "EuclideanHeuristic")
         {
-        	h.reset(new EuclideanHeuristic());
+        	h.reset(new EuclideanHeuristic(ivCellSize));
         	ROS_INFO("FootstepPlanner heuristic: euclidean distance");
         }
         else if(heuristic_type == "EuclStepCostHeuristic")
         {
-            h.reset(new EuclStepCostHeuristic(step_cost, max_step_width));
+            h.reset(new EuclStepCostHeuristic(ivCellSize, step_cost, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: euclidean distance with step "
                      "costs");
         }
         else if (heuristic_type == "PathCostHeuristic")
         {
-            h.reset(new PathCostHeuristic(max_step_width));
+            h.reset(new PathCostHeuristic(ivCellSize, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");
             // keep a local ptr for visualization
@@ -302,7 +299,7 @@ namespace footstep_planner
         ros::WallTime startTime = ros::WallTime::now();
         ret = ivPlannerPtr->replan(ivMaxSearchTime, &solution_state_ids,
                                    &path_cost);
-        ivPathCost = disc_2_cont(path_cost, ivCellSize) / FLOAT_TO_INT_MULT;
+        ivPathCost = double(path_cost) / FootstepPlannerEnvironment::mmScale;
 
         ivPlannerEnvironmentPtr->printHashStatistics();
 

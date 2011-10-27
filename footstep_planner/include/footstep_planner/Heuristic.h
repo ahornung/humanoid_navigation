@@ -43,20 +43,21 @@ namespace footstep_planner
 		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, PATH_COST=2 };
 
 
-		Heuristic(HeuristicType type);
+		Heuristic(double cellSize, HeuristicType type);
 		virtual ~Heuristic();
 
 		/**
 		 * @return The heuristically determined path costs to get from
 		 * state 'from' to state 'to' where 'to' is supposed to be the goal of
-		 * the planning task.
+		 * the planning task. Costs are in meter.
 		 */
 		virtual double getHValue(const PlanningState& from, const PlanningState& to) const = 0;
 
 		HeuristicType getHeuristicType() const { return ivHeuristicType; };
 
 
-	private:
+	protected:
+		double ivCellSize;
 
 		const HeuristicType ivHeuristicType;
 
@@ -72,7 +73,7 @@ namespace footstep_planner
 
 	public:
 
-		EuclideanHeuristic();
+		EuclideanHeuristic(double cellSize);
 		virtual ~EuclideanHeuristic();
 
 		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
@@ -93,7 +94,7 @@ namespace footstep_planner
 
 	public:
 
-		EuclStepCostHeuristic(int step_cost, int max_step_width);
+		EuclStepCostHeuristic(double cellSize, double step_cost, double max_step_width);
 		virtual ~EuclStepCostHeuristic();
 
 		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
@@ -101,8 +102,8 @@ namespace footstep_planner
 
 	private:
 
-		const int ivStepCost;
-		const int ivMaxStepWidth;
+		const double ivStepCost;
+		const double ivMaxStepWidth; /// longest step width
 
 	};
 }

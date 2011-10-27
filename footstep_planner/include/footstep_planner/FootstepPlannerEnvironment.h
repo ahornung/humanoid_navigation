@@ -62,7 +62,7 @@ namespace footstep_planner
                 int    max_inverse_footstep_x,
                 int    max_inverse_footstep_y,
                 int    max_inverse_footstep_theta,
-                int    step_cost,
+                double step_cost,
                 int    collision_check_accuracy,
                 int    hash_table_size,
                 double cell_size,
@@ -96,6 +96,7 @@ namespace footstep_planner
             return ivExpandedStates.end();
         };
 
+        /// overloaded from SBPL, returns costs in mm (truncated as int)
         int GetFromToHeuristic(int FromStateID, int ToStateID);
 
         int GetGoalHeuristic(int stateID);
@@ -123,6 +124,8 @@ namespace footstep_planner
         int SizeofCreatedEnv();
 
         bool reachable(const PlanningState& from, const PlanningState& to);
+
+        static const int mmScale = 1000; ///< to scale cont. costs in meter to discrete mm
 
     private:
         int ivGoalFootIdLeft;
@@ -152,6 +155,7 @@ namespace footstep_planner
         boost::shared_ptr<GridMap2D> ivMapPtr;
 
         exp_states_set_t ivExpandedStates;
+
 
         int  stepCost(const PlanningState& a, const PlanningState& b);
         bool occupied(const PlanningState& s);

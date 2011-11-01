@@ -100,6 +100,22 @@ namespace footstep_planner
 		state_iter_t getPathEnd() const { return ivPath.end(); };
 
     private:
+        void broadcastExpandedNodesVis();
+        void broadcastFootstepPathVis();
+        void broadcastHeuristicPathVis();
+        void broadcastPathVis();
+        void callbackPlanning();
+        bool extractSolution(const std::vector<int>& state_ids);
+        void footstepToMarker(const State& footstep,
+                              visualization_msgs::Marker* marker);
+        bool occupied(const State& u);
+        bool run();
+
+        void getFootPositionLeft(const State& robot, State* foot_left);
+        void getFootPositionRight(const State& robot, State* foot_right);
+
+        void setupPlanner();
+
         boost::shared_ptr<Heuristic> ivHeuristicPtr;
         boost::shared_ptr<FootstepPlannerEnvironment> ivPlannerEnvironmentPtr;
         boost::shared_ptr<GridMap2D> ivMapPtr;
@@ -141,27 +157,9 @@ namespace footstep_planner
         bool   ivForwardSearch;
 
         std::string ivPlannerType;
-
-
         std::string ivRFootID;
         std::string ivLFootID;
         std::string ivMarkerNamespace;
-
-        void broadcastExpandedNodesVis();
-        void broadcastFootstepPathVis();
-        void broadcastHeuristicPathVis();
-        void broadcastPathVis();
-        void callbackPlanning();
-        bool extractSolution(const std::vector<int>& state_ids);
-        void footstepToMarker(const State& footstep,
-                              visualization_msgs::Marker* marker);
-        bool occupied(const State& u);
-        bool run();
-
-        void getFootPositionLeft(const State& robot, State* foot_left);
-        void getFootPositionRight(const State& robot, State* foot_right);
-
-        void setupPlanner();
     };
 }
 

@@ -53,9 +53,9 @@ namespace footstep_planner
 
 		// in meter
 		return euclidean_distance(disc_2_cont(from.getX(), ivCellSize),
-									disc_2_cont(from.getY(), ivCellSize),
-									disc_2_cont(to.getX(), ivCellSize),
-									disc_2_cont(to.getY(), ivCellSize));
+		                          disc_2_cont(from.getY(), ivCellSize),
+		                          disc_2_cont(to.getX(), ivCellSize),
+		                          disc_2_cont(to.getY(), ivCellSize));
 
 	}
 
@@ -82,11 +82,11 @@ namespace footstep_planner
 
 		// in meter
         double dist = euclidean_distance(disc_2_cont(from.getX(), ivCellSize),
-        									disc_2_cont(from.getY(), ivCellSize),
-        									disc_2_cont(to.getX(), ivCellSize),
-        									disc_2_cont(to.getY(), ivCellSize));
-		double expectedSteps = (dist / ivMaxStepWidth);
+                                         disc_2_cont(from.getY(), ivCellSize),
+                                         disc_2_cont(to.getX(), ivCellSize),
+                                         disc_2_cont(to.getY(), ivCellSize));
+		double expected_steps = dist / ivMaxStepWidth;
 
-		return (dist + expectedSteps * ivStepCost);
+		return (dist + expected_steps * ivStepCost);
 	}
 }

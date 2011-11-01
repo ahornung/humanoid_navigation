@@ -23,14 +23,16 @@
 
 #include <footstep_planner/PathCostHeuristic.h>
 
-#define OBSTACLE_THRESHOLD 200
 
 namespace footstep_planner
 {
-    PathCostHeuristic::PathCostHeuristic(double cellSize, double max_step_width)
-        : Heuristic(cellSize, PATH_COST),
+    PathCostHeuristic::PathCostHeuristic(double cell_size,
+	                                     double step_cost,
+	                                     double max_step_width)
+        : Heuristic(cell_size, PATH_COST),
           ivpGrid(NULL),
           ivGoal(NULL),
+          ivStepCost(step_cost),
           ivMaxStepWidth(max_step_width)
     {};
 
@@ -43,7 +45,8 @@ namespace footstep_planner
 
 
     double
-    PathCostHeuristic::getHValue(const PlanningState& from, const PlanningState& to)
+    PathCostHeuristic::getHValue(const PlanningState& from,
+	                             const PlanningState& to)
     const
     {
         if (from == to)
@@ -51,17 +54,12 @@ namespace footstep_planner
 
         unsigned int from_x;
         unsigned int from_y;
-        bool valid = ivMapPtr->worldToMap(from.getContX(), from.getContY(),
-                                          from_x, from_y);
-        if (!valid)
-        {
-            ROS_ERROR("invalid planning state: (%i, %i) (%f, %f)", from.getX(),
-                      from.getY(), from.getContX(), from.getContY());
-            ROS_ERROR("equv. grid map state: (%i, %i)", from_x, from_y);
-        }
-        assert(valid);
+        ivMapPtr->worldToMapNoBounds(from.getContX(), from.getContY(), from_x,
+                                     from_y);
+        double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y)) / 1000;
+        double expected_steps = dist / ivMaxStepWidth;
 
-        return (double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y))/1000.0);
+        return (dist + expected_steps * ivStepCost);
     }
 
 
@@ -89,9 +87,9 @@ namespace footstep_planner
                                      goal_y);
         assert(valid);
 
-        ivGridSearchPtr->search(ivpGrid, OBSTACLE_THRESHOLD, goal_x, goal_y,
+        ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold, goal_x, goal_y,
                                 start_x, start_y,
-                                SBPL_2DGRIDSEARCH_TERM_CONDITION_OPTPATHFOUND);
+                                SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
 
         return true;
     }
@@ -107,7 +105,8 @@ namespace footstep_planner
 
         if (ivGridSearchPtr)
             ivGridSearchPtr->destroy();
-        ivGridSearchPtr.reset(new SBPL2DGridSearch(size.width, size.height, ivMapPtr->getResolution()));
+        ivGridSearchPtr.reset(new SBPL2DGridSearch(size.width, size.height,
+                                                   ivMapPtr->getResolution()));
 
         if (ivpGrid)
             resetGrid();

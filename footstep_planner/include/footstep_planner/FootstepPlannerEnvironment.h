@@ -125,7 +125,8 @@ namespace footstep_planner
 
         bool reachable(const PlanningState& from, const PlanningState& to);
 
-        static const int mmScale = 1000; ///< to scale cont. costs in meter to discrete mm
+        /// to scale continuous values in meter to discrete mm
+        static const int cvMmScale = 1000;
 
     private:
         int ivGoalFootIdLeft;
@@ -143,9 +144,9 @@ namespace footstep_planner
         const double ivFootSeparation;
         const double ivOriginFootShiftX, ivOriginFootShiftY;
         const double ivFootsizeX, ivFootsizeY;
-        const int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
-        const int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
-        const int    ivStepCost;
+        const int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta; /// discretized int in cell size
+        const int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta; /// discretized int in cell size
+        const int    ivStepCost; /// discretized int in mm
         const int    ivCollisionCheckAccuracy;
         const int    ivHashTableSize;
         const double ivCellSize;

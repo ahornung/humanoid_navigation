@@ -37,10 +37,6 @@ namespace footstep_planner
           ivLFootID("/LFoot_link"),
           ivMarkerNamespace("")
     {
-
-//        std::cerr << "sizeof PlanningState: " <<sizeof(PlanningState) << std::endl;
-//        std::cerr << "sizeof Footstep: " <<sizeof(Footstep) << std::endl;
-
         // private NodeHandle for parameters and private messages (debug / info)
         ros::NodeHandle nh_private("~");
         ros::NodeHandle nh_public;
@@ -170,7 +166,7 @@ namespace footstep_planner
         }
         else if (heuristic_type == "PathCostHeuristic")
         {
-            h.reset(new PathCostHeuristic(ivCellSize, max_step_width));
+            h.reset(new PathCostHeuristic(ivCellSize, step_cost, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");
             // keep a local ptr for visualization
@@ -217,7 +213,8 @@ namespace footstep_planner
     void
     FootstepPlanner::setupPlanner()
     {
-        if (ivPlannerType == "ARAPlanner"){
+        if (ivPlannerType == "ARAPlanner")
+        {
             ROS_INFO_STREAM("Planning with " << ivPlannerType);
             ivPlannerPtr.reset(new ARAPlanner(ivPlannerEnvironmentPtr.get(),
                                               ivForwardSearch));
@@ -299,7 +296,7 @@ namespace footstep_planner
         ros::WallTime startTime = ros::WallTime::now();
         ret = ivPlannerPtr->replan(ivMaxSearchTime, &solution_state_ids,
                                    &path_cost);
-        ivPathCost = double(path_cost) / FootstepPlannerEnvironment::mmScale;
+        ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;
 
         ivPlannerEnvironmentPtr->printHashStatistics();
 
@@ -362,11 +359,11 @@ namespace footstep_planner
     bool
     FootstepPlanner::plan()
     {
-    	if (!ivMapPtr){
+    	if (!ivMapPtr)
+    	{
     		ROS_ERROR("FootstepPlanner has no map yet for planning");
     		return false;
     	}
-
         if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
         {
             ROS_ERROR("FootstepPlanner has no start or goal pose set");
@@ -380,11 +377,7 @@ namespace footstep_planner
         ivEnvironmentSetUp = false;
 
         // start the planning and return success
-        bool success = run();
-        if (success)
-            return true;
-        else
-            return false;
+        return run();
     }
 
 
@@ -446,7 +439,6 @@ namespace footstep_planner
 
     		resp.footsteps.push_back(foot);
     	}
-
     	resp.result = result;
 
     	return result;

@@ -34,7 +34,8 @@ namespace footstep_planner
     class PathCostHeuristic : public Heuristic
     {
     public:
-        PathCostHeuristic(double cellSize, double max_step_width);
+        PathCostHeuristic(double cell_size, double step_cost,
+                          double max_step_width);
         virtual ~PathCostHeuristic();
 
         virtual double getHValue(const PlanningState& from,
@@ -46,10 +47,13 @@ namespace footstep_planner
         void setMap(const boost::shared_ptr<GridMap2D> map);
 
     private:
+        static const int cvObstacleThreshold = 200;
+
         unsigned char** ivpGrid;
 
         const PlanningState* ivGoal;
 
+        double ivStepCost;
         double ivMaxStepWidth;
 
         boost::shared_ptr<GridMap2D> ivMapPtr;

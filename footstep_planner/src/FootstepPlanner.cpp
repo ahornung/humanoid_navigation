@@ -28,8 +28,7 @@
 namespace footstep_planner
 {
     FootstepPlanner::FootstepPlanner()
-        : ivEnvironmentSetUp(false),
-          ivStartPoseSetUp(false),
+        : ivStartPoseSetUp(false),
           ivGoalPoseSetUp(false),
           ivLastMarkerMsgSize(0),
           ivPathCost(0),
@@ -243,28 +242,10 @@ namespace footstep_planner
     bool
     FootstepPlanner::run()
     {
-        // check if planner environment has been set up (this has to be done
-        // only once)
-        if (!ivEnvironmentSetUp)
-        {
-        	ROS_DEBUG("Setting up environment");
-        	ivPlannerEnvironmentPtr->setUp(ivStartFootLeft, ivStartFootRight,
-                                           ivGoalFootLeft, ivGoalFootRight);
-        	ROS_DEBUG("Setting up environment done");
-        	ivEnvironmentSetUp = true;
-        }
-        // the environment has been set up previously so the start pose of the
-        // planner has to be updated via its update method
-        else
-        {
-        	// NOTE: in the case of an unchanged start this method calls do
-        	// not change anything
-        	ROS_DEBUG("Updating start and goal in env.");
-        	ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft,
-                                                 ivStartFootRight);
-        	ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft,
-                                                ivGoalFootRight);
-        }
+        ROS_DEBUG("Setting up environment");
+		ivPlannerEnvironmentPtr->setUp(ivStartFootLeft, ivStartFootRight,
+									   ivGoalFootLeft, ivGoalFootRight);
+		ROS_DEBUG("Setting up environment done");
 
         int ret = 0;
         MDPConfig mdp_config;
@@ -290,8 +271,8 @@ namespace footstep_planner
         ivPlannerPtr->set_initialsolution_eps(ivInitialEpsilon);
         ivPlannerPtr->set_search_mode(ivSearchUntilFirstSolution);
 
-        ROS_INFO("Start planning (max time: %f, initial eps: %f)\n",
-                 ivMaxSearchTime, ivInitialEpsilon);
+        ROS_INFO("Start planning (max time: %f, initial eps: %f (%f))\n",
+                 ivMaxSearchTime, ivInitialEpsilon, ivPlannerPtr->get_initial_eps());
         int path_cost;
         ros::WallTime startTime = ros::WallTime::now();
         ret = ivPlannerPtr->replan(ivMaxSearchTime, &solution_state_ids,
@@ -374,7 +355,6 @@ namespace footstep_planner
         ivPlannerEnvironmentPtr->reset();
         setupPlanner();
         //ivPlannerPtr->force_planning_from_scratch();
-        ivEnvironmentSetUp = false;
 
         // start the planning and return success
         return run();
@@ -404,6 +384,7 @@ namespace footstep_planner
 
         return plan();
     }
+
 
     bool
     FootstepPlanner::planService(humanoid_nav_msgs::PlanFootsteps::Request &req,
@@ -446,19 +427,6 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::callbackPlanning()
-    {
-        // all checks should have been performed before
-        assert(ivStartPoseSetUp);
-        assert(ivGoalPoseSetUp);
-        assert(ivMapPtr);
-
-        // start the planning task
-        run();
-    }
-
-
-    void
     FootstepPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
         bool success = setGoal(goal_pose);
@@ -466,7 +434,10 @@ namespace footstep_planner
         {
             // NOTE: updates to the goal pose are handled in the run method
             if (ivStartPoseSetUp)
-                callbackPlanning();
+            {
+            	assert(ivMapPtr);
+            	run();
+            }
         }
     }
 
@@ -481,7 +452,10 @@ namespace footstep_planner
         {
             // NOTE: updates to the start pose are handled in the run method
             if (ivGoalPoseSetUp)
-                callbackPlanning();
+            {
+            	assert(ivMapPtr);
+                run();
+            }
         }
     }
 

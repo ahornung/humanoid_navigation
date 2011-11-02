@@ -96,16 +96,29 @@ namespace footstep_planner
             ivpStateHash2State = new std::vector<const PlanningState*>[ivHashTableSize];
         }
 
+        int start_foot_id_left = ivStartFootIdLeft;
+        int start_foot_id_right = ivStartFootIdRight;
         int goal_foot_id_left = ivGoalFootIdLeft;
         int goal_foot_id_right = ivGoalFootIdRight;
 
         updateStart(start_foot_left, start_foot_right);
         updateGoal(goal_foot_left, goal_foot_right);
 
-        if (goal_foot_id_left != ivGoalFootIdLeft &&
-            goal_foot_id_right != ivGoalFootIdRight)
+        if (ivForwardSearch)
         {
-        	updateHeuristicValues();
+			if (goal_foot_id_left != ivGoalFootIdLeft &&
+				goal_foot_id_right != ivGoalFootIdRight)
+			{
+				updateHeuristicValues();
+			}
+        }
+        else
+        {
+			if (start_foot_id_left != ivStartFootIdLeft &&
+				start_foot_id_right != ivStartFootIdRight)
+			{
+				updateHeuristicValues();
+			}
         }
     }
 
@@ -120,6 +133,7 @@ namespace footstep_planner
             p_foot_left = createNewHashEntry(foot_left);
             ivGoalFootIdLeft = p_foot_left->getId();
         }
+
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
@@ -142,6 +156,7 @@ namespace footstep_planner
             p_foot_left = createNewHashEntry(foot_left);
             ivStartFootIdLeft = p_foot_left->getId();
         }
+
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
@@ -344,6 +359,7 @@ namespace footstep_planner
         StateID2IndexMapping.clear();
 
         ivExpandedStates.clear();
+
         ivGoalFootIdLeft = -1;
         ivGoalFootIdRight = -1;
         ivStartFootIdLeft = -1;
@@ -465,8 +481,17 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetFromToHeuristic(int FromStateID,
                                                    int ToStateID)
     {
-    	return cvMmScale * ivHeuristicConstPtr->getHValue(*ivStateId2State[FromStateID],
-    	                                                  *ivStateId2State[ToStateID]);
+    	unsigned int from_x;
+    	unsigned int from_y;
+    	const PlanningState* from = ivStateId2State[FromStateID];
+    	bool valid = ivMapPtr->worldToMap(from->getContX(), from->getContY(),
+    	                                  from_x, from_y);
+    	if (!valid)
+    	{
+    		return 10000000;
+    	}
+
+    	return cvMmScale * ivHeuristicConstPtr->getHValue(*from, *ivStateId2State[ToStateID]);
     }
 
 
@@ -487,10 +512,9 @@ namespace footstep_planner
         PredIDV->reserve(ivFootstepSet.size());
         CostV->reserve(ivFootstepSet.size());
 
+        ivExpandedStates.push_back(TargetStateID);
+
         const PlanningState* current = ivStateId2State[TargetStateID];
-
-        ivExpandedStates.insert(TargetStateID);
-
         if (closeToStart(*current))
         {
             int start_id;
@@ -542,10 +566,9 @@ namespace footstep_planner
         SuccIDV->reserve(ivFootstepSet.size());
         CostV->reserve(ivFootstepSet.size());
 
+        ivExpandedStates.push_back(SourceStateID);
+
         const PlanningState* current = ivStateId2State[SourceStateID];
-
-        ivExpandedStates.insert(SourceStateID);
-
         if (closeToGoal(*current))
         {
             int goal_id;

@@ -36,7 +36,6 @@
 #include <footstep_planner/PlanningState.h>
 #include <sbpl/headers.h>
 
-#include <set>
 #include <vector>
 
 
@@ -45,8 +44,8 @@ namespace footstep_planner
     class FootstepPlannerEnvironment : public DiscreteSpaceInformation
     {
     public:
-        typedef std::set<int> exp_states_set_t;
-        typedef exp_states_set_t::const_iterator exp_states_iter_t;
+        typedef std::vector<int> exp_states_t;
+        typedef exp_states_t::const_iterator exp_states_iter_t;
 
         FootstepPlannerEnvironment(
                 const  std::vector<Footstep>& footstep_set,
@@ -74,9 +73,6 @@ namespace footstep_planner
 
         void setUp(const State& start_left, const State& start_right,
                    const State& goal_left, const State& goal_right);
-
-        void updateGoal(const State& foot_left, const State& foot_right);
-        void updateStart(const State& foot_left, const State& right_right);
 
         bool getState(unsigned int id, State* s);
 
@@ -155,7 +151,7 @@ namespace footstep_planner
 
         boost::shared_ptr<GridMap2D> ivMapPtr;
 
-        exp_states_set_t ivExpandedStates;
+        exp_states_t ivExpandedStates;
 
 
         int  stepCost(const PlanningState& a, const PlanningState& b);
@@ -169,6 +165,9 @@ namespace footstep_planner
 
         bool closeToGoal(const PlanningState& from);
         bool closeToStart(const PlanningState& from);
+
+        void updateGoal(const State& foot_left, const State& foot_right);
+        void updateStart(const State& foot_left, const State& right_right);
 
         void updateHeuristicValues();
 

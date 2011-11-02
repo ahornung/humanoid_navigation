@@ -104,7 +104,6 @@ namespace footstep_planner
         void broadcastFootstepPathVis();
         void broadcastHeuristicPathVis();
         void broadcastPathVis();
-        void callbackPlanning();
         bool extractSolution(const std::vector<int>& state_ids);
         void footstepToMarker(const State& footstep,
                               visualization_msgs::Marker* marker);
@@ -147,7 +146,7 @@ namespace footstep_planner
         double ivMaxStepWidth;
         int    ivCollisionCheckAccuracy;
         double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
-        bool   ivEnvironmentSetUp, ivStartPoseSetUp, ivGoalPoseSetUp;
+        bool   ivStartPoseSetUp, ivGoalPoseSetUp;
         int    ivLastMarkerMsgSize;
         double ivPathCost;
         double ivCellSize;

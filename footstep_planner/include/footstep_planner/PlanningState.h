@@ -61,16 +61,12 @@ namespace footstep_planner
 		int getTheta() const { return ivTheta; };
 		int getX() const { return ivX; };
 		int getY() const { return ivY; };
-		double getContX() const { return ivContX; };
-		double getContY() const { return ivContY; };
-		double getContTheta() const { return ivContTheta; };
 
 		unsigned int getHashTag() const { return ivHashTag; };
 		// TODO: move to helper?
 		unsigned int calculateHashTag(int max_hash_size) const;
 
 		int getId() const { return ivId; };
-
 
 	private:
 		int ivX;
@@ -79,14 +75,9 @@ namespace footstep_planner
 
 		Leg	ivLeg;
 
-		float ivContX;
-		float ivContY;
-		float ivContTheta;
-
 	    int ivId;
 
 		unsigned int ivHashTag;
 	};
 }
-
 #endif  /* HUMANOID_SBPL_STATE_H_ */

@@ -130,7 +130,6 @@ namespace footstep_planner
                     ivpGrid[x][y] = 0;
             }
         }
-
     }
 
 

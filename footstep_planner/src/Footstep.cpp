@@ -38,14 +38,13 @@ namespace footstep_planner
 	Footstep::Footstep(double x, double y, double theta,
                        double cell_size, int num_angle_bins,
                        int max_hash_size, double foot_separation)
-		: ivContX(x),
-		  ivContY(y),
-		  ivContTheta(theta),
-		  ivCellSize(cell_size),
+		: ivX(cont_2_disc(x, cell_size)),
+		  ivY(cont_2_disc(y, cell_size)),
+          ivTheta(angle_cont_2_disc(theta, num_angle_bins)),
+          ivCellSize(cell_size),
 		  ivNumAngleBins(num_angle_bins),
 		  ivMaxHashSize(max_hash_size),
-		  ivFootSeparation(foot_separation),
-		  ivTheta(angle_cont_2_disc(theta, num_angle_bins))
+		  ivFootSeparation(foot_separation)
 	{
 	    init();
 	}
@@ -123,10 +122,12 @@ namespace footstep_planner
             theta = -ivContTheta;
             leg = RIGHT;
         }
+        x += disc_2_cont(current.getX(), ivCellSize);
+        y += disc_2_cont(current.getY(), ivCellSize);
+        theta += angle_disc_2_cont(current.getTheta(), ivNumAngleBins);
 
-        return PlanningState(current.getContX() + x, current.getContY() + y,
-                             current.getContTheta() + theta, leg,
-                             ivCellSize, ivNumAngleBins, ivMaxHashSize);
+        return PlanningState(x, y, theta, leg, ivCellSize, ivNumAngleBins,
+                             ivMaxHashSize);
 	}
 
 
@@ -157,10 +158,12 @@ namespace footstep_planner
             theta = ivContTheta;
             leg = LEFT;
         }
+        x += disc_2_cont(current.getX(), ivCellSize);
+        y += disc_2_cont(current.getY(), ivCellSize);
+        theta += angle_disc_2_cont(current.getTheta(), ivNumAngleBins);
 
-        return PlanningState(current.getContX() + x, current.getContY() + y,
-                			 current.getContTheta() + theta, leg,
-                             ivCellSize, ivNumAngleBins, ivMaxHashSize);
+        return PlanningState(x, y, theta, leg, ivCellSize, ivNumAngleBins,
+                             ivMaxHashSize);
     }
 
 
@@ -170,22 +173,25 @@ namespace footstep_planner
 	const
 	{
         double foot_separation_half = ivFootSeparation/2;
+        double x = disc_2_cont(ivX, ivCellSize);
+        double y = disc_2_cont(ivY, ivCellSize);
+        double theta = angle_disc_2_cont(ivTheta, ivNumAngleBins);
 
         double theta_cos = cos(global_theta);
         double theta_sin = sin(global_theta);
         if (leg == RIGHT)
         {
-            *shift_x = theta_cos*ivContX - theta_sin*(ivContY+foot_separation_half);
-            *shift_y = theta_sin*ivContX + theta_cos*(ivContY+foot_separation_half);
-            global_theta += ivContTheta;
+            *shift_x = theta_cos * x - theta_sin * (y+foot_separation_half);
+            *shift_y = theta_sin * x + theta_cos * (y+foot_separation_half);
+            global_theta += theta;
             *shift_x += -sin(global_theta) * foot_separation_half;
             *shift_y +=  cos(global_theta) * foot_separation_half;
         }
         else // leg == LEFT
         {
-            *shift_x = theta_cos*ivContX + theta_sin*(ivContY+foot_separation_half);
-            *shift_y = theta_sin*ivContX - theta_cos*(ivContY+foot_separation_half);
-            global_theta -= ivContTheta;
+            *shift_x = theta_cos * x + theta_sin * (y+foot_separation_half);
+            *shift_y = theta_sin * x - theta_cos * (y+foot_separation_half);
+            global_theta -= theta;
             *shift_x +=  sin(global_theta) * foot_separation_half;
             *shift_y += -cos(global_theta) * foot_separation_half;
         }
@@ -198,26 +204,29 @@ namespace footstep_planner
     const
     {
         double foot_separation_half = ivFootSeparation/2;
+        double x = disc_2_cont(ivX, ivCellSize);
+        double y = disc_2_cont(ivY, ivCellSize);
+        double theta = angle_disc_2_cont(ivTheta, ivNumAngleBins);
 
         if (leg == LEFT)
         {
             *shift_x =  sin(global_theta) * foot_separation_half;
             *shift_y = -cos(global_theta) * foot_separation_half;
-            global_theta -= ivContTheta;
+            global_theta -= theta;
             double theta_cos = cos(global_theta);
             double theta_sin = sin(global_theta);
-            *shift_x += -theta_cos*ivContX + theta_sin*(ivContY+foot_separation_half);
-            *shift_y += -theta_sin*ivContX - theta_cos*(ivContY+foot_separation_half);
+            *shift_x += -theta_cos * x + theta_sin * (y+foot_separation_half);
+            *shift_y += -theta_sin * x - theta_cos * (y+foot_separation_half);
         }
         else // leg == RIGHT
         {
             *shift_x = -sin(global_theta) * foot_separation_half;
             *shift_y =  cos(global_theta) * foot_separation_half;
-            global_theta += ivContTheta;
+            global_theta += theta;
             double theta_cos = cos(global_theta);
             double theta_sin = sin(global_theta);
-            *shift_x += -theta_cos*ivContX - theta_sin*(ivContY+foot_separation_half);
-            *shift_y += -theta_sin*ivContX + theta_cos*(ivContY+foot_separation_half);
+            *shift_x += -theta_cos * x - theta_sin * (y+foot_separation_half);
+            *shift_y += -theta_sin * x + theta_cos * (y+foot_separation_half);
         }
     }
 } // end of namespace

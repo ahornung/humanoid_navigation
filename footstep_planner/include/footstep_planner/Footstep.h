@@ -60,9 +60,9 @@ namespace footstep_planner
         void calculateBackwardStep(Leg leg, double global_theta,
                                    double* footstep_x, double* footstep_y) const;
 
-		double ivContX;
-		double ivContY;
-		double ivContTheta;
+		int ivX;
+		int ivY;
+		int ivTheta;
 
 		double ivCellSize;
 
@@ -70,8 +70,6 @@ namespace footstep_planner
 		int ivMaxHashSize;
 
 		double ivFootSeparation;
-
-		int ivTheta;
 
         std::vector<shift_vector> ivSuccessorLeft;
         std::vector<shift_vector> ivSuccessorRight;

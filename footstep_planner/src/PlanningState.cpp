@@ -41,9 +41,6 @@ namespace footstep_planner
           ivY(cont_2_disc(y, cell_size)),
           ivTheta(angle_cont_2_disc(theta, num_angle_bins)),
           ivLeg(leg),
-          ivContX(x),
-          ivContY(y),
-          ivContTheta(theta),
           ivId(-1),
           ivHashTag(calculateHashTag(max_hash_size))
     {}
@@ -55,9 +52,6 @@ namespace footstep_planner
           ivY(cont_2_disc(s.y, cell_size)),
           ivTheta(angle_cont_2_disc(s.theta, num_angle_bins)),
           ivLeg(s.leg),
-          ivContX(s.x),
-          ivContY(s.y),
-          ivContTheta(s.theta),
           ivId(-1),
           ivHashTag(calculateHashTag(max_hash_size))
     {}
@@ -68,10 +62,7 @@ namespace footstep_planner
 	      ivY(s.getY()),
 	      ivTheta(s.getTheta()),
 	      ivLeg(s.getLeg()),
-          ivContX(s.getContX()),
-          ivContY(s.getContY()),
-          ivContTheta(s.getContTheta()),
-	      ivId(s.getId()),
+          ivId(s.getId()),
 	      ivHashTag(s.getHashTag())
 	{}
 

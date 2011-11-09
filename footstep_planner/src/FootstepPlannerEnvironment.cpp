@@ -484,7 +484,8 @@ namespace footstep_planner
     	unsigned int from_x;
     	unsigned int from_y;
     	const PlanningState* from = ivStateId2State[FromStateID];
-    	bool valid = ivMapPtr->worldToMap(from->getContX(), from->getContY(),
+    	bool valid = ivMapPtr->worldToMap(disc_2_cont(from->getX(), ivCellSize),
+                                          disc_2_cont(from->getY(), ivCellSize),
     	                                  from_x, from_y);
     	if (!valid)
     		return 1000000;

@@ -156,19 +156,20 @@ namespace footstep_planner
         boost::shared_ptr<Heuristic> h;
         if (heuristic_type == "EuclideanHeuristic")
         {
-        	h.reset(new EuclideanHeuristic(ivCellSize));
+        	h.reset(new EuclideanHeuristic(ivCellSize, num_angle_bins));
         	ROS_INFO("FootstepPlanner heuristic: euclidean distance");
         }
         else if(heuristic_type == "EuclStepCostHeuristic")
         {
-            h.reset(new EuclStepCostHeuristic(ivCellSize, step_cost,
-                                              diff_angle_cost, max_step_width));
+            h.reset(new EuclStepCostHeuristic(ivCellSize, num_angle_bins,
+                                              step_cost, diff_angle_cost,
+                                              max_step_width));
             ROS_INFO("FootstepPlanner heuristic: euclidean distance with step "
                      "costs");
         }
         else if (heuristic_type == "PathCostHeuristic")
         {
-            h.reset(new PathCostHeuristic(ivCellSize, step_cost,
+            h.reset(new PathCostHeuristic(ivCellSize, num_angle_bins, step_cost,
                                           diff_angle_cost, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");

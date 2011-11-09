@@ -25,8 +25,9 @@
 
 namespace footstep_planner
 {
-	Heuristic::Heuristic(double cellSize, HeuristicType type)
-		: ivCellSize (cellSize),
+	Heuristic::Heuristic(double cell_size, int num_angle_bins, HeuristicType type)
+		: ivCellSize(cell_size),
+		  ivNumAngleBins(num_angle_bins),
 		  ivHeuristicType(type)
 	{}
 
@@ -35,8 +36,8 @@ namespace footstep_planner
 	{}
 
 
-	EuclideanHeuristic::EuclideanHeuristic(double cellSize)
-		: Heuristic(cellSize, EUCLIDEAN)
+	EuclideanHeuristic::EuclideanHeuristic(double cell_size, int num_angle_bins)
+		: Heuristic(cell_size, num_angle_bins, EUCLIDEAN)
 	{}
 
 
@@ -60,11 +61,12 @@ namespace footstep_planner
 	}
 
 
-	EuclStepCostHeuristic::EuclStepCostHeuristic(double cellSize,
+	EuclStepCostHeuristic::EuclStepCostHeuristic(double cell_size,
+	                                             int    num_angle_bins,
 												 double step_cost,
                                                  double diff_angle_cost,
 	                                             double max_step_width)
-		: Heuristic(cellSize, EUCLIDEAN_STEPCOST),
+		: Heuristic(cell_size, num_angle_bins, EUCLIDEAN_STEPCOST),
 		  ivStepCost(step_cost),
 		  ivDiffAngleCost(diff_angle_cost),
 		  ivMaxStepWidth(max_step_width)
@@ -88,7 +90,8 @@ namespace footstep_planner
                                          disc_2_cont(to.getX(), ivCellSize),
                                          disc_2_cont(to.getY(), ivCellSize));
 		double expected_steps = dist / ivMaxStepWidth;
-        int diff_angle = abs(from.getTheta() - to.getTheta());
+        int disc_diff_angle = abs(from.getTheta() - to.getTheta());
+        double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
 
 		return (dist + expected_steps * ivStepCost + diff_angle * ivDiffAngleCost);
 	}

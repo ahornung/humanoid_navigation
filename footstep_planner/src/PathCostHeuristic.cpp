@@ -27,10 +27,11 @@
 namespace footstep_planner
 {
     PathCostHeuristic::PathCostHeuristic(double cell_size,
+                                         int    num_angle_bins,
 	                                     double step_cost,
                                          double diff_angle_cost,
 	                                     double max_step_width)
-        : Heuristic(cell_size, PATH_COST),
+        : Heuristic(cell_size, num_angle_bins, PATH_COST),
           ivpGrid(NULL),
           ivGoal(NULL),
           ivStepCost(step_cost),
@@ -60,7 +61,8 @@ namespace footstep_planner
                                      from_x, from_y);
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y)) / 1000;
         double expected_steps = dist / ivMaxStepWidth;
-        int diff_angle = abs(from.getTheta() - to.getTheta());
+        int disc_diff_angle = abs(from.getTheta() - to.getTheta());
+        double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
 
         return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
     }

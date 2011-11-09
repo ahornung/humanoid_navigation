@@ -57,8 +57,9 @@ namespace footstep_planner
 	void
 	Footstep::updateNumAngleBins(int num)
 	{
+		double x = angle_disc_2_cont(ivTheta, ivNumAngleBins);
 	    ivNumAngleBins = num;
-	    ivTheta = angle_cont_2_disc(ivContTheta, num);
+	    ivTheta = angle_cont_2_disc(x, num);
 	    init();
 	}
 
@@ -105,13 +106,14 @@ namespace footstep_planner
         double theta;
         Leg leg;
 
+        theta = 0;
 	    angle = current.getTheta();
         if (current.getLeg() == RIGHT)
         {
             shift_vector xy = ivSuccessorRight[angle];
             x = xy.first;
             y = xy.second;
-            theta = ivContTheta;
+            theta = angle_disc_2_cont(ivTheta, ivNumAngleBins);
             leg = LEFT;
         }
         else // leg == LEFT
@@ -119,12 +121,12 @@ namespace footstep_planner
             shift_vector xy = ivSuccessorLeft[angle];
             x = xy.first;
             y = xy.second;
-            theta = -ivContTheta;
+            theta = -angle_disc_2_cont(ivTheta, ivNumAngleBins);
             leg = RIGHT;
         }
         x += disc_2_cont(current.getX(), ivCellSize);
         y += disc_2_cont(current.getY(), ivCellSize);
-        theta += angle_disc_2_cont(current.getTheta(), ivNumAngleBins);
+        theta += angle_disc_2_cont(angle, ivNumAngleBins);
 
         return PlanningState(x, y, theta, leg, ivCellSize, ivNumAngleBins,
                              ivMaxHashSize);
@@ -147,7 +149,7 @@ namespace footstep_planner
             shift_vector xy = ivPredecessorLeft[angle];
             x = xy.first;
             y = xy.second;
-            theta = -ivContTheta;
+            theta = -angle_disc_2_cont(ivTheta, ivNumAngleBins);
             leg = RIGHT;
         }
         else // leg == RIGHT
@@ -155,7 +157,7 @@ namespace footstep_planner
             shift_vector xy = ivPredecessorRight[angle];
             x = xy.first;
             y = xy.second;
-            theta = ivContTheta;
+            theta = angle_disc_2_cont(ivTheta, ivNumAngleBins);
             leg = LEFT;
         }
         x += disc_2_cont(current.getX(), ivCellSize);

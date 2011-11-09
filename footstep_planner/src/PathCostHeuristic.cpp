@@ -57,7 +57,8 @@ namespace footstep_planner
 
         unsigned int from_x;
         unsigned int from_y;
-        ivMapPtr->worldToMapNoBounds(from.getContX(), from.getContY(),
+        ivMapPtr->worldToMapNoBounds(disc_2_cont(from.getX(), ivCellSize),
+                                     disc_2_cont(from.getY(), ivCellSize),
                                      from_x, from_y);
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y)) / 1000;
         double expected_steps = dist / ivMaxStepWidth;
@@ -83,13 +84,15 @@ namespace footstep_planner
 
         unsigned int start_x;
         unsigned int start_y;
-        bool valid = ivMapPtr->worldToMap(start.getContX(), start.getContY(),
+        bool valid = ivMapPtr->worldToMap(disc_2_cont(start.getX(), ivCellSize),
+                                          disc_2_cont(start.getY(), ivCellSize),
                                           start_x, start_y);
         assert(valid);
         unsigned int goal_x;
         unsigned int goal_y;
-        valid = ivMapPtr->worldToMap(goal.getContX(), goal.getContY(), goal_x,
-                                     goal_y);
+        valid = ivMapPtr->worldToMap(disc_2_cont(goal.getX(), ivCellSize),
+		                             disc_2_cont(goal.getY(), ivCellSize),
+		                             goal_x, goal_y);
         assert(valid);
 
         ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold, goal_x, goal_y,

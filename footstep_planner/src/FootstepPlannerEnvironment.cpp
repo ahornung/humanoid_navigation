@@ -487,9 +487,7 @@ namespace footstep_planner
     	bool valid = ivMapPtr->worldToMap(from->getContX(), from->getContY(),
     	                                  from_x, from_y);
     	if (!valid)
-    	{
-    		return 10000000;
-    	}
+    		return 1000000;
 
     	return cvMmScale * ivHeuristicConstPtr->getHValue(*from, *ivStateId2State[ToStateID]);
     }

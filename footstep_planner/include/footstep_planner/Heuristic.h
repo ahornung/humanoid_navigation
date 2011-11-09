@@ -30,18 +30,14 @@
 
 namespace footstep_planner
 {
-
 	/**
 	 * @brief An abstract super class providing methods necessary to be used as
 	 * heuristic function within Dstar.
 	 */
 	class Heuristic
 	{
-
 	public:
-
 		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, PATH_COST=2 };
-
 
 		Heuristic(double cellSize, HeuristicType type);
 		virtual ~Heuristic();
@@ -55,12 +51,10 @@ namespace footstep_planner
 
 		HeuristicType getHeuristicType() const { return ivHeuristicType; };
 
-
 	protected:
 		double ivCellSize;
 
 		const HeuristicType ivHeuristicType;
-
 	};
 
 
@@ -70,17 +64,11 @@ namespace footstep_planner
 	 */
 	class EuclideanHeuristic : public Heuristic
 	{
-
 	public:
-
 		EuclideanHeuristic(double cellSize);
 		virtual ~EuclideanHeuristic();
 
 		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
-
-
-	private:
-
 	};
 
 
@@ -93,19 +81,16 @@ namespace footstep_planner
 	{
 
 	public:
-
-		EuclStepCostHeuristic(double cellSize, double step_cost, double max_step_width);
+		EuclStepCostHeuristic(double cellSize, double step_cost,
+                              double diff_angle_cost, double max_step_width);
 		virtual ~EuclStepCostHeuristic();
 
 		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
 
-
 	private:
-
 		const double ivStepCost;
+		const double ivDiffAngleCost;
 		const double ivMaxStepWidth; /// longest step width
-
 	};
 }
-
 #endif /* HUMANOID_SBPL_HEURISTIC_H */

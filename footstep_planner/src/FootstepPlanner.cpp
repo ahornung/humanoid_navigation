@@ -51,6 +51,7 @@ namespace footstep_planner
         int max_hash_size;
         std::string heuristic_type;
         double step_cost;
+        double diff_angle_cost;
 
         // read parameters from config file:
         // - planner environment settings
@@ -60,6 +61,7 @@ namespace footstep_planner
         nh_private.param("accuracy/cell_size", ivCellSize, 0.01);
         nh_private.param("accuracy/num_angle_bins", num_angle_bins, 64);
         nh_private.param("step_cost", step_cost, 0.05);
+        nh_private.param("diff_angle_cost", diff_angle_cost, 0.0);
         nh_private.param("rfoot_frame_id", ivRFootID, ivRFootID);
         nh_private.param("lfoot_frame_id", ivLFootID, ivLFootID);
         nh_private.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
@@ -159,13 +161,15 @@ namespace footstep_planner
         }
         else if(heuristic_type == "EuclStepCostHeuristic")
         {
-            h.reset(new EuclStepCostHeuristic(ivCellSize, step_cost, max_step_width));
+            h.reset(new EuclStepCostHeuristic(ivCellSize, step_cost,
+                                              diff_angle_cost, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: euclidean distance with step "
                      "costs");
         }
         else if (heuristic_type == "PathCostHeuristic")
         {
-            h.reset(new PathCostHeuristic(ivCellSize, step_cost, max_step_width));
+            h.reset(new PathCostHeuristic(ivCellSize, step_cost,
+                                          diff_angle_cost, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");
             // keep a local ptr for visualization
@@ -201,6 +205,22 @@ namespace footstep_planner
                                                ivForwardSearch));
 
         // set up planner
+        if (ivPlannerType == "ARAPlanner")
+            ROS_INFO_STREAM("Planning with " << ivPlannerType);
+        else if (ivPlannerType == "ADPlanner")
+            ROS_INFO_STREAM("Planning with " << ivPlannerType);
+        else if (ivPlannerType == "RSTARPlanner")
+            ROS_INFO_STREAM("Planning with " << ivPlannerType);
+        else
+        {
+            ROS_ERROR_STREAM("Planner "<< ivPlannerType <<" not available / "
+                             "untested.");
+            exit(1);
+        }
+        if (ivForwardSearch)
+            ROS_INFO_STREAM("Search direction: forward planning");
+        else
+            ROS_INFO_STREAM("Search direction: backward planning");
         setupPlanner();
     }
 
@@ -214,27 +234,18 @@ namespace footstep_planner
     {
         if (ivPlannerType == "ARAPlanner")
         {
-            ROS_INFO_STREAM("Planning with " << ivPlannerType);
             ivPlannerPtr.reset(new ARAPlanner(ivPlannerEnvironmentPtr.get(),
                                               ivForwardSearch));
         }
         else if (ivPlannerType == "ADPlanner")
         {
-            ROS_INFO_STREAM("Planning with " << ivPlannerType);
             ivPlannerPtr.reset(new ADPlanner(ivPlannerEnvironmentPtr.get(),
                                              ivForwardSearch));
         }
         else if (ivPlannerType == "RSTARPlanner")
         {
-            ROS_INFO_STREAM("Planning with " << ivPlannerType);
             ivPlannerPtr.reset(new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
                                                 ivForwardSearch));
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Planner "<< ivPlannerType <<" not available / "
-                             "untested.");
-            exit(1);
         }
     }
 

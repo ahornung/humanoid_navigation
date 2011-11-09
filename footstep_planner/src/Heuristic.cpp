@@ -62,9 +62,11 @@ namespace footstep_planner
 
 	EuclStepCostHeuristic::EuclStepCostHeuristic(double cellSize,
 												 double step_cost,
+                                                 double diff_angle_cost,
 	                                             double max_step_width)
 		: Heuristic(cellSize, EUCLIDEAN_STEPCOST),
 		  ivStepCost(step_cost),
+		  ivDiffAngleCost(diff_angle_cost),
 		  ivMaxStepWidth(max_step_width)
 	{}
 
@@ -86,7 +88,8 @@ namespace footstep_planner
                                          disc_2_cont(to.getX(), ivCellSize),
                                          disc_2_cont(to.getY(), ivCellSize));
 		double expected_steps = dist / ivMaxStepWidth;
+        int diff_angle = abs(from.getTheta() - to.getTheta());
 
-		return (dist + expected_steps * ivStepCost);
+		return (dist + expected_steps * ivStepCost + diff_angle * ivDiffAngleCost);
 	}
 }

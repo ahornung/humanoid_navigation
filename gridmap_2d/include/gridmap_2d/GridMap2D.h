@@ -53,9 +53,11 @@ public:
 	void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;
 	bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 	void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
-	/// Map cells to index coordinates (image indices)
-	void mapToIndex(unsigned mx, unsigned my, unsigned& i, unsigned& j);
-	void indexToMap(unsigned i, unsigned j, unsigned& mx, unsigned& my);
+
+	/**
+	 * Inflate occupancy map by inflationRadius
+	 */
+	void inflateMap(double inflationRaduis);
 
 	/// Distance (in m) between two map coordinates (indices)
 	inline double worldDist(unsigned x1, unsigned y1, unsigned x2, unsigned y2){

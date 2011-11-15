@@ -94,6 +94,13 @@ void GridMap2D::setMap(const cv::Mat& binaryMap){
 
 }
 
+void GridMap2D::inflateMap(double inflationRadius){
+	m_binaryMap = (m_distMap <= inflationRadius );
+	// recompute distance map with new binary map:
+	cv::distanceTransform(m_binaryMap, m_distMap, CV_DIST_L2, CV_DIST_MASK_PRECISE);
+	m_distMap = m_distMap * m_mapInfo.resolution;
+}
+
 // See costmap2D for mapToWorld / worldToMap implementations:
 
 void GridMap2D::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const {

@@ -567,6 +567,50 @@ namespace footstep_planner
     void
     FootstepPlanner::setMap(boost::shared_ptr<GridMap2D> gridMap)
     {
+    	// map change detection if old map exists (currently only when sizes match!)
+    	if (ivMapPtr && ivMapPtr->size().height == gridMap->size().height
+    				 &&ivMapPtr->size().width == gridMap->size().width){
+    		ROS_INFO("Received an updated map => change detection");
+
+    		cv::Mat changedCells;
+    		// get new occupied cells only (0: occupied in binary map)
+    		// changedCells(x,y) = old(x,y) AND NOT(new(x,y))
+//    		cv::bitwise_not(gridMap->binaryMap(), changedCells);
+//    		cv::bitwise_and(ivMapPtr->binaryMap(), changedCells, changedCells);
+
+    		// to get all changed cells (new free and occupied) use XOR:
+    		cv::bitwise_xor(gridMap->binaryMap(),ivMapPtr->binaryMap(), changedCells);
+
+    		//inflate by outer foot radius:
+    		cv::bitwise_not(changedCells, changedCells); // invert for distanceTransform
+    		cv::Mat changedDistMap = cv::Mat(changedCells.size(), CV_32FC1);
+    		cv::distanceTransform(changedCells, changedDistMap, CV_DIST_L2, CV_DIST_MASK_PRECISE);
+    		double maxFootRadius = sqrt(pow(std::abs(ivOriginFootShiftX)+ivFootsizeX/2.0, 2.0) +
+    									pow(std::abs(ivOriginFootShiftY)+ivFootsizeY/2.0, 2.0))  / ivMapPtr->getResolution();
+    		changedCells = (changedDistMap <= maxFootRadius); // threshold, also invert back
+
+    		// loop over changed cells (now marked with 255 in the mask):
+    		unsigned int numChanged = 0;
+    		for (int y = 0; y < changedCells.rows; ++y){
+    			for (int x = 0; x < changedCells.cols; ++x){
+    				if (changedCells.at<uchar>(x,y) == 255){ // marked as a changed cell
+    					numChanged++;
+    					// TODO: get x,y, put in state change query
+    					// double wx,wy;
+    					//ivMapPtr->mapToWorld(x,y,wx,wy);
+    				}
+
+    			}
+
+    		}
+
+    		ROS_INFO("%d changed map cells found", numChanged);
+    	}
+
+    	// TODO: do we need to handle size changes (reinit everything)?
+    	// TODO: check if resolution stayed the same
+
+    	// store new map
         ivMapPtr.reset();
         ivMapPtr = gridMap;
         ivPlannerEnvironmentPtr->updateDistanceMap(gridMap);
@@ -601,6 +645,7 @@ namespace footstep_planner
     }
 
 
+    // TODO: remove (use occupied of environment instead)?
     bool
     FootstepPlanner::occupied(const State& u)
     {

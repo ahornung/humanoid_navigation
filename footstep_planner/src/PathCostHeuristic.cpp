@@ -62,8 +62,12 @@ namespace footstep_planner
                                      from_x, from_y);
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y)) / 1000;
         double expected_steps = dist / ivMaxStepWidth;
-        int disc_diff_angle = abs(from.getTheta() - to.getTheta());
-        double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
+        // we could replace this by working on ints (w. all normalization)
+        // int disc_diff_angle = abs(from.getTheta() - to.getTheta());
+        // double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
+        double diff_angle = 0.0;
+        if (ivDiffAngleCost > 0.0)
+        	diff_angle = std::abs(angles::shortest_angular_distance(angle_disc_2_cont(from.getTheta(), ivNumAngleBins),angle_disc_2_cont(to.getTheta(), ivNumAngleBins)));
 
         return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
     }

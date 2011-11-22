@@ -57,9 +57,11 @@ namespace footstep_planner
 
         unsigned int from_x;
         unsigned int from_y;
-        ivMapPtr->worldToMapNoBounds(disc_2_cont(from.getX(), ivCellSize),
+        // could be removed after more testing (then use ...noBounds... again)
+        bool valid = ivMapPtr->worldToMap(disc_2_cont(from.getX(), ivCellSize),
                                      disc_2_cont(from.getY(), ivCellSize),
                                      from_x, from_y);
+        assert(valid);
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y)) / 1000;
         double expected_steps = dist / ivMaxStepWidth;
         // we could replace this by working on ints (w. all normalization)

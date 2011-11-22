@@ -128,6 +128,11 @@ bool GridMap2D::worldToMap(double wx, double wy, unsigned int& mx, unsigned int&
     return false;
 }
 
+bool GridMap2D::inMapBounds(double wx, double wy) const{
+	unsigned mx, my;
+	return worldToMap(wx,wy,mx,my);
+}
+
 float GridMap2D::distanceMapAt(double wx, double wy) const{
 	unsigned mx, my;
 

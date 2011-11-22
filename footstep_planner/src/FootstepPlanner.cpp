@@ -568,7 +568,8 @@ namespace footstep_planner
     FootstepPlanner::setMap(boost::shared_ptr<GridMap2D> gridMap)
     {
     	// map change detection if old map exists (currently only when sizes match!)
-    	if (ivMapPtr && ivMapPtr->size().height == gridMap->size().height
+    	if (ivMapPtr && ivMapPtr->getResolution() == gridMap->getResolution()
+    				 && ivMapPtr->size().height == gridMap->size().height
     				 &&ivMapPtr->size().width == gridMap->size().width){
     		ROS_INFO("Received an updated map => change detection");
 
@@ -608,7 +609,6 @@ namespace footstep_planner
     	}
 
     	// TODO: do we need to handle size changes (reinit everything)?
-    	// TODO: check if resolution stayed the same
 
     	// store new map
         ivMapPtr.reset();

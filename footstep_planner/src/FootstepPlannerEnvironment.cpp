@@ -184,6 +184,8 @@ namespace footstep_planner
         PlanningState* new_state = new PlanningState(s);
 
         int state_id = ivStateId2State.size();
+        assert(state_id < numeric_limits<int>::max());
+
         new_state->setId(state_id);
         ivStateId2State.push_back(new_state);
 
@@ -255,6 +257,8 @@ namespace footstep_planner
     {
         double x = disc_2_cont(s.getX(), ivCellSize);
         double y = disc_2_cont(s.getY(), ivCellSize);
+        if (ivMapPtr->isOccupiedAt(x,y))
+        	return true;
         double theta = angle_disc_2_cont(s.getTheta(), ivNumAngleBins);
         double theta_cos = cos(theta);
         double theta_sin = sin(theta);
@@ -480,17 +484,9 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetFromToHeuristic(int FromStateID,
                                                    int ToStateID)
     {
-    	unsigned int from_x;
-    	unsigned int from_y;
+
     	assert(FromStateID < ivStateId2State.size());
     	const PlanningState* from = ivStateId2State[FromStateID];
-
-    	bool valid = ivMapPtr->worldToMap(disc_2_cont(from->getX(), ivCellSize),
-                                          disc_2_cont(from->getY(), ivCellSize),
-    	                                  from_x, from_y);
-    	// TODO: "from" is sometimes invalid (out of map)?
-    	if (!valid)
-    		return 1000000;
 
     	return cvMmScale * ivHeuristicConstPtr->getHValue(*from, *ivStateId2State[ToStateID]);
     }

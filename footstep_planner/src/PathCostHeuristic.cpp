@@ -69,7 +69,11 @@ namespace footstep_planner
         // double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
         double diff_angle = 0.0;
         if (ivDiffAngleCost > 0.0)
-        	diff_angle = std::abs(angles::shortest_angular_distance(angle_disc_2_cont(from.getTheta(), ivNumAngleBins),angle_disc_2_cont(to.getTheta(), ivNumAngleBins)));
+        {
+        	diff_angle = std::abs(angles::shortest_angular_distance(
+        	        angle_disc_2_cont(from.getTheta(), ivNumAngleBins),
+        	        angle_disc_2_cont(to.getTheta(), ivNumAngleBins)));
+        }
 
         return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
     }

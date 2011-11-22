@@ -560,19 +560,11 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetFromToHeuristic(int FromStateID,
                                                    int ToStateID)
     {
-
     	assert(FromStateID < ivStateId2State.size());
+
     	const PlanningState* from = ivStateId2State[FromStateID];
-
-    	bool valid = ivMapPtr->worldToMap(disc_2_cont(from->getX(), ivCellSize),
-                                          disc_2_cont(from->getY(), ivCellSize),
-    	                                  from_x, from_y);
-    	// TODO: "from" is sometimes invalid (out of map)?
-    	if (!valid)
-    		return 10000000;
-
     	return cvMmScale * ivHeuristicConstPtr->getHValue(
-    			*from, *ivStateId2State[ToStateID]);
+    	        *from, *ivStateId2State[ToStateID]);
     }
 
 

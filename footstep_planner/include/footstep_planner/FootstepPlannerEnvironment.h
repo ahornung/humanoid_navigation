@@ -24,8 +24,8 @@
 #ifndef HUMANOID_SBPL_FOOTSTEPPLANNERENVIRONMENT_H
 #define HUMANOID_SBPL_FOOTSTEPPLANNERENVIRONMENT_H
 
-#define FLOAT_TO_INT_MULT 1
 
+#include <vector>
 
 #include <boost/tr1/unordered_map.hpp>
 
@@ -35,8 +35,6 @@
 #include <footstep_planner/Footstep.h>
 #include <footstep_planner/PlanningState.h>
 #include <sbpl/headers.h>
-
-#include <vector>
 
 
 namespace footstep_planner
@@ -69,7 +67,7 @@ namespace footstep_planner
                 bool   forward_search);
         virtual ~FootstepPlannerEnvironment();
 
-        void updateDistanceMap(const boost::shared_ptr<GridMap2D> map);
+        void updateDistanceMap(GridMap2DPtr map);
 
         void setUp(const State& start_left, const State& start_right,
                    const State& goal_left, const State& goal_right);
@@ -121,39 +119,17 @@ namespace footstep_planner
 
         bool reachable(const PlanningState& from, const PlanningState& to);
 
+        void getPredsOfGridCells(
+        		const std::vector<State>& changed_states,
+        		std::vector<int>* pred_ids);
+        void getSuccsOfGridCells(
+        		const std::vector<State>& changed_states,
+        		std::vector<int>* succ_ids);
+
         /// to scale continuous values in meter to discrete mm
         static const int cvMmScale = 1000;
 
     private:
-        int ivGoalFootIdLeft;
-        int ivGoalFootIdRight;
-        int ivStartFootIdLeft;
-        int ivStartFootIdRight;
-        int ivHashFaultCounter;
-
-        std::vector<const PlanningState*>  ivStateId2State;
-        std::vector<const PlanningState*>* ivpStateHash2State;
-
-        const std::vector<Footstep>& ivFootstepSet;
-        const boost::shared_ptr<Heuristic> ivHeuristicConstPtr;
-
-        const double ivFootSeparation;
-        const double ivOriginFootShiftX, ivOriginFootShiftY;
-        const double ivFootsizeX, ivFootsizeY;
-        const int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta; /// discretized int in cell size
-        const int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta; /// discretized int in cell size
-        const int    ivStepCost; /// discretized int in mm
-        const int    ivCollisionCheckAccuracy;
-        const int    ivHashTableSize;
-        const double ivCellSize;
-        const int    ivNumAngleBins;
-        const bool   ivForwardSearch;
-
-        boost::shared_ptr<GridMap2D> ivMapPtr;
-
-        exp_states_t ivExpandedStates;
-
-
         int  stepCost(const PlanningState& a, const PlanningState& b);
         bool occupied(const PlanningState& s);
         void calculateHashTag(const PlanningState& s);
@@ -177,8 +153,39 @@ namespace footstep_planner
 
         struct less
         {
-            bool operator ()(const PlanningState* a, const PlanningState* b) const;
+            bool operator ()(const PlanningState* a,
+                             const PlanningState* b) const;
         };
+
+		int ivGoalFootIdLeft;
+        int ivGoalFootIdRight;
+        int ivStartFootIdLeft;
+        int ivStartFootIdRight;
+        int ivHashFaultCounter;
+
+        std::vector<const PlanningState*>  ivStateId2State;
+        std::vector<const PlanningState*>* ivpStateHash2State;
+
+        const std::vector<Footstep>& ivFootstepSet;
+        const boost::shared_ptr<Heuristic> ivHeuristicConstPtr;
+
+        const double ivFootSeparation;
+        const double ivOriginFootShiftX, ivOriginFootShiftY;
+        const double ivFootsizeX, ivFootsizeY;
+        /// discretized int in cell size
+        const int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
+        /// discretized int in cell size
+        const int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
+        const int    ivStepCost; /// discretized int in mm
+        const int    ivCollisionCheckAccuracy;
+        const int    ivHashTableSize;
+        const double ivCellSize;
+        const int    ivNumAngleBins;
+        const bool   ivForwardSearch;
+
+        boost::shared_ptr<GridMap2D> ivMapPtr;
+
+        exp_states_t ivExpandedStates;
     };
 }
 

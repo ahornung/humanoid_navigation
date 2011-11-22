@@ -23,6 +23,7 @@
 
 #include <footstep_planner/FootstepPlannerEnvironment.h>
 
+
 namespace footstep_planner
 {
     FootstepPlannerEnvironment::FootstepPlannerEnvironment(
@@ -93,7 +94,8 @@ namespace footstep_planner
     {
         if (ivpStateHash2State == NULL)
         {
-            ivpStateHash2State = new std::vector<const PlanningState*>[ivHashTableSize];
+            ivpStateHash2State =
+            		new std::vector<const PlanningState*>[ivHashTableSize];
         }
 
         int start_foot_id_left = ivStartFootIdLeft;
@@ -239,7 +241,8 @@ namespace footstep_planner
 
 
     int
-    FootstepPlannerEnvironment::stepCost(const PlanningState& a, const PlanningState& b)
+    FootstepPlannerEnvironment::stepCost(const PlanningState& a,
+	                                     const PlanningState& b)
     {
         if (a == b)
             return 0;
@@ -283,7 +286,8 @@ namespace footstep_planner
         const PlanningState* planning_state = ivStateId2State[id];
         s->x = disc_2_cont(planning_state->getX(), ivCellSize);
         s->y = disc_2_cont(planning_state->getY(), ivCellSize);
-        s->theta = angle_disc_2_cont(planning_state->getTheta(), ivNumAngleBins);
+        s->theta = angle_disc_2_cont(planning_state->getTheta(),
+                                     ivNumAngleBins);
         s->leg = planning_state->getLeg();
 
         return true;
@@ -291,14 +295,16 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::updateDistanceMap(const boost::shared_ptr<GridMap2D> map)
+    FootstepPlannerEnvironment::updateDistanceMap(GridMap2DPtr map)
     {
         ivMapPtr.reset();
         ivMapPtr = map;
 
         if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
         {
-            boost::shared_ptr<PathCostHeuristic> h = boost::dynamic_pointer_cast<PathCostHeuristic>(ivHeuristicConstPtr);
+            boost::shared_ptr<PathCostHeuristic> h =
+            		boost::dynamic_pointer_cast<PathCostHeuristic>(
+            				ivHeuristicConstPtr);
             h->setMap(map);
         }
 
@@ -310,7 +316,8 @@ namespace footstep_planner
     {
         if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
         {
-            boost::shared_ptr<PathCostHeuristic> h = boost::dynamic_pointer_cast<PathCostHeuristic>(ivHeuristicConstPtr);
+            boost::shared_ptr<PathCostHeuristic> h =
+            		boost::dynamic_pointer_cast<PathCostHeuristic>(ivHeuristicConstPtr);
             MDPConfig MDPCfg;
             InitializeMDPCfg(&MDPCfg);
             const PlanningState* start = ivStateId2State[MDPCfg.startstateid];
@@ -421,7 +428,8 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlannerEnvironment::reachable(const PlanningState& from, const PlanningState& to)
+    FootstepPlannerEnvironment::reachable(const PlanningState& from,
+	                                      const PlanningState& to)
     {
         bool in_range_x = false;
         bool in_range_y = false;
@@ -471,6 +479,74 @@ namespace footstep_planner
 
 
     void
+    FootstepPlannerEnvironment::getPredsOfGridCells(
+	        const std::vector<State>& changed_states,
+	        std::vector<int>* pred_ids)
+    {
+    	pred_ids->clear();
+
+		std::vector<State>::const_iterator state_iter = changed_states.begin();
+		for (; state_iter != changed_states.end(); state_iter++)
+		{
+			PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
+			                ivHashTableSize);
+
+			std::vector<Footstep>::const_iterator footstep_set_iter;
+			for(footstep_set_iter = ivFootstepSet.begin();
+                footstep_set_iter != ivFootstepSet.end();
+                footstep_set_iter++)
+			{
+				PlanningState successor =
+						footstep_set_iter->revertMeOnThisState(s);
+				if (occupied(successor))
+					continue;
+
+				const PlanningState* successor_hash_entry =
+						getHashEntry(successor);
+				if (successor_hash_entry == NULL)
+					continue;
+
+				pred_ids->push_back(successor_hash_entry->getId());
+			}
+		}
+    }
+
+
+    void
+    FootstepPlannerEnvironment::getSuccsOfGridCells(
+	        const std::vector<State>& changed_states,
+	        std::vector<int>* succ_ids)
+    {
+    	succ_ids->clear();
+
+		std::vector<State>::const_iterator state_iter = changed_states.begin();
+		for (; state_iter != changed_states.end(); state_iter++)
+		{
+			PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
+			                ivHashTableSize);
+
+			std::vector<Footstep>::const_iterator footstep_set_iter;
+			for(footstep_set_iter = ivFootstepSet.begin();
+			    footstep_set_iter != ivFootstepSet.end();
+			    footstep_set_iter++)
+			{
+				PlanningState successor =
+						footstep_set_iter->performMeOnThisState(s);
+				if (occupied(successor))
+					continue;
+
+				const PlanningState* successor_hash_entry =
+						getHashEntry(successor);
+				if (successor_hash_entry == NULL)
+					continue;
+
+				succ_ids->push_back(successor_hash_entry->getId());
+			}
+		}
+    }
+
+
+    void
     FootstepPlannerEnvironment::printHashStatistics()
     {
 #if DEBUG_HASH
@@ -488,7 +564,15 @@ namespace footstep_planner
     	assert(FromStateID < ivStateId2State.size());
     	const PlanningState* from = ivStateId2State[FromStateID];
 
-    	return cvMmScale * ivHeuristicConstPtr->getHValue(*from, *ivStateId2State[ToStateID]);
+    	bool valid = ivMapPtr->worldToMap(disc_2_cont(from->getX(), ivCellSize),
+                                          disc_2_cont(from->getY(), ivCellSize),
+    	                                  from_x, from_y);
+    	// TODO: "from" is sometimes invalid (out of map)?
+    	if (!valid)
+    		return 10000000;
+
+    	return cvMmScale * ivHeuristicConstPtr->getHValue(
+    			*from, *ivStateId2State[ToStateID]);
     }
 
 
@@ -531,11 +615,13 @@ namespace footstep_planner
         footstep_set_iter = ivFootstepSet.begin();
         for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
         {
-            const PlanningState predecessor = footstep_set_iter->revertMeOnThisState(*current);
+            const PlanningState predecessor =
+            		footstep_set_iter->revertMeOnThisState(*current);
             if (occupied(predecessor))
                 continue;
 
-            const PlanningState* predecessor_hash_entry = getHashEntry(predecessor);
+            const PlanningState* predecessor_hash_entry =
+            		getHashEntry(predecessor);
             if (predecessor_hash_entry == NULL)
                 predecessor_hash_entry = createNewHashEntry(predecessor);
 
@@ -585,7 +671,8 @@ namespace footstep_planner
         footstep_set_iter = ivFootstepSet.begin();
         for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
         {
-            PlanningState successor = footstep_set_iter->performMeOnThisState(*current);
+            PlanningState successor =
+            		footstep_set_iter->performMeOnThisState(*current);
             if (occupied(successor))
                 continue;
 

@@ -33,6 +33,7 @@
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
 #include <footstep_planner/FootstepPlannerEnvironment.h>
+#include <footstep_planner/PlanningStateChangeQuery.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
@@ -71,7 +72,7 @@ namespace footstep_planner
         bool setGoal(float x, float y, float theta);
         bool setStart(const geometry_msgs::PoseStampedConstPtr& start_pose);
         bool setStart(float x, float y, float theta);
-        void setMap(boost::shared_ptr<GridMap2D> gridMap);
+        void setMap(GridMap2DPtr gridMap);
         void setMarkerNamespace(const std::string& ns) { ivMarkerNamespace = ns; };
         void setMaxSearchTime(int search_time) { ivMaxSearchTime = search_time; };
 
@@ -147,6 +148,7 @@ namespace footstep_planner
         int    ivCollisionCheckAccuracy;
         double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
         bool   ivStartPoseSetUp, ivGoalPoseSetUp;
+        bool   ivPlanExists;
         int    ivLastMarkerMsgSize;
         double ivPathCost;
         double ivCellSize;
@@ -154,6 +156,9 @@ namespace footstep_planner
         double ivMaxSearchTime;
         double ivInitialEpsilon;
         bool   ivForwardSearch;
+        int    ivNumAngleBins;
+
+        unsigned int ivChangedStatesLimit;
 
         std::string ivPlannerType;
         std::string ivRFootID;

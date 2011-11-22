@@ -28,6 +28,7 @@ set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
     src/Heuristic.cpp 
     src/helper.cpp
     src/PathCostHeuristic.cpp
+    src/PlanningStateChangeQuery.cpp
 )
 
 rosbuild_add_library(${PROJECT_NAME} ${FOOTSTEP_PLANNER_FILES})

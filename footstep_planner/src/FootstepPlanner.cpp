@@ -30,6 +30,7 @@ namespace footstep_planner
     FootstepPlanner::FootstepPlanner()
         : ivStartPoseSetUp(false),
           ivGoalPoseSetUp(false),
+          ivPlanExists(false),
           ivLastMarkerMsgSize(0),
           ivPathCost(0),
           ivRFootID("/RFoot_link"),
@@ -47,32 +48,37 @@ namespace footstep_planner
         ivPathVisPub = nh_private.advertise<nav_msgs::Path>("path", 1);
         ivStartPoseVisPub = nh_private.advertise<geometry_msgs::PoseStamped>("start", 1);
 
-        int num_angle_bins;
         int max_hash_size;
+        int changed_states_limit;
         std::string heuristic_type;
         double step_cost;
         double diff_angle_cost;
 
         // read parameters from config file:
         // - planner environment settings
-        nh_private.param("heuristic_type", heuristic_type, std::string("EuclideanHeuristic"));
+        nh_private.param("heuristic_type", heuristic_type,
+        		std::string("EuclideanHeuristic"));
         nh_private.param("max_hash_size", max_hash_size, 65536);
         nh_private.param("accuracy/collision_check", ivCollisionCheckAccuracy, 2);
         nh_private.param("accuracy/cell_size", ivCellSize, 0.01);
-        nh_private.param("accuracy/num_angle_bins", num_angle_bins, 64);
+        nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 64);
         nh_private.param("step_cost", step_cost, 0.05);
         nh_private.param("diff_angle_cost", diff_angle_cost, 0.0);
         nh_private.param("rfoot_frame_id", ivRFootID, ivRFootID);
         nh_private.param("lfoot_frame_id", ivLFootID, ivLFootID);
         nh_private.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
         nh_private.param("accuracy/footstep/y", ivFootstepAccuracyY, 0.01);
-        nh_private.param("accuracy/footstep/theta", ivFootstepAccuracyTheta, 0.15);
-        nh_private.param("planner_type", ivPlannerType, std::string("ARAPlanner"));
+        nh_private.param("accuracy/footstep/theta", ivFootstepAccuracyTheta,
+        		0.15);
+        nh_private.param("planner_type", ivPlannerType,
+        		std::string("ARAPlanner"));
         nh_private.param("search_until_first_solution",
         		ivSearchUntilFirstSolution, false);
         nh_private.param("allocated_time", ivMaxSearchTime, 7.0);
         nh_private.param("forward_search", ivForwardSearch, false);
         nh_private.param("initial_epsilon", ivInitialEpsilon, 3.0);
+        nh_private.param("changed_states_limit", changed_states_limit, 5000);
+		ivChangedStatesLimit = (unsigned int) changed_states_limit;
 
         // - footstep settings
         nh_private.param("foot/size/x", ivFootsizeX, 0.16);
@@ -130,7 +136,7 @@ namespace footstep_planner
             double y = (double)discretization_list_y[i];
             double theta = (double)discretization_list_theta[i];
 
-            Footstep f(x, y, theta, ivCellSize, num_angle_bins, max_hash_size,
+            Footstep f(x, y, theta, ivCellSize, ivNumAngleBins, max_hash_size,
                        ivFootSeparation);
             ivFootstepSet.push_back(f);
 
@@ -144,24 +150,24 @@ namespace footstep_planner
         int max_footstep_x = cont_2_disc(ivMaxFootstepX, ivCellSize);
         int max_footstep_y = cont_2_disc(ivMaxFootstepY, ivCellSize);
         int max_footstep_theta = angle_cont_2_disc(ivMaxFootstepTheta,
-                                                   num_angle_bins);
+                                                   ivNumAngleBins);
         int max_inv_footstep_x = cont_2_disc(ivMaxInvFootstepX,
                                                       ivCellSize);
         int max_inv_footstep_y = cont_2_disc(ivMaxInvFootstepY,
                                                       ivCellSize);
         int max_inv_footstep_theta = angle_cont_2_disc(ivMaxInvFootstepTheta,
-                                                       num_angle_bins);
+                                                       ivNumAngleBins);
 
         // initialize the heuristic
         boost::shared_ptr<Heuristic> h;
         if (heuristic_type == "EuclideanHeuristic")
         {
-        	h.reset(new EuclideanHeuristic(ivCellSize, num_angle_bins));
+        	h.reset(new EuclideanHeuristic(ivCellSize, ivNumAngleBins));
         	ROS_INFO("FootstepPlanner heuristic: euclidean distance");
         }
         else if(heuristic_type == "EuclStepCostHeuristic")
         {
-            h.reset(new EuclStepCostHeuristic(ivCellSize, num_angle_bins,
+            h.reset(new EuclStepCostHeuristic(ivCellSize, ivNumAngleBins,
                                               step_cost, diff_angle_cost,
                                               max_step_width));
             ROS_INFO("FootstepPlanner heuristic: euclidean distance with step "
@@ -169,7 +175,7 @@ namespace footstep_planner
         }
         else if (heuristic_type == "PathCostHeuristic")
         {
-            h.reset(new PathCostHeuristic(ivCellSize, num_angle_bins, step_cost,
+            h.reset(new PathCostHeuristic(ivCellSize, ivNumAngleBins, step_cost,
                                           diff_angle_cost, max_step_width));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");
@@ -202,7 +208,7 @@ namespace footstep_planner
                                                ivCollisionCheckAccuracy,
                                                max_hash_size,
                                                ivCellSize,
-                                               num_angle_bins,
+                                               ivNumAngleBins,
                                                ivForwardSearch));
 
         // set up planner
@@ -299,10 +305,10 @@ namespace footstep_planner
                      solution_state_ids.size(),
             		 (ros::WallTime::now()-startTime).toSec());
 
-            bool success = extractSolution(solution_state_ids);
+            ivPlanExists = extractSolution(solution_state_ids);
             broadcastExpandedNodesVis();
 
-            if (!success)
+            if (!ivPlanExists)
             {
                 ROS_ERROR("extracting path failed\n\n");
                 return false;
@@ -311,7 +317,6 @@ namespace footstep_planner
             ROS_INFO("Expanded states: %i total / %i new",
                      ivPlannerEnvironmentPtr->getNumExpandedStates(),
                      ivPlannerPtr->get_n_expands());
-
             ROS_INFO("Final eps: %f", ivPlannerPtr->get_final_epsilon());
             ROS_INFO("Path cost: %f (%i)", ivPathCost, path_cost);
 
@@ -565,47 +570,85 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::setMap(boost::shared_ptr<GridMap2D> gridMap)
+    FootstepPlanner::setMap(GridMap2DPtr gridMap)
     {
-    	// map change detection if old map exists (currently only when sizes match!)
-    	if (ivMapPtr && ivMapPtr->getResolution() == gridMap->getResolution()
-    				 && ivMapPtr->size().height == gridMap->size().height
-    				 &&ivMapPtr->size().width == gridMap->size().width){
+    	// map change detection if old map exists (currently only when sizes
+    	// match!) and a plan was found on the old map
+    	if (ivPlannerType == "ADPlanner" &&
+    	    ivPlanExists &&
+    	    ivMapPtr &&
+    	    ivMapPtr->getResolution() == gridMap->getResolution() &&
+    	    ivMapPtr->size().height == gridMap->size().height &&
+    	    ivMapPtr->size().width == gridMap->size().width)
+    	{
     		ROS_INFO("Received an updated map => change detection");
 
-    		cv::Mat changedCells;
+    		std::vector<State> changed_states;
+    		cv::Mat changed_cells;
     		// get new occupied cells only (0: occupied in binary map)
     		// changedCells(x,y) = old(x,y) AND NOT(new(x,y))
 //    		cv::bitwise_not(gridMap->binaryMap(), changedCells);
 //    		cv::bitwise_and(ivMapPtr->binaryMap(), changedCells, changedCells);
 
     		// to get all changed cells (new free and occupied) use XOR:
-    		cv::bitwise_xor(gridMap->binaryMap(),ivMapPtr->binaryMap(), changedCells);
+    		cv::bitwise_xor(gridMap->binaryMap(), ivMapPtr->binaryMap(),
+    		                changed_cells);
 
     		//inflate by outer foot radius:
-    		cv::bitwise_not(changedCells, changedCells); // invert for distanceTransform
-    		cv::Mat changedDistMap = cv::Mat(changedCells.size(), CV_32FC1);
-    		cv::distanceTransform(changedCells, changedDistMap, CV_DIST_L2, CV_DIST_MASK_PRECISE);
-    		double maxFootRadius = sqrt(pow(std::abs(ivOriginFootShiftX)+ivFootsizeX/2.0, 2.0) +
-    									pow(std::abs(ivOriginFootShiftY)+ivFootsizeY/2.0, 2.0))  / ivMapPtr->getResolution();
-    		changedCells = (changedDistMap <= maxFootRadius); // threshold, also invert back
+    		cv::bitwise_not(changed_cells, changed_cells); // invert for distanceTransform
+    		cv::Mat changedDistMap = cv::Mat(changed_cells.size(), CV_32FC1);
+    		cv::distanceTransform(changed_cells, changedDistMap,
+    		                      CV_DIST_L2, CV_DIST_MASK_PRECISE);
+    		double max_foot_radius = sqrt(
+    				pow(std::abs(ivOriginFootShiftX)+ivFootsizeX/2.0, 2.0) +
+    				pow(std::abs(ivOriginFootShiftY)+ivFootsizeY/2.0, 2.0)) /
+    				ivMapPtr->getResolution();
+    		changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
 
     		// loop over changed cells (now marked with 255 in the mask):
-    		unsigned int numChanged = 0;
-    		for (int y = 0; y < changedCells.rows; ++y){
-    			for (int x = 0; x < changedCells.cols; ++x){
-    				if (changedCells.at<uchar>(x,y) == 255){ // marked as a changed cell
-    					numChanged++;
-    					// TODO: get x,y, put in state change query
-    					// double wx,wy;
-    					//ivMapPtr->mapToWorld(x,y,wx,wy);
+    		unsigned int num_changed = 0;
+    		double wx, wy;
+    		State s;
+    		for (int y = 0; y < changed_cells.rows; ++y)
+    		{
+    			for (int x = 0; x < changed_cells.cols; ++x)
+    			{
+    				if (changed_cells.at<uchar>(x,y) == 255) // marked as a changed cell
+    				{
+    					num_changed++;
+						ivMapPtr->mapToWorld(x, y, wx, wy);
+						s.x = wx;
+						s.y = wy;
+						for (int theta = 0; theta < ivNumAngleBins; ++theta)
+						{
+							s.theta = angle_disc_2_cont(theta, ivNumAngleBins);
+							changed_states.push_back(s);
+						}
     				}
-
     			}
-
     		}
+    		ROS_INFO("%d changed map cells found", num_changed);
 
-    		ROS_INFO("%d changed map cells found", numChanged);
+    		if (num_changed <= ivChangedStatesLimit)
+    		{
+    			ROS_INFO("Use old information in new planning taks");
+				std::vector<int> changed_states_ids;
+				if (ivForwardSearch)
+				{
+					ivPlannerEnvironmentPtr->getSuccsOfGridCells(changed_states,
+							&changed_states_ids);
+				}
+				else
+				{
+					ivPlannerEnvironmentPtr->getPredsOfGridCells(changed_states,
+							&changed_states_ids);
+				}
+				boost::shared_ptr<ADPlanner> h =
+						boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
+				h->costs_changed(PlanningStateChangeQuery(&changed_states_ids));
+    		}
+    		else
+    			ROS_INFO("Reset old information in new planning taks");
     	}
 
     	// TODO: do we need to handle size changes (reinit everything)?

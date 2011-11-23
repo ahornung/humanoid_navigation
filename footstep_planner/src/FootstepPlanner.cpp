@@ -212,12 +212,10 @@ namespace footstep_planner
                                                ivForwardSearch));
 
         // set up planner
-        if (ivPlannerType == "ARAPlanner")
+        if (ivPlannerType == "ARAPlanner" || ivPlannerType == "ADPlanner"
+        		|| ivPlannerType == "RSTARPlanner"){
             ROS_INFO_STREAM("Planning with " << ivPlannerType);
-        else if (ivPlannerType == "ADPlanner")
-            ROS_INFO_STREAM("Planning with " << ivPlannerType);
-        else if (ivPlannerType == "RSTARPlanner")
-            ROS_INFO_STREAM("Planning with " << ivPlannerType);
+        }
         else
         {
             ROS_ERROR_STREAM("Planner "<< ivPlannerType <<" not available / "

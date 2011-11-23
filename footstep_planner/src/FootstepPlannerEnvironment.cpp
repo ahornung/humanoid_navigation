@@ -582,11 +582,10 @@ namespace footstep_planner
     {
         PredIDV->clear();
         CostV->clear();
-        PredIDV->reserve(ivFootstepSet.size());
-        CostV->reserve(ivFootstepSet.size());
 
         ivExpandedStates.push_back(TargetStateID);
 
+        assert(TargetStateID < ivStateId2State.size());
         const PlanningState* current = ivStateId2State[TargetStateID];
         if (closeToStart(*current))
         {
@@ -603,6 +602,8 @@ namespace footstep_planner
             return;
         }
 
+        PredIDV->reserve(ivFootstepSet.size());
+        CostV->reserve(ivFootstepSet.size());
         std::vector<Footstep>::const_iterator footstep_set_iter;
         footstep_set_iter = ivFootstepSet.begin();
         for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
@@ -638,11 +639,10 @@ namespace footstep_planner
     {
         SuccIDV->clear();
         CostV->clear();
-        SuccIDV->reserve(ivFootstepSet.size());
-        CostV->reserve(ivFootstepSet.size());
 
         ivExpandedStates.push_back(SourceStateID);
 
+        assert(SourceStateID < ivStateId2State.size());
         const PlanningState* current = ivStateId2State[SourceStateID];
         if (closeToGoal(*current))
         {
@@ -659,6 +659,8 @@ namespace footstep_planner
             return;
         }
 
+        SuccIDV->reserve(ivFootstepSet.size());
+        CostV->reserve(ivFootstepSet.size());
         std::vector<Footstep>::const_iterator footstep_set_iter;
         footstep_set_iter = ivFootstepSet.begin();
         for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
@@ -677,6 +679,177 @@ namespace footstep_planner
             CostV->push_back(cost);
         }
     }
+
+    void
+    FootstepPlannerEnvironment::GetRandomSuccsatDistance(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CLowV)
+    {
+    	//number of random neighbors
+    	int nNumofNeighs = 10;
+    	//distance at which the neighbors are generated
+    	int nDist_c = 100;
+
+    	assert(SourceStateID < ivStateId2State.size());
+    	const PlanningState* currentState = ivStateId2State[SourceStateID];
+
+    	//goal state should be absorbing
+    	if (closeToGoal(*currentState))
+    		return;
+
+    	//get the successors
+    	bool bSuccs = true;
+    	GetRandomNeighs(currentState, SuccIDV, CLowV, nNumofNeighs, nDist_c, bSuccs);
+    }
+
+    void
+    FootstepPlannerEnvironment::GetRandomPredsatDistance(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CLowV)
+    {
+    	//number of random neighbors
+    	int nNumofNeighs = 10;
+    	//distance at which the neighbors are generated
+    	int nDist_c = 100;
+
+    	assert(TargetStateID < ivStateId2State.size());
+    	const PlanningState* currentState = ivStateId2State[TargetStateID];
+
+    	//start state should be absorbing
+    	if(closeToStart(*currentState))
+    		return;
+
+    	//get the predecessors
+    	bool bSuccs = false;
+    	GetRandomNeighs(currentState, PredIDV, CLowV, nNumofNeighs, nDist_c, bSuccs);
+
+    }
+
+    //generates nNumofNeighs random neighbors of cell <X,Y> at distance nDist_c (measured in cells)
+    //it will also generate goal if within this distance as an additional neighbor
+    //bSuccs is set to true if we are computing successor states, otherwise it is Preds
+    // (see fct. implemented in environment_nav2D)
+    void FootstepPlannerEnvironment::GetRandomNeighs(const PlanningState* currentState, std::vector<int>* NeighIDV, std::vector<int>* CLowV, int nNumofNeighs, int nDist_c, bool bSuccs)
+    {
+
+    	//clear the successor array
+    	NeighIDV->clear();
+    	CLowV->clear();
+
+    	//get X, Y for the states
+    	int X = currentState->getX();
+    	int Y = currentState->getY();
+
+    	//iterate through random actions
+    	for (int i = 0, nAttempts = 0; i < nNumofNeighs && nAttempts < 5*nNumofNeighs; i++, nAttempts++)
+    	{
+    		int dX = 0;
+    		int dY = 0;
+
+    		//pick a direction
+    		float fDir = (float)(2*PI_CONST*(((double)rand())/RAND_MAX));
+
+    		//compute the successor that result from following this direction until one of the coordinates reaches the desired distance
+    		//decide whether |dX| = dist or |dY| = dist
+    		float fRadius = 0;
+    		if(fabs(cos(fDir)) > fabs(sin(fDir)))
+    		{
+    			fRadius = (float)((nDist_c+0.5)/fabs(cos(fDir)));
+    		}
+    		else
+    		{
+    			fRadius = (float)((nDist_c+0.5)/fabs(sin(fDir)));
+    		}
+
+    		dX = (int)(fRadius*cos(fDir));
+    		dY = (int)(fRadius*sin(fDir));
+
+    		if((fabs((float)dX) < nDist_c && fabs((float)dY) < nDist_c) || fabs((float)dX) > nDist_c ||
+    				fabs((float)dY) > nDist_c)
+    		{
+    			SBPL_ERROR("ERROR in EnvNav2D genneighs function: dX=%d dY=%d\n", dX, dY);
+    			throw new SBPL_Exception();
+    		}
+
+    		//get the coords of the state
+    		int newX = X + dX;
+    		int newY = Y + dY;
+    		// TODO: random theta for orientation and leg
+    		int newTheta = angle_cont_2_disc(fDir, ivNumAngleBins);
+    		PlanningState random_state(newX, newY, newTheta, RIGHT, ivHashTableSize);
+
+    		//skip the invalid cells
+    		if(occupied(random_state))
+    		{
+    			i--;
+    			continue;
+    		}
+
+    		//get the state
+            const PlanningState* random_hash_entry = getHashEntry(random_state);
+            if (random_hash_entry == NULL)
+            	random_hash_entry = createNewHashEntry(random_state);
+
+    		//compute clow
+    		int clow;
+    		if(bSuccs)
+    			clow = GetFromToHeuristic(currentState->getId(), random_hash_entry->getId());
+    		else
+    			clow = GetFromToHeuristic(random_hash_entry->getId(), currentState->getId());
+
+    		//insert it into the list
+    		NeighIDV->push_back(random_hash_entry->getId());
+    		CLowV->push_back(clow);
+
+    	}
+
+    	//see if the goal/start belongs to the inside area and if yes then add it to Neighs as well
+    	// NOTE: "goal check" for backward planning
+    	const PlanningState* goal_left = NULL;
+    	const PlanningState* goal_right = NULL;
+    	if (bSuccs){
+    		goal_left = ivStateId2State[ivGoalFootIdLeft];
+    		goal_right = ivStateId2State[ivGoalFootIdLeft];
+    	} else {
+    		goal_left = ivStateId2State[ivStartFootIdLeft];
+    		goal_right = ivStateId2State[ivStartFootIdLeft];
+    	}
+
+
+    	//add left if within the distance
+    	if(std::abs(goal_left->getX() - X) <= nDist_c && std::abs(goal_left->getY() - Y) <= nDist_c)
+    	{
+    		//compute clow
+    		int clow;
+    		int desstateID = goal_left->getId();
+    		if(bSuccs)
+    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
+    		else
+    			clow = GetFromToHeuristic(desstateID, currentState->getId());
+
+    		NeighIDV->push_back(desstateID);
+    		CLowV->push_back(clow);
+    	}
+
+    	//add right if within the distance
+    	if(std::abs(goal_right->getX() - X) <= nDist_c && std::abs(goal_right->getY() - Y) <= nDist_c)
+    	{
+    		//compute clow
+    		int clow;
+    		int desstateID = goal_right->getId();
+    		if(bSuccs)
+    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
+    		else
+    			clow = GetFromToHeuristic(desstateID, currentState->getId());
+
+    		NeighIDV->push_back(desstateID);
+    		CLowV->push_back(clow);
+    	}
+    }
+
+	bool
+	FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
+	{
+		// TODO: check if needed
+		return (StateID1 == StateID2);
+	}
+
 
 
     bool

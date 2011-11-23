@@ -26,7 +26,6 @@
 
 
 #include <vector>
-
 #include <boost/tr1/unordered_map.hpp>
 
 #include <footstep_planner/helper.h>
@@ -103,6 +102,20 @@ namespace footstep_planner
         void GetSuccs(int SourceStateID, std::vector<int> *SuccIDV, \
                       std::vector<int> *CostV);
 
+        /**
+         * \brief Mainly used for RStar: generate succs/preds at some domain-dependent distance.
+         * The number of generated succs/preds is up to the environment.
+         */
+        virtual void GetRandomSuccsatDistance(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CLowV);
+
+        /**
+         * \brief Mainly used for RStar: generate succs/preds at some domain-dependent distance.
+         * The number of generated succs/preds is up to the environment.
+         */
+        virtual void GetRandomPredsatDistance(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CLowV);
+
+    	 /// @return true if two states meet the same condition, used for R*
+        bool AreEquivalent(int StateID1, int StateID2);
         bool InitializeEnv(const char *sEnvFile);
 
         bool InitializeMDPCfg(MDPConfig *MDPCfg);
@@ -133,6 +146,7 @@ namespace footstep_planner
         int  stepCost(const PlanningState& a, const PlanningState& b);
         bool occupied(const PlanningState& s);
         void calculateHashTag(const PlanningState& s);
+        void GetRandomNeighs(const PlanningState* currentState, std::vector<int>* NeighIDV, std::vector<int>* CLowV, int nNumofNeighs, int nDist_c, bool bSuccs);
 
         const PlanningState* createNewHashEntry(const State& s);
         const PlanningState* createNewHashEntry(const PlanningState& s);
@@ -186,6 +200,7 @@ namespace footstep_planner
         boost::shared_ptr<GridMap2D> ivMapPtr;
 
         exp_states_t ivExpandedStates;
+
     };
 }
 

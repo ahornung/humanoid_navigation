@@ -260,18 +260,21 @@ namespace footstep_planner
     {
         double x = disc_2_cont(s.getX(), ivCellSize);
         double y = disc_2_cont(s.getY(), ivCellSize);
+        // collision check for the planning state
         if (ivMapPtr->isOccupiedAt(x,y))
         	return true;
         double theta = angle_disc_2_cont(s.getTheta(), ivNumAngleBins);
         double theta_cos = cos(theta);
         double theta_sin = sin(theta);
 
+        // transform the planning state to the foot center
         x += theta_cos*ivOriginFootShiftX - theta_sin*ivOriginFootShiftY;
         if (s.getLeg() == LEFT)
             y += theta_sin*ivOriginFootShiftX + theta_cos*ivOriginFootShiftY;
         else // leg == RLEG
             y += theta_sin*ivOriginFootShiftX - theta_cos*ivOriginFootShiftY;
 
+        // collision check for the foot center
         return collision_check(x, y, theta, ivFootsizeX, ivFootsizeY,
                                ivCollisionCheckAccuracy, *ivMapPtr);
     }
@@ -490,7 +493,7 @@ namespace footstep_planner
 		{
 			PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
 			                ivHashTableSize);
-
+            // generate predecessor planning states
 			std::vector<Footstep>::const_iterator footstep_set_iter;
 			for(footstep_set_iter = ivFootstepSet.begin();
                 footstep_set_iter != ivFootstepSet.end();
@@ -498,14 +501,14 @@ namespace footstep_planner
 			{
 				PlanningState successor =
 						footstep_set_iter->revertMeOnThisState(s);
-				if (occupied(successor))
-					continue;
-
+				// check if predecessor exists
 				const PlanningState* successor_hash_entry =
 						getHashEntry(successor);
 				if (successor_hash_entry == NULL)
 					continue;
-
+			    // check if predecessor is occupied
+				if (occupied(successor))
+					continue;
 				pred_ids->push_back(successor_hash_entry->getId());
 			}
 		}
@@ -524,7 +527,7 @@ namespace footstep_planner
 		{
 			PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
 			                ivHashTableSize);
-
+			// generate successors
 			std::vector<Footstep>::const_iterator footstep_set_iter;
 			for(footstep_set_iter = ivFootstepSet.begin();
 			    footstep_set_iter != ivFootstepSet.end();
@@ -532,14 +535,14 @@ namespace footstep_planner
 			{
 				PlanningState successor =
 						footstep_set_iter->performMeOnThisState(s);
-				if (occupied(successor))
-					continue;
-
+				// check if successor exists
 				const PlanningState* successor_hash_entry =
 						getHashEntry(successor);
 				if (successor_hash_entry == NULL)
 					continue;
-
+				// check if successor is occupied
+				if (occupied(successor))
+					continue;
 				succ_ids->push_back(successor_hash_entry->getId());
 			}
 		}
@@ -560,7 +563,7 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetFromToHeuristic(int FromStateID,
                                                    int ToStateID)
     {
-    	assert(FromStateID < ivStateId2State.size());
+    	assert((unsigned int) FromStateID < ivStateId2State.size());
 
     	const PlanningState* from = ivStateId2State[FromStateID];
     	return cvMmScale * ivHeuristicConstPtr->getHValue(
@@ -583,9 +586,9 @@ namespace footstep_planner
         PredIDV->clear();
         CostV->clear();
 
+        assert((unsigned int) TargetStateID < ivStateId2State.size());
         ivExpandedStates.push_back(TargetStateID);
 
-        assert(TargetStateID < ivStateId2State.size());
         const PlanningState* current = ivStateId2State[TargetStateID];
         if (closeToStart(*current))
         {
@@ -640,9 +643,9 @@ namespace footstep_planner
         SuccIDV->clear();
         CostV->clear();
 
+        assert((unsigned int) SourceStateID < ivStateId2State.size());
         ivExpandedStates.push_back(SourceStateID);
 
-        assert(SourceStateID < ivStateId2State.size());
         const PlanningState* current = ivStateId2State[SourceStateID];
         if (closeToGoal(*current))
         {

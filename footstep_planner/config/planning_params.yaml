@@ -35,4 +35,4 @@ forward_search: False
 
 # the limit of changed states that decides whether to replan or to start a hole
 # new planning task
-changed_states_limit: 5000
+changed_states_limit: 20000

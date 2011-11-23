@@ -158,7 +158,7 @@ namespace footstep_planner
         bool   ivForwardSearch;
         int    ivNumAngleBins;
 
-        unsigned int ivChangedStatesLimit;
+        unsigned int ivChangedCellsLimit;
 
         std::string ivPlannerType;
         std::string ivRFootID;

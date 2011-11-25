@@ -1,6 +1,0 @@
-geometry_msgs/Pose2D start
-geometry_msgs/Pose2D goal
----
-bool result
-humanoid_nav_msgs/StepTarget[] footsteps
-float64 costs

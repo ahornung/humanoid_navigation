@@ -10,8 +10,9 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/humanoid_navigation</url>
   <depend stack="arm_navigation" /> <!-- sbpl -->
-  <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs, visualization_msgs -->
+  <depend stack="common_msgs" /> <!-- nav_msgs, visualization_msgs -->
   <depend stack="geometry" /> <!-- tf, angles -->
+  <depend stack="humanoid_msgs" /> <!-- humanoid_nav_msgs -->
   <depend stack="navigation" /> <!-- map_server -->
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- rospy, roscpp -->

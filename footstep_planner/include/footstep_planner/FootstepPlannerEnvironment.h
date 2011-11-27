@@ -66,10 +66,12 @@ namespace footstep_planner
                 bool   forward_search);
         virtual ~FootstepPlannerEnvironment();
 
-        void updateDistanceMap(GridMap2DPtr map);
+        void setMap(GridMap2DPtr map);
 
         void setUp(const State& start_left, const State& start_right,
                    const State& goal_left, const State& goal_right);
+
+        bool occupied(const State& s);
 
         bool getState(unsigned int id, State* s);
 

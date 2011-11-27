@@ -256,6 +256,14 @@ namespace footstep_planner
 
 
     bool
+    FootstepPlannerEnvironment::occupied(const State& s)
+    {
+        return occupied(PlanningState(s, ivCellSize, ivNumAngleBins,
+                                      ivHashTableSize));
+    }
+
+
+    bool
     FootstepPlannerEnvironment::occupied(const PlanningState& s)
     {
         double x = disc_2_cont(s.getX(), ivCellSize);
@@ -298,7 +306,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::updateDistanceMap(GridMap2DPtr map)
+    FootstepPlannerEnvironment::setMap(GridMap2DPtr map)
     {
         ivMapPtr.reset();
         ivMapPtr = map;
@@ -507,8 +515,8 @@ namespace footstep_planner
 				if (successor_hash_entry == NULL)
 					continue;
 			    // check if predecessor is occupied
-				if (occupied(successor))
-					continue;
+//				if (occupied(successor))
+//					continue;
 				pred_ids->push_back(successor_hash_entry->getId());
 			}
 		}
@@ -541,8 +549,8 @@ namespace footstep_planner
 				if (successor_hash_entry == NULL)
 					continue;
 				// check if successor is occupied
-				if (occupied(successor))
-					continue;
+//				if (occupied(successor))
+//					continue;
 				succ_ids->push_back(successor_hash_entry->getId());
 			}
 		}

@@ -297,7 +297,7 @@ namespace footstep_planner
 
         ivPlannerEnvironmentPtr->printHashStatistics();
 
-        if (ret)
+        if (ret && solution_state_ids.size() > 0)
         {
             ROS_INFO("Solution of size %zu found after %f s",
                      solution_state_ids.size(),
@@ -507,7 +507,8 @@ namespace footstep_planner
         goal.theta = theta;
         getFootPositionLeft(goal, &ivGoalFootLeft);
         getFootPositionRight(goal, &ivGoalFootRight);
-        if (occupied(ivGoalFootLeft) || occupied(ivGoalFootRight))
+        if (ivPlannerEnvironmentPtr->occupied(ivGoalFootLeft) ||
+            ivPlannerEnvironmentPtr->occupied(ivGoalFootRight))
         {
             ROS_ERROR("Goal pose at (%f %f %f) not accessible.", x, y, theta);
             return false;
@@ -544,7 +545,8 @@ namespace footstep_planner
         start.theta = theta;
         getFootPositionLeft(start, &ivStartFootLeft);
         getFootPositionRight(start, &ivStartFootRight);
-        if (occupied(ivStartFootLeft) || occupied(ivStartFootRight))
+        if (ivPlannerEnvironmentPtr->occupied(ivStartFootLeft) ||
+            ivPlannerEnvironmentPtr->occupied(ivStartFootRight))
         {
             ROS_ERROR("Start pose (%f %f %f) not accessible.", x, y, theta);
             return false;
@@ -570,108 +572,130 @@ namespace footstep_planner
     void
     FootstepPlanner::setMap(GridMap2DPtr grid_map)
     {
-    	// map change detection if old map exists (currently only when sizes
-    	// and resolutions match!) and a plan was found on the old map;
-        // currently replanning can only be used with the ADPlanner
-    	if (ivPlannerType == "ADPlanner" &&
-    	    ivPlanExists &&
-    	    ivMapPtr &&
-    	    ivMapPtr->getResolution() == grid_map->getResolution() &&
-    	    ivMapPtr->size().height == grid_map->size().height &&
-    	    ivMapPtr->size().width == grid_map->size().width)
-    	{
-    		ROS_INFO("Received an updated map => change detection");
+        // TODO: do we need to handle size changes (reinit everything)?
 
-    		std::vector<State> changed_states;
-    		cv::Mat changed_cells;
-    		// get new occupied cells only (0: occupied in binary map)
-    		// changedCells(x,y) = old(x,y) AND NOT(new(x,y))
-//    		cv::bitwise_not(gridMap->binaryMap(), changedCells);
-//    		cv::bitwise_and(ivMapPtr->binaryMap(), changedCells, changedCells);
+        bool map_exists = ivMapPtr;
 
-    		// to get all changed cells (new free and occupied) use XOR:
-    		cv::bitwise_xor(grid_map->binaryMap(), ivMapPtr->binaryMap(),
-    		                changed_cells);
+        // store old map locally
+        GridMap2DPtr old_map = ivMapPtr;
+        // store new map
+        ivMapPtr.reset();
+        ivMapPtr = grid_map;
+        // update map of planning environment
+        ivPlannerEnvironmentPtr->setMap(grid_map);
 
-    		//inflate by outer foot radius:
-    		cv::bitwise_not(changed_cells, changed_cells); // invert for distanceTransform
-    		cv::Mat changedDistMap = cv::Mat(changed_cells.size(), CV_32FC1);
-    		cv::distanceTransform(changed_cells, changedDistMap,
-    		                      CV_DIST_L2, CV_DIST_MASK_PRECISE);
-    		double max_foot_radius = sqrt(
-    				pow(std::abs(ivOriginFootShiftX)+ivFootsizeX/2.0, 2.0) +
-    				pow(std::abs(ivOriginFootShiftY)+ivFootsizeY/2.0, 2.0)) /
-    				ivMapPtr->getResolution();
-    		changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
+        if (map_exists && ivPlanExists)
+        {
+            updateEnvironment(old_map);
+            run(); // plan new path
+        }
+    }
 
-    		// loop over changed cells (now marked with 255 in the mask):
-    		unsigned int num_changed_cells = 0;
-    		double wx, wy;
-    		State s;
-    		for (int y = 0; y < changed_cells.rows; ++y)
-    		{
-    			for (int x = 0; x < changed_cells.cols; ++x)
-    			{
-    				if (changed_cells.at<uchar>(x,y) == 255)
-    				{
-    					num_changed_cells++;
-						ivMapPtr->mapToWorld(x, y, wx, wy);
-						s.x = wx;
-						s.y = wy;
-						// on each grid cell ivNumAngleBins-many planning states
-						// can be placed
-						for (int theta = 0; theta < ivNumAngleBins; ++theta)
-						{
-						    s.theta = angle_disc_2_cont(theta, ivNumAngleBins);
-                            changed_states.push_back(s);
-						}
 
-						// TODO: state calculation in cases where the grid map
-						// resolution and the planning state resolution don't
-						// match
-    				}
-    			}
-    		}
-    		ROS_INFO("%d changed map cells found", num_changed_cells);
+    void
+    FootstepPlanner::updateEnvironment(GridMap2DPtr old_map)
+    {
+        if (ivPlannerType == "ADPlanner" &&
+            ivMapPtr->getResolution() == old_map->getResolution() &&
+            ivMapPtr->size().height == old_map->size().height &&
+            ivMapPtr->size().width == old_map->size().width)
+        {
+            ROS_INFO("Received an updated map => change detection");
 
-    		if (num_changed_cells <= ivChangedCellsLimit)
-    		{
-                // update planer
-    			ROS_INFO("Use old information in new planning taks");
+            std::vector<State> changed_states;
+            cv::Mat changed_cells;
 
-				std::vector<int> changed_states_ids;
-				if (ivForwardSearch)
-				{
-					ivPlannerEnvironmentPtr->getSuccsOfGridCells(changed_states,
-							&changed_states_ids);
-				}
-				else
-				{
-					ivPlannerEnvironmentPtr->getPredsOfGridCells(changed_states,
-							&changed_states_ids);
-				}
+            // get new occupied cells only (0: occupied in binary map)
+            // changedCells(x,y) = old(x,y) AND NOT(new(x,y))
+//          cv::bitwise_not(gridMap->binaryMap(), changedCells);
+//          cv::bitwise_and(ivMapPtr->binaryMap(), changedCells, changedCells);
 
-				boost::shared_ptr<ADPlanner> h =
-						boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
-				h->costs_changed(PlanningStateChangeQuery(&changed_states_ids));
-    		}
-    		else
+            // to get all changed cells (new free and occupied) use XOR:
+            cv::bitwise_xor(old_map->binaryMap(), ivMapPtr->binaryMap(),
+                            changed_cells);
+
+            //inflate by outer foot radius:
+            cv::bitwise_not(changed_cells, changed_cells); // invert for distanceTransform
+            cv::Mat changedDistMap = cv::Mat(changed_cells.size(), CV_32FC1);
+            cv::distanceTransform(changed_cells, changedDistMap,
+                                  CV_DIST_L2, CV_DIST_MASK_PRECISE);
+            double max_foot_radius = sqrt(
+                    pow(std::abs(ivOriginFootShiftX)+ivFootsizeX/2.0, 2.0) +
+                    pow(std::abs(ivOriginFootShiftY)+ivFootsizeY/2.0, 2.0))
+                    / ivMapPtr->getResolution();
+            changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
+
+            // loop over changed cells (now marked with 255 in the mask):
+            unsigned int num_changed_cells = 0;
+            double wx, wy;
+            State s;
+            for (int y = 0; y < changed_cells.rows; ++y)
             {
-    		    // reset planner
-    		    ROS_INFO("Reset old information in new planning taks");
+                for (int x = 0; x < changed_cells.cols; ++x)
+                {
+                    if (changed_cells.at<uchar>(x,y) == 255)
+                    {
+                        num_changed_cells++;
+                        ivMapPtr->mapToWorld(x, y, wx, wy);
+                        s.x = wx;
+                        s.y = wy;
+                        // on each grid cell ivNumAngleBins-many planning states
+                        // can be placed
+                        for (int theta = 0; theta < ivNumAngleBins; ++theta)
+                        {
+                            s.theta = angle_disc_2_cont(theta, ivNumAngleBins);
+                            changed_states.push_back(s);
+                        }
+
+                        // TODO: state calculation in cases where the grid map
+                        // resolution and the planning state resolution don't
+                        // match
+                    }
+                }
+            }
+            if (num_changed_cells == 0)
+            {
+                ROS_INFO("old map equals new map; no replanning necessary");
+                return;
+            }
+            ROS_INFO("%d changed map cells found", num_changed_cells);
+
+            if (num_changed_cells <= ivChangedCellsLimit)
+            {
+                // update planer
+                ROS_INFO("Use old information in new planning taks");
+
+                std::vector<int> changed_states_ids;
+                if (ivForwardSearch)
+                    ivPlannerEnvironmentPtr->getSuccsOfGridCells(changed_states,
+                            &changed_states_ids);
+                else
+                    ivPlannerEnvironmentPtr->getPredsOfGridCells(changed_states,
+                            &changed_states_ids);
+
+                boost::shared_ptr<ADPlanner> h =
+                        boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
+                h->costs_changed(PlanningStateChangeQuery(&changed_states_ids));
+            }
+            else
+            {
+                // reset planner
+                ROS_INFO("Reset old information in new planning task");
 
                 ivPlannerEnvironmentPtr->reset();
                 setupPlanner();
                 //ivPlannerPtr->force_planning_from_scratch();
             }
-    	}
+        }
+        else
+        {
+            // reset planner
+            ROS_INFO("Reset old information in new planning task");
 
-    	// TODO: do we need to handle size changes (reinit everything)?
-
-    	// store new map
-        ivMapPtr.reset();
-        ivMapPtr = grid_map;
-        ivPlannerEnvironmentPtr->updateDistanceMap(grid_map);
+            ivPlannerEnvironmentPtr->reset();
+            setupPlanner();
+            //ivPlannerPtr->force_planning_from_scratch();
+        }
     }
 
 
@@ -700,34 +724,6 @@ namespace footstep_planner
         foot_right->y = robot.y - shift_y;
         foot_right->theta = theta;
         foot_right->leg = RIGHT;
-    }
-
-
-    // TODO: remove (use occupied of environment instead) --> No, because this
-    // is just a wrapper for collision_check accepting State (environment uses
-    // PlanningStates (discrete States))
-    bool
-    FootstepPlanner::occupied(const State& u)
-    {
-        // also perform a collision check for the state
-        if (ivMapPtr->isOccupiedAt(u.x, u.y))
-            return true;
-
-        // transform the state to the foot center
-        float theta_cos = cos(u.theta);
-        float theta_sin = sin(u.theta);
-        float shift_x = theta_cos*ivOriginFootShiftX - theta_sin*ivOriginFootShiftY;
-        float shift_y;
-        if (u.leg == LEFT)
-            shift_y = theta_sin*ivOriginFootShiftX + theta_cos*ivOriginFootShiftY;
-        else // leg == RLEG
-            shift_y = theta_sin*ivOriginFootShiftX - theta_cos*ivOriginFootShiftY;
-
-        // collision check for the foot center
-        return collision_check(u.x + shift_x, u.y + shift_y, u.theta,
-                               ivFootsizeX, ivFootsizeY,
-                               ivCollisionCheckAccuracy,
-                               *ivMapPtr);
     }
 
 

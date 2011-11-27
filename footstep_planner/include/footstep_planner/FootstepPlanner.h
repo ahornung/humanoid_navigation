@@ -108,13 +108,14 @@ namespace footstep_planner
         bool extractSolution(const std::vector<int>& state_ids);
         void footstepToMarker(const State& footstep,
                               visualization_msgs::Marker* marker);
-        bool occupied(const State& u);
         bool run();
 
         void getFootPositionLeft(const State& robot, State* foot_left);
         void getFootPositionRight(const State& robot, State* foot_right);
 
         void setupPlanner();
+
+        void updateEnvironment(GridMap2DPtr old_map);
 
         boost::shared_ptr<Heuristic> ivHeuristicPtr;
         boost::shared_ptr<FootstepPlannerEnvironment> ivPlannerEnvironmentPtr;

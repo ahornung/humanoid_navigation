@@ -21,6 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 
 set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
+	src/FootstepNavigation.cpp
     src/FootstepPlannerNode.cpp
     src/FootstepPlannerEnvironment.cpp 
     src/Footstep.cpp
@@ -37,3 +38,5 @@ rosbuild_add_library(${PROJECT_NAME} ${FOOTSTEP_PLANNER_FILES})
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 rosbuild_add_executable(footstep_planner_node src/footstep_planner.cpp)
 target_link_libraries(footstep_planner_node ${PROJECT_NAME})
+rosbuild_add_executable(footstep_navigation_node src/footstep_navigation.cpp)
+target_link_libraries(footstep_navigation_node ${PROJECT_NAME})

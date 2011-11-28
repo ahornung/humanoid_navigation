@@ -22,13 +22,12 @@
  */
 
 
-#ifndef HUMANOID_SBPL_FOOTSTEPPLANNER_H_
-#define HUMANOID_SBPL_FOOTSTEPPLANNER_H_
+#ifndef FOOTSTEP_PLANNER_FOOTSTEPPLANNER_H_
+#define FOOTSTEP_PLANNER_FOOTSTEPPLANNER_H_
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <humanoid_nav_msgs/StepTargetService.h>
 #include <humanoid_nav_msgs/PlanFootsteps.h>
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
@@ -100,7 +99,7 @@ namespace footstep_planner
 		state_iter_t getPathBegin() const { return ivPath.begin(); };
 		state_iter_t getPathEnd() const { return ivPath.end(); };
 
-    private:
+    protected:
         void broadcastExpandedNodesVis();
         void broadcastFootstepPathVis();
         void broadcastHeuristicPathVis();
@@ -162,10 +161,8 @@ namespace footstep_planner
         unsigned int ivChangedCellsLimit;
 
         std::string ivPlannerType;
-        std::string ivRFootID;
-        std::string ivLFootID;
         std::string ivMarkerNamespace;
     };
 }
 
-#endif  // HUMANOID_SBPL_HUMANOID_SBPL_
+#endif  // FOOTSTEP_PLANNER_HUMANOID_SBPL_

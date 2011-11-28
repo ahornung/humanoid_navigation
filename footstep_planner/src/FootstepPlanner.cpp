@@ -33,8 +33,6 @@ namespace footstep_planner
           ivPlanExists(false),
           ivLastMarkerMsgSize(0),
           ivPathCost(0),
-          ivRFootID("/RFoot_link"),
-          ivLFootID("/LFoot_link"),
           ivMarkerNamespace("")
     {
         // private NodeHandle for parameters and private messages (debug / info)
@@ -64,8 +62,6 @@ namespace footstep_planner
         nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 64);
         nh_private.param("step_cost", step_cost, 0.05);
         nh_private.param("diff_angle_cost", diff_angle_cost, 0.0);
-        nh_private.param("rfoot_frame_id", ivRFootID, ivRFootID);
-        nh_private.param("lfoot_frame_id", ivLFootID, ivLFootID);
         nh_private.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
         nh_private.param("accuracy/footstep/y", ivFootstepAccuracyY, 0.01);
         nh_private.param("accuracy/footstep/theta", ivFootstepAccuracyTheta,

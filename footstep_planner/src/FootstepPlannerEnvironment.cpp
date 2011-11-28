@@ -695,9 +695,10 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetRandomSuccsatDistance(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CLowV)
     {
     	//number of random neighbors
-    	int nNumofNeighs = 10;
+    	int nNumofNeighs = 20;
     	//distance at which the neighbors are generated
-    	int nDist_c = 100;
+    	double randomNeighborDist = 0.5;
+    	int nDist_c = randomNeighborDist / ivCellSize;
 
     	assert(SourceStateID < ivStateId2State.size());
     	const PlanningState* currentState = ivStateId2State[SourceStateID];
@@ -715,9 +716,10 @@ namespace footstep_planner
     FootstepPlannerEnvironment::GetRandomPredsatDistance(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CLowV)
     {
     	//number of random neighbors
-    	int nNumofNeighs = 10;
+    	int nNumofNeighs = 20;
     	//distance at which the neighbors are generated
-    	int nDist_c = 100;
+    	double randomNeighborDist = 0.5;
+    	int nDist_c = randomNeighborDist / ivCellSize;
 
     	assert(TargetStateID < ivStateId2State.size());
     	const PlanningState* currentState = ivStateId2State[TargetStateID];
@@ -781,9 +783,11 @@ namespace footstep_planner
     		//get the coords of the state
     		int newX = X + dX;
     		int newY = Y + dY;
-    		// TODO: random theta for orientation and leg
-    		int newTheta = angle_cont_2_disc(fDir, ivNumAngleBins);
-    		PlanningState random_state(newX, newY, newTheta, RIGHT, ivHashTableSize);
+
+    		// random theta: // TODO: pick better choice
+    		int newTheta = rand() % ivNumAngleBins;
+    		Leg newLeg = Leg(rand() % 2);
+    		PlanningState random_state(newX, newY, newTheta, newLeg, ivHashTableSize);
 
     		//skip the invalid cells
     		if(occupied(random_state))

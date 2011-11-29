@@ -35,6 +35,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 #include <assert.h>
 
@@ -52,21 +53,54 @@ namespace footstep_planner
         bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
         bool setGoal(float x, float y, float theta);
 
+        void robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
         void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose);
         void startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose);
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
+        /// @brief Obtains the pose of the robot's foot from tf
         void getFootTransform(const std::string& from, const std::string& to,
             		const ros::Time& time, tf::Transform& foot);
+        /**
+         * @brief Calculates for a given support foot and the desired foot placement
+         * the most applicable footstep. If the robot (limited by its step size)
+         * could not perform the necessary step, choose the step that gets closest
+         * to the placement.
+         *
+         * @param supportFoot the robot's current support foot (global coordinates)
+         * @param footPlacement where to put the other foot (global coordinates)
+         * @param footstep the most applicable relative footstep to be used (within bounds)
+         *
+         * @return false if the calculated footstep does not reach footPlacement (out of limits)
+         */
+        bool getGreedyFootstep(const tf::Transform& supportFoot,
+            		const tf::Transform& footPlacement,
+            		humanoid_nav_msgs::StepTarget& footstep);
+
+        /// Main execution loop, will be called from a boost::thread
         bool run();
+
         FootstepPlanner ivPlanner;
 
-        ros::Subscriber ivGridMapSub;
+        ros::Subscriber ivGridMapSub, ivRobotPoseSub;
         ros::Publisher  ivPathVisPub;
+        ros::ServiceClient ivFootstepService;
+        tf::TransformListener ivTransformListener;
+        boost::mutex ivRobotPoseUpdateMutex;
+
+        ros::Time ivLastRobotTime;
 
         std::string ivRFootID;
         std::string ivLFootID;
+        std::string ivMapFrameID;
+
+        double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
+        double ivFootSeparation;
+        double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
+        double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
+        bool   ivExecutingFootsteps;
+
     };
 }
 

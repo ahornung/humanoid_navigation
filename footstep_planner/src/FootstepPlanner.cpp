@@ -62,10 +62,7 @@ namespace footstep_planner
         nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 64);
         nh_private.param("step_cost", step_cost, 0.05);
         nh_private.param("diff_angle_cost", diff_angle_cost, 0.0);
-        nh_private.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
-        nh_private.param("accuracy/footstep/y", ivFootstepAccuracyY, 0.01);
-        nh_private.param("accuracy/footstep/theta", ivFootstepAccuracyTheta,
-        		0.15);
+
         nh_private.param("planner_type", ivPlannerType,
         		std::string("ARAPlanner"));
         nh_private.param("search_until_first_solution",

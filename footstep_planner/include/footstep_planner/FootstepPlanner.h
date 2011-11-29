@@ -146,7 +146,7 @@ namespace footstep_planner
         double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
         double ivMaxStepWidth;
         int    ivCollisionCheckAccuracy;
-        double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
+
         bool   ivStartPoseSetUp, ivGoalPoseSetUp;
         bool   ivPlanExists;
         int    ivLastMarkerMsgSize;

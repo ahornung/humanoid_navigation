@@ -50,17 +50,28 @@ namespace footstep_planner
         FootstepNavigation();
         virtual ~FootstepNavigation();
 
+        /// calls setGoal(x,y,theta)
         bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
+
+        /**
+         * @brief Sets the goal of the underlying planner
+         * @return success of operation (goal valid)
+         */
         bool setGoal(float x, float y, float theta);
 
         void robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
+
+        /**
+         * @brief Set goal of planner and start planning from the current foot configuration
+         *
+         * @param goal_pose
+         */
         void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose);
-        void startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose);
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
         /// @brief Obtains the pose of the robot's foot from tf
-        void getFootTransform(const std::string& from, const std::string& to,
+        void getFootTransform(const std::string& footID, const std::string& worldFrameID,
             		const ros::Time& time, tf::Transform& foot);
         /**
          * @brief Calculates for a given support foot and the desired foot placement

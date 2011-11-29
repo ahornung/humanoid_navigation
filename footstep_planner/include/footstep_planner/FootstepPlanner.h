@@ -58,19 +58,40 @@ namespace footstep_planner
         FootstepPlanner();
         virtual ~FootstepPlanner();
 
+        /**
+         * @brief Start a planning process from scratch
+         * (will delete exisint planner information). Map, start and goal states
+         * need to be set beforehand.
+         *
+         * @return success of planning
+         */
         bool plan();
+
         bool plan(const geometry_msgs::PoseStampedConstPtr& start,
                   const geometry_msgs::PoseStampedConstPtr& goal);
+
         bool plan(float start_x, float start_y, float start_theta,
                   float goal_x, float goal_y, float goal_theta);
+
+        /**
+         * @brief Start replanning (directly calls run()), reuses existing information,
+         * Map, start and goal states need to be set beforehand.
+         *
+         * @return success of planning
+         */
+        bool replan();
 
 		/// Service handle to plan footsteps
 		bool planService(humanoid_nav_msgs::PlanFootsteps::Request &req, humanoid_nav_msgs::PlanFootsteps::Response &resp);
 
         bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
         bool setGoal(float x, float y, float theta);
+        /// sets start position as a robot pose (centered between two feet)
         bool setStart(const geometry_msgs::PoseStampedConstPtr& start_pose);
+        /// sets start position as a robot pose (centered between two feet)
         bool setStart(float x, float y, float theta);
+        /// sets start as position of left and right footsteps
+        bool setStart(const State& right_foot, const State& left_foot);
         void setMap(GridMap2DPtr gridMap);
         void setMarkerNamespace(const std::string& ns) { ivMarkerNamespace = ns; };
         void setMaxSearchTime(int search_time) { ivMaxSearchTime = search_time; };
@@ -109,8 +130,7 @@ namespace footstep_planner
                               visualization_msgs::Marker* marker);
         bool run();
 
-        void getFootPositionLeft(const State& robot, State* foot_left);
-        void getFootPositionRight(const State& robot, State* foot_right);
+        State getFootPosition(const State& robot, Leg side);
 
         void setupPlanner();
 

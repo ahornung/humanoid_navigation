@@ -64,7 +64,6 @@ namespace footstep_planner
     bool
     FootstepNavigation::run()
     {
-    	// TODO: planning /replanning loop, will be called from a boost thread
 
     	// TODO: Initial plan
     	humanoid_nav_msgs::StepTarget step;
@@ -295,11 +294,33 @@ namespace footstep_planner
     void
     FootstepNavigation::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
-    	bool success = setGoal(goal_pose);
-    	if (success)
+    	// TODO: check if already executing footsteps, request stop
+
+    	if (setGoal(goal_pose))
     	{
-    		// TODO execution thread
-    		run();
+    		tf::Transform leftFoot, rightFoot;
+    		{
+				boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
+				// get real placement of the feet
+				getFootTransform(ivLFootID, ivMapFrameID, ivLastRobotTime, leftFoot);
+				getFootTransform(ivRFootID, ivMapFrameID, ivLastRobotTime, rightFoot);
+    		}
+    		State left, right;
+    		left.x = leftFoot.getOrigin().x();
+    		left.y = leftFoot.getOrigin().y();
+    		left.leg = LEFT;
+    		left.theta = tf::getYaw(leftFoot.getRotation());
+
+    		right.x = rightFoot.getOrigin().x();
+    		right.y = rightFoot.getOrigin().y();
+    		right.leg = LEFT;
+    		right.theta = tf::getYaw(rightFoot.getRotation());
+
+    		if (ivPlanner.setStart(right, left)){
+				// execution thread
+				ivExecutingFootsteps = true;
+				boost::thread footstepExecutionThread(&FootstepNavigation::run, this);
+    		}
     	}
     }
 
@@ -331,16 +352,16 @@ namespace footstep_planner
     }
 
     void
-    FootstepNavigation::getFootTransform(const std::string& from,
-    		const std::string& to,
+    FootstepNavigation::getFootTransform(const std::string& footID,
+    		const std::string& worldFrameID,
     		const ros::Time& time,
     		tf::Transform& foot)
     {
 
     	tf::StampedTransform stampedFootTransform;
     	// TODO: try/catch if tf not available?
-    	ivTransformListener.waitForTransform(to, from, time, ros::Duration(0.1));
-    	ivTransformListener.lookupTransform(to, from, time, stampedFootTransform);
+    	ivTransformListener.waitForTransform(worldFrameID, footID, time, ros::Duration(0.1));
+    	ivTransformListener.lookupTransform(worldFrameID, footID, time, stampedFootTransform);
 
     	foot.setOrigin(stampedFootTransform.getOrigin());
     	foot.setRotation(stampedFootTransform.getRotation());

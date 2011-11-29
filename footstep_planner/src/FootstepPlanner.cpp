@@ -368,6 +368,23 @@ namespace footstep_planner
         return run();
     }
 
+    bool
+    FootstepPlanner::replan()
+    {
+    	if (!ivMapPtr)
+    	{
+    		ROS_ERROR("FootstepPlanner has no map yet for planning");
+    		return false;
+    	}
+        if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
+        {
+            ROS_ERROR("FootstepPlanner has no start or goal pose set");
+            return false;
+        }
+
+        return run();
+    }
+
 
     bool
     FootstepPlanner::plan(const geometry_msgs::PoseStampedConstPtr& start,
@@ -498,14 +515,18 @@ namespace footstep_planner
         goal.x = x;
         goal.y = y;
         goal.theta = theta;
-        getFootPositionLeft(goal, &ivGoalFootLeft);
-        getFootPositionRight(goal, &ivGoalFootRight);
-        if (ivPlannerEnvironmentPtr->occupied(ivGoalFootLeft) ||
-            ivPlannerEnvironmentPtr->occupied(ivGoalFootRight))
+
+        State leftFoot = getFootPosition(goal, LEFT);
+        State rightFoot = getFootPosition(goal, RIGHT);
+
+        if (ivPlannerEnvironmentPtr->occupied(leftFoot) ||
+            ivPlannerEnvironmentPtr->occupied(rightFoot))
         {
             ROS_ERROR("Goal pose at (%f %f %f) not accessible.", x, y, theta);
             return false;
         }
+        ivGoalFootLeft = leftFoot;
+        ivGoalFootRight = rightFoot;
 
         ivGoalPoseSetUp = true;
         ROS_INFO("Goal pose set to (%f %f %f)", x, y, theta);
@@ -522,6 +543,21 @@ namespace footstep_planner
                         tf::getYaw(start_pose->pose.orientation));
     }
 
+    bool
+    FootstepPlanner::setStart(const State& right_foot, const State& left_foot){
+        if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
+            ivPlannerEnvironmentPtr->occupied(right_foot))
+        {
+            return false;
+        }
+        ivStartFootLeft = left_foot;
+        ivStartFootRight = right_foot;
+
+        ivStartPoseSetUp = true;
+
+        return true;
+    }
+
 
     bool
     FootstepPlanner::setStart(float x, float y, float theta)
@@ -536,17 +572,16 @@ namespace footstep_planner
         start.x = x;
         start.y = y;
         start.theta = theta;
-        getFootPositionLeft(start, &ivStartFootLeft);
-        getFootPositionRight(start, &ivStartFootRight);
-        if (ivPlannerEnvironmentPtr->occupied(ivStartFootLeft) ||
-            ivPlannerEnvironmentPtr->occupied(ivStartFootRight))
-        {
-            ROS_ERROR("Start pose (%f %f %f) not accessible.", x, y, theta);
-            return false;
-        }
 
-        ivStartPoseSetUp = true;
-        ROS_INFO("Start pose set to (%f %f %f)", x, y, theta);
+        State leftFoot = getFootPosition(start, LEFT);
+        State rightFoot = getFootPosition(start, RIGHT);
+
+        bool success = setStart(rightFoot, leftFoot);
+
+        if (success)
+        	ROS_INFO("Start pose set to (%f %f %f)", x, y, theta);
+        else
+            ROS_ERROR("Start pose (%f %f %f) not accessible.", x, y, theta);
 
         // publish visualization:
         geometry_msgs::PoseStamped start_pose;
@@ -558,7 +593,7 @@ namespace footstep_planner
         start_pose.header.stamp = ros::Time::now();
         ivStartPoseVisPub.publish(start_pose);
 
-        return true;
+        return success;
     }
 
 
@@ -691,32 +726,24 @@ namespace footstep_planner
         }
     }
 
-
-    void
-    FootstepPlanner::getFootPositionLeft(const State& robot, State* foot_left)
+    State
+    FootstepPlanner::getFootPosition(const State& robot, Leg side)
     {
-        double theta = robot.theta;
-        double shift_x = -sin(theta) * ivFootSeparation/2;
-        double shift_y =  cos(theta) * ivFootSeparation/2;
 
-        foot_left->x = robot.x + shift_x;
-        foot_left->y = robot.y + shift_y;
-        foot_left->theta = theta;
-        foot_left->leg = LEFT;
-    }
+        double shift_x = -sin(robot.theta) * ivFootSeparation/2;
+        double shift_y =  cos(robot.theta) * ivFootSeparation/2;
 
+        double sign = -1.0;
+        if (side == LEFT)
+        	sign = 1.0;
 
-    void
-    FootstepPlanner::getFootPositionRight(const State& robot, State* foot_right)
-    {
-        double theta = robot.theta;
-        double shift_x = -sin(theta) * ivFootSeparation/2;
-        double shift_y =  cos(theta) * ivFootSeparation/2;
+        State foot;
+        foot.x = robot.x + sign * shift_x;
+        foot.y = robot.y + sign * shift_y;
+        foot.theta = robot.theta;
+        foot.leg = side;
 
-        foot_right->x = robot.x - shift_x;
-        foot_right->y = robot.y - shift_y;
-        foot_right->theta = theta;
-        foot_right->leg = RIGHT;
+        return foot;
     }
 
 

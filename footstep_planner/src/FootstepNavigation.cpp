@@ -201,7 +201,7 @@ namespace footstep_planner
     	get_footstep(supportLeg, ivFootSeparation,
     				 supportFoot.getOrigin().x(), supportFoot.getOrigin().y(), tf::getYaw(supportFoot.getRotation()),
     				 footPlacement.getOrigin().x(), footPlacement.getOrigin().y(), tf::getYaw(footPlacement.getRotation()),
-    				 &x, &y, &theta);
+    				 x, y, theta);
 
     	// TODO: cleanup below (see "reachable" in environment?)
     	if (x <= ivMaxFootstepX + ivFootstepAccuracyX &&

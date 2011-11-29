@@ -137,8 +137,8 @@ namespace footstep_planner
     void get_footstep(Leg support_leg, double foot_separation,
                       double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,
-                      double* footstep_x, double* footstep_y,
-                      double* footstep_theta);
+                      double& footstep_x, double& footstep_y,
+                      double& footstep_theta);
 
 	/**
 	 * Checking if a footstep (represented by its center and orientation (x, y, theta))

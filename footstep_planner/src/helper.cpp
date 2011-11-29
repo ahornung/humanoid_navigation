@@ -28,8 +28,8 @@ namespace footstep_planner
     void get_footstep(Leg support_leg, double foot_separation,
                       double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,
-                      double* footstep_x, double* footstep_y,
-                      double* footstep_theta)
+                      double& footstep_x, double& footstep_y,
+                      double& footstep_theta)
     {
         double diff_angle = angles::shortest_angular_distance(from_theta, to_theta);
 
@@ -62,9 +62,9 @@ namespace footstep_planner
 
         double from_theta_cos = cos(-from_theta);
         double from_theta_sin = sin(-from_theta);
-        *footstep_x = from_theta_cos*to_x - from_theta_sin*to_y;
-        *footstep_y = from_theta_sin*to_x + from_theta_cos*to_y;
-        *footstep_theta = diff_angle;
+        footstep_x = from_theta_cos*to_x - from_theta_sin*to_y;
+        footstep_y = from_theta_sin*to_x + from_theta_cos*to_y;
+        footstep_theta = diff_angle;
     }
 
 

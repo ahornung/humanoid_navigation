@@ -420,9 +420,9 @@ namespace footstep_planner
     FootstepPlannerEnvironment::getFootstep(Leg support_leg,
                                             const PlanningState& from,
                                             const PlanningState& to,
-                                            double* footstep_x,
-                                            double* footstep_y,
-                                            double* footstep_theta) const
+                                            double& footstep_x,
+                                            double& footstep_y,
+                                            double& footstep_theta) const
     {
         double from_x = disc_2_cont(from.getX(), ivCellSize);
         double from_y = disc_2_cont(from.getY(), ivCellSize);
@@ -450,7 +450,7 @@ namespace footstep_planner
         double y;
         double theta;
 
-        getFootstep(from.getLeg(), from, to, &x, &y, &theta);
+        getFootstep(from.getLeg(), from, to, x, y, theta);
 
         int diff_x = cont_2_disc(x, ivCellSize);
         int diff_y = cont_2_disc(y, ivCellSize);

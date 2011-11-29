@@ -164,8 +164,8 @@ namespace footstep_planner
         void updateHeuristicValues();
 
         void getFootstep(Leg support_leg, const PlanningState& from,
-                         const PlanningState& to, double* footstep_x,
-                         double* footstep_y, double* footstep_theta) const;
+                         const PlanningState& to, double& footstep_x,
+                         double& footstep_y, double& footstep_theta) const;
 
         struct less
         {

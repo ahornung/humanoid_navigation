@@ -68,6 +68,50 @@ namespace footstep_planner
     }
 
 
+    bool
+    reachable(int x, int y, int theta,
+              int max_footstep_x, int max_footstep_y, int max_footstep_theta,
+              int max_inv_footstep_x, int max_inv_footstep_y,
+              int max_inv_footstep_theta,
+              Leg from_leg)
+    {
+        bool in_range_x = false;
+        bool in_range_y = false;
+        bool in_range_theta = false;
+
+        if (x <=  max_footstep_x && x >= -max_inv_footstep_x)
+        {
+            in_range_x = true;
+        }
+        if (from_leg == RIGHT)
+        {
+            if (y <=  max_footstep_y && y >= -max_inv_footstep_y)
+            {
+                in_range_y = true;
+            }
+            if (theta <=  max_footstep_theta &&
+                theta >= -max_inv_footstep_theta)
+            {
+                in_range_theta = true;
+            }
+        }
+        else // from_leg == LEFT
+        {
+            if (y >= -max_footstep_y && y <= max_inv_footstep_y)
+            {
+                in_range_y = true;
+            }
+            if (theta >= -max_footstep_theta &&
+                theta <=  max_inv_footstep_theta)
+            {
+                in_range_theta = true;
+            }
+        }
+
+        return in_range_x && in_range_y && in_range_theta;
+    }
+
+
 	bool
 	collision_check(double x, double y, double theta, double height,
                     double width, int accuracy, const GridMap2D& distance_map)

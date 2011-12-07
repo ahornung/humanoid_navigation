@@ -63,13 +63,14 @@ namespace footstep_planner
 
         /**
          * @brief Set goal of planner and start planning from the current foot configuration
-         *
          * @param goal_pose
          */
         void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose);
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
+        void run();
+
         /// @brief Obtains the pose of the robot's foot from tf
         void getFootTransform(const std::string& footID, const std::string& worldFrameID,
             		const ros::Time& time, tf::Transform& foot);
@@ -90,7 +91,7 @@ namespace footstep_planner
             		humanoid_nav_msgs::StepTarget& footstep);
 
         /// Main execution loop, will be called from a boost::thread
-        bool run();
+        void executeFootsteps();
 
         FootstepPlanner ivPlanner;
 
@@ -110,8 +111,9 @@ namespace footstep_planner
         double ivFootSeparation;
         double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
         double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
+        double ivCellSize;
+        int    ivNumAngleBins;
         bool   ivExecutingFootsteps;
-
     };
 }
 

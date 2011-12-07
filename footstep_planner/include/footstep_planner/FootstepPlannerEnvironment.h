@@ -132,7 +132,7 @@ namespace footstep_planner
 
         int SizeofCreatedEnv();
 
-        bool reachable(const PlanningState& from, const PlanningState& to);
+        bool reachableState(const PlanningState& from, const PlanningState& to);
 
         void getPredsOfGridCells(
         		const std::vector<State>& changed_states,

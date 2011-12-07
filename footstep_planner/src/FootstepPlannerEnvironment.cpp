@@ -398,7 +398,7 @@ namespace footstep_planner
         else
             start = ivStateId2State[ivStartFootIdRight];
 
-        return reachable(*start, from);
+        return reachableState(*start, from);
     }
 
 
@@ -412,7 +412,7 @@ namespace footstep_planner
         else
             goal = ivStateId2State[ivGoalFootIdRight];
 
-        return reachable(from, *goal);
+        return reachableState(from, *goal);
     }
 
 
@@ -432,60 +432,30 @@ namespace footstep_planner
         double to_theta = angle_disc_2_cont(to.getTheta(), ivNumAngleBins);
 
         // TODO: speed comparison with other get_footstep function
-        get_footstep(support_leg, ivFootSeparation, from_x, from_y, from_theta,
-                     to_x, to_y, to_theta, footstep_x, footstep_y,
-                     footstep_theta);
+        get_footstep(support_leg, ivFootSeparation,
+                     from_x, from_y, from_theta,
+                     to_x, to_y, to_theta,
+                     footstep_x, footstep_y, footstep_theta);
     }
 
 
     bool
-    FootstepPlannerEnvironment::reachable(const PlanningState& from,
-	                                      const PlanningState& to)
+    FootstepPlannerEnvironment::reachableState(const PlanningState& from,
+	                                           const PlanningState& to)
     {
-        bool in_range_x = false;
-        bool in_range_y = false;
-        bool in_range_theta = false;
-
         double x;
         double y;
         double theta;
-
         getFootstep(from.getLeg(), from, to, x, y, theta);
 
         int diff_x = cont_2_disc(x, ivCellSize);
         int diff_y = cont_2_disc(y, ivCellSize);
         int diff_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-
-        if (diff_x <=  ivMaxFootstepX && diff_x >= -ivMaxInvFootstepX)
-        {
-            in_range_x = true;
-        }
-        if (from.getLeg() == RIGHT)
-        {
-            if (diff_y <=  ivMaxFootstepY && diff_y >= -ivMaxInvFootstepY)
-            {
-                in_range_y = true;
-            }
-            if (diff_theta <=  ivMaxFootstepTheta &&
-                diff_theta >= -ivMaxInvFootstepTheta)
-            {
-                in_range_theta = true;
-            }
-        }
-        else // leg == LEFT
-        {
-            if (diff_y >= -ivMaxFootstepY && diff_y <= ivMaxInvFootstepY)
-            {
-                in_range_y = true;
-            }
-            if (diff_theta >= -ivMaxFootstepTheta &&
-                diff_theta <=  ivMaxInvFootstepTheta)
-            {
-                in_range_theta = true;
-            }
-        }
-
-        return in_range_x && in_range_y && in_range_theta;
+        return reachable(diff_x, diff_y, diff_theta,
+                         ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
+                         ivMaxInvFootstepX, ivMaxInvFootstepY,
+                         ivMaxInvFootstepTheta,
+                         from.getLeg());
     }
 
 

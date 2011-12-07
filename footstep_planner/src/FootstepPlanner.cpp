@@ -40,11 +40,19 @@ namespace footstep_planner
         ros::NodeHandle nh_public;
 
         // ..publishers
-        ivExpandedStatesVisPub = nh_private.advertise<sensor_msgs::PointCloud>("expanded_states", 1);
-        ivFootstepPathVisPub = nh_private.advertise<visualization_msgs::MarkerArray>("footsteps_array", 1);
-        ivHeuristicPathVisPub = nh_private.advertise<nav_msgs::Path>("heuristic_path", 1);
+        ivExpandedStatesVisPub = nh_private.advertise<
+                sensor_msgs::PointCloud>("expanded_states", 1);
+        ivFootstepPathVisPub = nh_private.advertise<
+                visualization_msgs::MarkerArray>("footsteps_array", 1);
+        ivHeuristicPathVisPub = nh_private.advertise<
+                nav_msgs::Path>("heuristic_path", 1);
         ivPathVisPub = nh_private.advertise<nav_msgs::Path>("path", 1);
-        ivStartPoseVisPub = nh_private.advertise<geometry_msgs::PoseStamped>("start", 1);
+        ivStartPoseVisPub = nh_private.advertise<
+                geometry_msgs::PoseStamped>("start", 1);
+
+        // TODO: remove later
+        ivChangedStatesVisPub = nh_private.advertise<
+                sensor_msgs::PointCloud>("changed_states", 1);
 
         int max_hash_size;
         int changed_cells_limit;
@@ -368,23 +376,6 @@ namespace footstep_planner
         return run();
     }
 
-    bool
-    FootstepPlanner::replan()
-    {
-    	if (!ivMapPtr)
-    	{
-    		ROS_ERROR("FootstepPlanner has no map yet for planning");
-    		return false;
-    	}
-        if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
-        {
-            ROS_ERROR("FootstepPlanner has no start or goal pose set");
-            return false;
-        }
-
-        return run();
-    }
-
 
     bool
     FootstepPlanner::plan(const geometry_msgs::PoseStampedConstPtr& start,
@@ -408,6 +399,24 @@ namespace footstep_planner
         }
 
         return plan();
+    }
+
+
+    bool
+    FootstepPlanner::replan()
+    {
+       if (!ivMapPtr)
+       {
+           ROS_ERROR("FootstepPlanner has no map yet for planning");
+           return false;
+       }
+        if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
+        {
+            ROS_ERROR("FootstepPlanner has no start or goal pose set");
+            return false;
+        }
+
+        return run();
     }
 
 
@@ -543,8 +552,10 @@ namespace footstep_planner
                         tf::getYaw(start_pose->pose.orientation));
     }
 
+
     bool
-    FootstepPlanner::setStart(const State& right_foot, const State& left_foot){
+    FootstepPlanner::setStart(const State& right_foot, const State& left_foot)
+    {
         if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
             ivPlannerEnvironmentPtr->occupied(right_foot))
         {
@@ -615,7 +626,8 @@ namespace footstep_planner
         if (map_exists && ivPlanExists)
         {
             updateEnvironment(old_map);
-            run(); // plan new path
+            // TODO: uncomment later
+//            run(); // plan new path
         }
     }
 
@@ -623,6 +635,7 @@ namespace footstep_planner
     void
     FootstepPlanner::updateEnvironment(GridMap2DPtr old_map)
     {
+
         if (ivPlannerType == "ADPlanner" &&
             ivMapPtr->getResolution() == old_map->getResolution() &&
             ivMapPtr->size().height == old_map->size().height &&
@@ -687,6 +700,9 @@ namespace footstep_planner
                 return;
             }
             ROS_INFO("%d changed map cells found", num_changed_cells);
+
+            // TODO: remove later
+            broadcastChangedStatesVis(changed_states);
 
             if (num_changed_cells <= ivChangedCellsLimit)
             {
@@ -770,6 +786,37 @@ namespace footstep_planner
         }
 
         ivFootstepPathVisPub.publish(marker_msg);
+    }
+
+
+    // TODO: remove later
+    void
+    FootstepPlanner::broadcastChangedStatesVis(
+            const std::vector<State>& changed_states)
+    {
+        if (ivChangedStatesVisPub.getNumSubscribers() > 0)
+        {
+            sensor_msgs::PointCloud cloud_msg;
+            geometry_msgs::Point32 point;
+            std::vector<geometry_msgs::Point32> points;
+
+            std::vector<State>::const_iterator states_iter;
+            for(states_iter = changed_states.begin();
+                states_iter != changed_states.end();
+                states_iter++)
+            {
+                point.x = states_iter->x;
+                point.y = states_iter->y;
+                point.z = 0.01;
+                points.push_back(point);
+            }
+            cloud_msg.header.stamp = ros::Time::now();
+            cloud_msg.header.frame_id = ivMapPtr->getFrameID();
+
+            cloud_msg.points = points;
+
+            ivChangedStatesVisPub.publish(cloud_msg);
+        }
     }
 
 

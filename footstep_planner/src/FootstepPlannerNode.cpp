@@ -34,16 +34,11 @@ namespace footstep_planner
 		ivGoalPoseSub = nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
 		ivStartPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &FootstepPlanner::startPoseCallback, &ivFootstepPlanner);
 
-//		if (ivFootstepPlanner.getPlanningMode() == FootstepPlanner::ROBOT_NAVIGATION)
-//			ivRobotPoseSub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 1, &FootstepPlanner::robotPoseCallback, &ivFootstepPlanner);
-
 		// service:
 		ivFootstepPlanService = nh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
 	}
 
 
 	FootstepPlannerNode::~FootstepPlannerNode()
-	{
-
-	}
+	{}
 }

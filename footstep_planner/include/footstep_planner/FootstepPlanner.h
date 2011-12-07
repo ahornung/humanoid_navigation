@@ -73,12 +73,6 @@ namespace footstep_planner
         bool plan(float start_x, float start_y, float start_theta,
                   float goal_x, float goal_y, float goal_theta);
 
-        /**
-         * @brief Start replanning (directly calls run()), reuses existing information,
-         * Map, start and goal states need to be set beforehand.
-         *
-         * @return success of planning
-         */
         bool replan();
 
 		/// Service handle to plan footsteps
@@ -121,6 +115,9 @@ namespace footstep_planner
 		state_iter_t getPathEnd() const { return ivPath.end(); };
 
     protected:
+		// TODO: remove later
+		void broadcastChangedStatesVis(
+		        const std::vector<State>& changed_states);
         void broadcastExpandedNodesVis();
         void broadcastFootstepPathVis();
         void broadcastHeuristicPathVis();
@@ -150,6 +147,9 @@ namespace footstep_planner
         State ivStartFootRight;
         State ivGoalFootLeft;
         State ivGoalFootRight;
+
+        // TODO: remove later
+        ros::Publisher ivChangedStatesVisPub;
 
         ros::Publisher  ivExpandedStatesVisPub;
         ros::Publisher  ivFootstepPathVisPub;

@@ -627,7 +627,7 @@ namespace footstep_planner
         {
             updateEnvironment(old_map);
             // TODO: uncomment later
-//            run(); // plan new path
+            run(); // plan new path
         }
     }
 

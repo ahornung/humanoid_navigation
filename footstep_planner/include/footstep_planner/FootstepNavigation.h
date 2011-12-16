@@ -95,7 +95,7 @@ namespace footstep_planner
 
         FootstepPlanner ivPlanner;
 
-        ros::Subscriber ivGridMapSub, ivRobotPoseSub;
+        ros::Subscriber ivGridMapSub, ivRobotPoseSub, ivGoalPoseSub;
         ros::Publisher  ivPathVisPub;
         ros::ServiceClient ivFootstepService;
         tf::TransformListener ivTransformListener;

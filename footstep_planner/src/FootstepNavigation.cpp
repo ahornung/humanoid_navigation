@@ -29,7 +29,8 @@ namespace footstep_planner
 	FootstepNavigation::FootstepNavigation()
         : ivLastRobotTime(0),
           ivRFootID("/RFoot_link"), ivLFootID("/LFoot_link"),
-          ivMapFrameID("map")
+          ivMapFrameID("map"),
+          ivExecutingFootsteps(false)
     {
         // private NodeHandle for parameters and private messages (debug / info)
         ros::NodeHandle nh_private("~");
@@ -38,6 +39,8 @@ namespace footstep_planner
         // service
         ivFootstepService = nh_public.serviceClient<humanoid_nav_msgs::StepTargetService>("cmd_step_srv");
 
+        // subscribers
+        ivGridMapSub = nh_public.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepNavigation::mapCallback, this);
 		ivGoalPoseSub = nh_public.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepNavigation::goalPoseCallback, this);
         // subscribe to robot pose to get latest time
         ivRobotPoseSub = nh_public.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 5, &FootstepNavigation::robotPoseCallback, this);
@@ -255,8 +258,6 @@ namespace footstep_planner
     FootstepNavigation::setGoal(
             const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
-    	ROS_INFO("check2");
-
         return setGoal(goal_pose->pose.position.x,
                        goal_pose->pose.position.y,
                        tf::getYaw(goal_pose->pose.orientation));
@@ -267,6 +268,8 @@ namespace footstep_planner
     FootstepNavigation::mapCallback(
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
+    	ROS_INFO("maaap");
+
         boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
         ivMapFrameID = gridMap->getFrameID();
         ivPlanner.setMap(gridMap);

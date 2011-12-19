@@ -189,11 +189,28 @@ namespace footstep_planner
     	int diff_x = cont_2_disc(x, ivCellSize);
         int diff_y = cont_2_disc(y, ivCellSize);
         int diff_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-        return reachable(diff_x, diff_y, diff_theta,
-                         ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
-                         ivMaxInvFootstepX, ivMaxInvFootstepY,
-                         ivMaxInvFootstepTheta,
-                         support_leg);
+        bool reached = reachable(diff_x, diff_y, diff_theta,
+                                 ivMaxFootstepX, ivMaxFootstepY,
+                                 ivMaxFootstepTheta,
+                                 ivMaxInvFootstepX, ivMaxInvFootstepY,
+                                 ivMaxInvFootstepTheta,
+                                 support_leg);
+        if (reached)
+        {
+            footstep.pose.x = x;
+            footstep.pose.y = y;
+            footstep.pose.theta = theta;
+
+            return true;
+        }
+        else
+        {
+            footstep.pose.x = 0;
+            footstep.pose.y = 0;
+            footstep.pose.theta = 0;
+
+            return false;
+        }
     }
 
 
@@ -268,8 +285,6 @@ namespace footstep_planner
     FootstepNavigation::mapCallback(
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
-    	ROS_INFO("maaap");
-
         boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
         ivMapFrameID = gridMap->getFrameID();
         ivPlanner.setMap(gridMap);

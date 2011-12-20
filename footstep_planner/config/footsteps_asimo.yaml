@@ -23,9 +23,3 @@ foot:
     step: {x: 0.22, y: 0.12, theta: 0.7}
     inverse:
       step: {x: 0.1, y: 0.02, theta: 0.4}
-accuracy:    
-  # the execution accuracy of each footstep; the more accurate a footstep should
-  # fit into the calculated steps the more likely a replanning is necessary
-  footstep/x: 0.01
-  footstep/y: 0.01
-  footstep/theta: 0.15

@@ -1,0 +1,7 @@
+<launch>
+  # naoqi should be running right now
+  <include file="$(find nao_driver)/launch/nao_driver.launch" />
+  <include file="$(find nao_remote)/launch/nao_remote.launch" />
+  <include file="$(find nao_nav)/launch/fake_loc_from_odom.launch" />
+  <include file="$(find footstep_planner)/launch/footstep_navigation_complete.launch" />
+</launch>

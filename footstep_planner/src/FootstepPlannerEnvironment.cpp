@@ -431,7 +431,6 @@ namespace footstep_planner
         double to_y = disc_2_cont(to.getY(), ivCellSize);
         double to_theta = angle_disc_2_cont(to.getTheta(), ivNumAngleBins);
 
-        // TODO: speed comparison with other get_footstep function
         get_footstep(support_leg, ivFootSeparation,
                      from_x, from_y, from_theta,
                      to_x, to_y, to_theta,
@@ -448,10 +447,10 @@ namespace footstep_planner
         double theta;
         getFootstep(from.getLeg(), from, to, x, y, theta);
 
-        int diff_x = cont_2_disc(x, ivCellSize);
-        int diff_y = cont_2_disc(y, ivCellSize);
-        int diff_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-        return reachable(diff_x, diff_y, diff_theta,
+        int disc_x = cont_2_disc(x, ivCellSize);
+        int disc_y = cont_2_disc(y, ivCellSize);
+        int disc_theta = angle_cont_2_disc(theta, ivNumAngleBins);
+        return reachable(disc_x, disc_y, disc_theta,
                          ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
                          ivMaxInvFootstepX, ivMaxInvFootstepY,
                          ivMaxInvFootstepTheta,

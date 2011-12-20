@@ -428,11 +428,11 @@ namespace footstep_planner
                            req.goal.x, req.goal.y, req.goal.theta);
 
     	resp.costs = getPathCosts();
-    	resp.footsteps.reserve(ivPath.size());
+    	resp.footsteps.reserve(getPathSize());
 
     	humanoid_nav_msgs::StepTarget foot;
     	state_iter_t path_iter;
-    	for (path_iter = ivPath.begin(); path_iter != ivPath.end(); path_iter++)
+    	for (path_iter = getPathBegin(); path_iter != getPathEnd(); path_iter++)
     	{
     		foot.pose.x = path_iter->x;
     		foot.pose.y = path_iter->y;
@@ -854,7 +854,7 @@ namespace footstep_planner
     void
     FootstepPlanner::broadcastFootstepPathVis()
     {
-        if (ivPath.size() == 0)
+        if (getPathSize() == 0)
         {
             ROS_INFO("no path has been extracted yet");
             return;
@@ -869,7 +869,7 @@ namespace footstep_planner
         marker.header.stamp = ros::Time::now();
         marker.header.frame_id = ivMapPtr->getFrameID();
 
-		// add the missing start foot to the publish vector
+		// add the missing start foot to the publish vector for visualization:
         if (ivPath.front().leg == LEFT)
         	footstepToMarker(ivStartFootRight, &marker);
         else
@@ -878,15 +878,9 @@ namespace footstep_planner
 		marker.id = markers_counter++;
 		markers.push_back(marker);
 
-		// add the right start foot to the publish vector
-		footstepToMarker(ivStartFootRight, &marker);
-		marker.id = markers_counter++;
-		markers.push_back(marker);
-
-
         // add the footsteps of the path to the publish vector
-        state_iter_t path_iter = ivPath.begin();
-        for(; path_iter != ivPath.end(); path_iter++)
+        state_iter_t path_iter = getPathBegin();
+        for(; path_iter != getPathEnd(); path_iter++)
         {
             footstepToMarker(*path_iter, &marker);
             marker.id = markers_counter++;
@@ -904,7 +898,7 @@ namespace footstep_planner
             }
         }
 
-        // add goal feet for visualization:
+        // add the missing goal foot to the publish vector for visualization:
         if (ivPath.back().leg == LEFT)
         	footstepToMarker(ivGoalFootRight, &marker);
         else
@@ -922,7 +916,7 @@ namespace footstep_planner
     void
     FootstepPlanner::broadcastPathVis()
     {
-        if (ivPath.size() == 0)
+        if (getPathSize() == 0)
         {
             ROS_INFO("no path has been extracted yet");
             return;
@@ -935,7 +929,7 @@ namespace footstep_planner
         state.header.frame_id = ivMapPtr->getFrameID();
 
         state_iter_t path_iter;
-        for(path_iter = ivPath.begin(); path_iter != ivPath.end(); path_iter++)
+        for(path_iter = getPathBegin(); path_iter != getPathEnd(); path_iter++)
         {
             state.pose.position.x = path_iter->x;
             state.pose.position.y = path_iter->y;

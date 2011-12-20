@@ -113,6 +113,7 @@ namespace footstep_planner
 
 		state_iter_t getPathBegin() const { return ivPath.begin(); };
 		state_iter_t getPathEnd() const { return ivPath.end(); };
+		int getPathSize() { return ivPath.size(); };
 
     protected:
 		// TODO: remove later

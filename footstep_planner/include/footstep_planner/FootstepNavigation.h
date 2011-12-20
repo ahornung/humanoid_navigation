@@ -86,9 +86,9 @@ namespace footstep_planner
          *
          * @return false if the calculated footstep does not reach footPlacement (out of limits)
          */
-        bool getGreedyFootstep(const tf::Transform& supportFoot,
-            		const tf::Transform& footPlacement,
-            		humanoid_nav_msgs::StepTarget& footstep);
+        bool getFootstep(const tf::Transform& supportFoot,
+                         const State& footPlacement,
+                         humanoid_nav_msgs::StepTarget& footstep);
 
         /// Main execution loop, will be called from a boost::thread
         void executeFootsteps();
@@ -103,14 +103,14 @@ namespace footstep_planner
 
         ros::Time ivLastRobotTime;
 
-        std::string ivRFootID;
-        std::string ivLFootID;
+        std::string ivFootIDRight;
+        std::string ivFootIDLeft;
         std::string ivMapFrameID;
 
         double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
         double ivFootSeparation;
-        double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
-        double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
+        int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
+        int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
         double ivCellSize;
         int    ivNumAngleBins;
         bool   ivExecutingFootsteps;

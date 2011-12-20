@@ -1,7 +1,7 @@
 ### Footstep parameterization for the Aldebaran Robotics Nao humanoid ##########
 
 # cost to perform one footstep (in addition to distance costs, corresponds to 'meters')
-step_cost: 0.05
+step_cost: 0.01
 # cost to estimate the difference between the current orientation and the goal 
 # orientation; used in the heuristic it can easily overestimate the true path 
 # cost since this cost is not incorporated in each step
@@ -23,9 +23,3 @@ foot:
     step: {x: 0.04, y: 0.04, theta: 0.3}
     inverse:
       step: {x: 0.04, y: 0.01, theta: 0.05}
-accuracy:    
-  # the execution accuracy of each footstep; the more accurate a footstep should
-  # fit into the calculated steps the more likely a replanning is necessary
-  footstep/x: 0.005
-  footstep/y: 0.005
-  footstep/theta: 0.07

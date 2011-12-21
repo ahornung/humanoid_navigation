@@ -90,6 +90,8 @@ namespace footstep_planner
                          const State& footPlacement,
                          humanoid_nav_msgs::StepTarget& footstep);
 
+        bool updateStart();
+
         /// Main execution loop, will be called from a boost::thread
         void executeFootsteps();
 

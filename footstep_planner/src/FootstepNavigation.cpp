@@ -125,12 +125,18 @@ namespace footstep_planner
     			// TODO: remove later
     			return;
 
-                if (ivPlanner.replan())
-                {
-                    // if replanning was successful start new execution thread
-                    boost::thread footstepExecutionThread(
-                            &FootstepNavigation::executeFootsteps, this);
-                }
+    			if (updateStart())
+    			{
+                    if (ivPlanner.replan())
+                    {
+                        // if replanning was successful start new execution thread
+                        boost::thread footstepExecutionThread(
+                                &FootstepNavigation::executeFootsteps, this);
+                    }
+    			}
+    	        else
+    	            ROS_ERROR("start pose not accessible: check your odometry");
+
                 // leave this thread
                 return;
     		}
@@ -229,27 +235,7 @@ namespace footstep_planner
 
     	if (setGoal(goal_pose))
     	{
-    		tf::Transform foot_left, foot_right;
-    		{
-				boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
-				// get real placement of the feet
-				getFootTransform(ivFootIDLeft, ivMapFrameID, ivLastRobotTime,
-                                 foot_left);
-				getFootTransform(ivFootIDRight, ivMapFrameID, ivLastRobotTime,
-                                 foot_right);
-    		}
-    		State left, right;
-    		left.x = foot_left.getOrigin().x();
-    		left.y = foot_left.getOrigin().y();
-    		left.leg = LEFT;
-    		left.theta = tf::getYaw(foot_left.getRotation());
-
-    		right.x = foot_right.getOrigin().x();
-    		right.y = foot_right.getOrigin().y();
-    		right.leg = RIGHT;
-    		right.theta = tf::getYaw(foot_right.getRotation());
-
-    		if (ivPlanner.setStart(right, left))
+    		if (updateStart())
     		{
     	        // calculate plan
     	        if (ivPlanner.plan())
@@ -261,10 +247,7 @@ namespace footstep_planner
     	        }
     		}
     		else
-    		{
-    			ROS_ERROR("start pose not accessible; odometry and map "
-    					  "information do not match!");
-    		}
+    			ROS_ERROR("start pose not accessible: check your odometry");
     	}
     }
 
@@ -279,6 +262,40 @@ namespace footstep_planner
     }
 
 
+    bool
+    FootstepNavigation::setGoal(float x, float y, float theta)
+    {
+    	return ivPlanner.setGoal(x,y,theta);
+    }
+
+
+    bool
+    FootstepNavigation::updateStart()
+    {
+        tf::Transform foot_left, foot_right;
+        {
+            boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
+            // get real placement of the feet
+            getFootTransform(ivFootIDLeft, ivMapFrameID, ivLastRobotTime,
+                             foot_left);
+            getFootTransform(ivFootIDRight, ivMapFrameID, ivLastRobotTime,
+                             foot_right);
+        }
+        State left, right;
+        left.x = foot_left.getOrigin().x();
+        left.y = foot_left.getOrigin().y();
+        left.leg = LEFT;
+        left.theta = tf::getYaw(foot_left.getRotation());
+
+        right.x = foot_right.getOrigin().x();
+        right.y = foot_right.getOrigin().y();
+        right.leg = RIGHT;
+        right.theta = tf::getYaw(foot_right.getRotation());
+
+        return ivPlanner.setStart(right, left);
+    }
+
+
     void
     FootstepNavigation::mapCallback(
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
@@ -286,13 +303,6 @@ namespace footstep_planner
         boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
         ivMapFrameID = gridMap->getFrameID();
         ivPlanner.setMap(gridMap);
-    }
-
-
-    bool
-    FootstepNavigation::setGoal(float x, float y, float theta)
-    {
-    	return ivPlanner.setGoal(x,y,theta);
     }
 
 

@@ -545,7 +545,7 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlanner::setStart(const geometry_msgs::PoseStampedConstPtr& start_pose)
+    FootstepPlanner::updateStart(const geometry_msgs::PoseStampedConstPtr& start_pose)
     {
         return setStart(start_pose->pose.position.x,
                         start_pose->pose.position.y,

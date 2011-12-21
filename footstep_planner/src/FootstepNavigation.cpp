@@ -188,12 +188,13 @@ namespace footstep_planner
     	int disc_x = cont_2_disc(x, ivCellSize);
         int disc_y = cont_2_disc(y, ivCellSize);
         int disc_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-        bool reached = reachable(disc_x, disc_y, disc_theta,
-                                 ivMaxFootstepX, ivMaxFootstepY,
-                                 ivMaxFootstepTheta,
-                                 ivMaxInvFootstepX, ivMaxInvFootstepY,
-                                 ivMaxInvFootstepTheta,
-                                 support_leg);
+        bool reached = performable(disc_x, disc_y, disc_theta,
+                                   ivMaxFootstepX, ivMaxFootstepY,
+                                   ivMaxFootstepTheta,
+                                   ivMaxInvFootstepX, ivMaxInvFootstepY,
+                                   ivMaxInvFootstepTheta,
+                                   ivNumAngleBins,
+                                   support_leg);
         if (reached)
         {
             footstep.pose.x = x;

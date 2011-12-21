@@ -140,12 +140,13 @@ namespace footstep_planner
                       double& footstep_x, double& footstep_y,
                       double& footstep_theta);
 
-    bool reachable(int x, int y, int theta,
-                   int max_footstep_x, int max_footstep_y,
-                   int max_footstep_theta,
-                   int max_inv_footstep_x, int max_inv_footstep_y,
-                   int max_inv_footstep_theta,
-                   Leg from_leg);
+    bool performable(int x, int y, int theta,
+                     int max_footstep_x, int max_footstep_y,
+                     int max_footstep_theta,
+                     int max_inv_footstep_x, int max_inv_footstep_y,
+                     int max_inv_footstep_theta,
+                     int num_angle_bins,
+                     Leg from_leg);
 
 	/**
 	 * Checking if a footstep (represented by its center and orientation (x, y, theta))

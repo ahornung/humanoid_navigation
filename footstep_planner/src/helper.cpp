@@ -69,23 +69,28 @@ namespace footstep_planner
 
 
     bool
-    reachable(int x, int y, int theta,
-              int max_footstep_x, int max_footstep_y, int max_footstep_theta,
-              int max_inv_footstep_x, int max_inv_footstep_y,
-              int max_inv_footstep_theta,
-              Leg from_leg)
+    performable(int x, int y, int theta,
+                int max_footstep_x, int max_footstep_y, int max_footstep_theta,
+                int max_inv_footstep_x, int max_inv_footstep_y,
+                int max_inv_footstep_theta,
+                int num_angle_bins,
+                Leg from_leg)
     {
         bool in_range_x = false;
         bool in_range_y = false;
         bool in_range_theta = false;
 
-        if (x <=  max_footstep_x && x >= -max_inv_footstep_x)
+        // shift theta from range [0..num_angle_bins) to
+        // [-num_angle_bins/2..num_angle_bins/2)
+        theta -= num_angle_bins;
+
+        if (x <= max_footstep_x && x >= -max_inv_footstep_x)
         {
             in_range_x = true;
         }
         if (from_leg == RIGHT)
         {
-            if (y <=  max_footstep_y && y >= -max_inv_footstep_y)
+            if (y <= max_footstep_y && y >= -max_inv_footstep_y)
             {
                 in_range_y = true;
             }

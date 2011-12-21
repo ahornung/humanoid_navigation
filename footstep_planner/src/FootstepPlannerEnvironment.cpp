@@ -450,11 +450,12 @@ namespace footstep_planner
         int disc_x = cont_2_disc(x, ivCellSize);
         int disc_y = cont_2_disc(y, ivCellSize);
         int disc_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-        return reachable(disc_x, disc_y, disc_theta,
-                         ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
-                         ivMaxInvFootstepX, ivMaxInvFootstepY,
-                         ivMaxInvFootstepTheta,
-                         from.getLeg());
+        return performable(disc_x, disc_y, disc_theta,
+                           ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
+                           ivMaxInvFootstepX, ivMaxInvFootstepY,
+                           ivMaxInvFootstepTheta,
+                           ivNumAngleBins,
+                           from.getLeg());
     }
 
 

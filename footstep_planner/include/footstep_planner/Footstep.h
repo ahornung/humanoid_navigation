@@ -51,18 +51,18 @@ namespace footstep_planner
         void updateNumAngleBins(int num);
 
 	private:
-        typedef std::pair<double, double> shift_vector;
+        typedef std::pair<int, int> footstep_xy;
 
 		void init();
 
-        void calculateForwardStep(Leg leg, double global_theta,
-                                  double* footstep_x, double* footstep_y) const;
-        void calculateBackwardStep(Leg leg, double global_theta,
-                                   double* footstep_x, double* footstep_y) const;
+        int calculateForwardStep(Leg leg, int global_theta,
+                                 int* footstep_x, int* footstep_y) const;
 
-		int ivX;
-		int ivY;
-		int ivTheta;
+        int ivTheta;
+
+		double ivContX;
+		double ivContY;
+		double ivContTheta;
 
 		double ivCellSize;
 
@@ -71,10 +71,10 @@ namespace footstep_planner
 
 		double ivFootSeparation;
 
-        std::vector<shift_vector> ivSuccessorLeft;
-        std::vector<shift_vector> ivSuccessorRight;
-        std::vector<shift_vector> ivPredecessorLeft;
-        std::vector<shift_vector> ivPredecessorRight;
+        std::vector<footstep_xy> ivDiscSuccessorLeft;
+        std::vector<footstep_xy> ivDiscSuccessorRight;
+        std::vector<footstep_xy> ivDiscPredecessorLeft;
+        std::vector<footstep_xy> ivDiscPredecessorRight;
 	};
 } // end of namespace
 

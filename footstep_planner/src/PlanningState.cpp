@@ -37,17 +37,19 @@ namespace footstep_planner
     PlanningState::PlanningState(double x, double y, double theta, Leg leg,
                                  double cell_size, int num_angle_bins,
                                  int max_hash_size)
-        : ivX(cont_2_disc(x, cell_size)),
-          ivY(cont_2_disc(y, cell_size)),
-          ivTheta(angle_cont_2_disc(theta, num_angle_bins)),
+        : ivX(state_2_cell(x, cell_size)),
+          ivY(state_2_cell(y, cell_size)),
+          ivTheta(angle_state_2_cell(theta, num_angle_bins)),
           ivLeg(leg),
           ivId(-1),
           ivHashTag(calculateHashTag(max_hash_size))
     {
-
+        assert(false);
     }
 
-    PlanningState::PlanningState(int x, int y, int theta, Leg leg, int max_hash_size)
+    PlanningState::PlanningState(int x, int y, int theta, Leg leg,
+                                 double cell_size, int num_angle_bins,
+                                 int max_hash_size)
         :  ivX(x), ivY(y), ivTheta(theta),
            ivLeg(leg), ivHashTag(calculateHashTag(max_hash_size))
     {
@@ -57,9 +59,9 @@ namespace footstep_planner
 
     PlanningState::PlanningState(const State& s, double cell_size,
                                  int num_angle_bins, int max_hash_size)
-        : ivX(cont_2_disc(s.x, cell_size)),
-          ivY(cont_2_disc(s.y, cell_size)),
-          ivTheta(angle_cont_2_disc(s.theta, num_angle_bins)),
+        : ivX(state_2_cell(s.x, cell_size)),
+          ivY(state_2_cell(s.y, cell_size)),
+          ivTheta(angle_state_2_cell(s.theta, num_angle_bins)),
           ivLeg(s.leg),
           ivId(-1),
           ivHashTag(calculateHashTag(max_hash_size))

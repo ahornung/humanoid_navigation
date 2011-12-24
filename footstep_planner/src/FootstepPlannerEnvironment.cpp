@@ -247,10 +247,10 @@ namespace footstep_planner
         if (a == b)
             return 0;
 
-		double dist = euclidean_distance(  disc_2_cont(a.getX(), ivCellSize),
-									disc_2_cont(a.getY(), ivCellSize),
-									disc_2_cont(b.getX(), ivCellSize),
-									disc_2_cont(b.getY(), ivCellSize));
+		double dist = euclidean_distance(cell_2_state(a.getX(), ivCellSize),
+                                         cell_2_state(a.getY(), ivCellSize),
+                                         cell_2_state(b.getX(), ivCellSize),
+                                         cell_2_state(b.getY(), ivCellSize));
 		return int(cvMmScale * dist) + ivStepCost;
     }
 
@@ -266,12 +266,12 @@ namespace footstep_planner
     bool
     FootstepPlannerEnvironment::occupied(const PlanningState& s)
     {
-        double x = disc_2_cont(s.getX(), ivCellSize);
-        double y = disc_2_cont(s.getY(), ivCellSize);
+        double x = cell_2_state(s.getX(), ivCellSize);
+        double y = cell_2_state(s.getY(), ivCellSize);
         // collision check for the planning state
         if (ivMapPtr->isOccupiedAt(x,y))
         	return true;
-        double theta = angle_disc_2_cont(s.getTheta(), ivNumAngleBins);
+        double theta = angle_cell_2_state(s.getTheta(), ivNumAngleBins);
         double theta_cos = cos(theta);
         double theta_sin = sin(theta);
 
@@ -295,9 +295,9 @@ namespace footstep_planner
             return false;
 
         const PlanningState* planning_state = ivStateId2State[id];
-        s->x = disc_2_cont(planning_state->getX(), ivCellSize);
-        s->y = disc_2_cont(planning_state->getY(), ivCellSize);
-        s->theta = angle_disc_2_cont(planning_state->getTheta(),
+        s->x = cell_2_state(planning_state->getX(), ivCellSize);
+        s->y = cell_2_state(planning_state->getY(), ivCellSize);
+        s->theta = angle_cell_2_state(planning_state->getTheta(),
                                      ivNumAngleBins);
         s->leg = planning_state->getLeg();
 
@@ -424,12 +424,12 @@ namespace footstep_planner
                                             double& footstep_y,
                                             double& footstep_theta) const
     {
-        double from_x = disc_2_cont(from.getX(), ivCellSize);
-        double from_y = disc_2_cont(from.getY(), ivCellSize);
-        double from_theta = angle_disc_2_cont(from.getTheta(), ivNumAngleBins);
-        double to_x = disc_2_cont(to.getX(), ivCellSize);
-        double to_y = disc_2_cont(to.getY(), ivCellSize);
-        double to_theta = angle_disc_2_cont(to.getTheta(), ivNumAngleBins);
+        double from_x = cell_2_state(from.getX(), ivCellSize);
+        double from_y = cell_2_state(from.getY(), ivCellSize);
+        double from_theta = angle_cell_2_state(from.getTheta(), ivNumAngleBins);
+        double to_x = cell_2_state(to.getX(), ivCellSize);
+        double to_y = cell_2_state(to.getY(), ivCellSize);
+        double to_theta = angle_cell_2_state(to.getTheta(), ivNumAngleBins);
 
         get_footstep(support_leg, ivFootSeparation,
                      from_x, from_y, from_theta,
@@ -442,15 +442,18 @@ namespace footstep_planner
     FootstepPlannerEnvironment::reachableState(const PlanningState& from,
 	                                           const PlanningState& to)
     {
-        double x;
-        double y;
-        double theta;
-        getFootstep(from.getLeg(), from, to, x, y, theta);
+        double cont_footstep_x;
+        double cont_footstep_y;
+        double cont_footstep_theta;
+        getFootstep(from.getLeg(), from, to,
+                    cont_footstep_x, cont_footstep_y, cont_footstep_theta);
 
-        int disc_x = cont_2_disc(x, ivCellSize);
-        int disc_y = cont_2_disc(y, ivCellSize);
-        int disc_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-        return performable(disc_x, disc_y, disc_theta,
+        int footstep_x = cont_2_disc(cont_footstep_x, ivCellSize);
+        int footstep_y = cont_2_disc(cont_footstep_y, ivCellSize);
+        int footstep_theta = angle_state_2_cell(cont_footstep_theta,
+                                                ivNumAngleBins);
+        return performable(footstep_x, footstep_y,
+                           footstep_theta,
                            ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
                            ivMaxInvFootstepX, ivMaxInvFootstepY,
                            ivMaxInvFootstepTheta,
@@ -757,7 +760,7 @@ namespace footstep_planner
     		// random theta: // TODO: pick better choice
     		int newTheta = rand() % ivNumAngleBins;
     		Leg newLeg = Leg(rand() % 2);
-    		PlanningState random_state(newX, newY, newTheta, newLeg, ivHashTableSize);
+    		PlanningState random_state(newX, newY, newTheta, newLeg, ivCellSize, ivNumAngleBins, ivHashTableSize);
 
     		//skip the invalid cells
     		if(occupied(random_state))

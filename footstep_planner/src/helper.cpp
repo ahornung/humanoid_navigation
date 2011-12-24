@@ -25,14 +25,15 @@
 
 namespace footstep_planner
 {
+    // TODO: get_footstep should be working for int
     void get_footstep(Leg support_leg, double foot_separation,
                       double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,
                       double& footstep_x, double& footstep_y,
                       double& footstep_theta)
     {
-        double diff_angle = angles::shortest_angular_distance(from_theta, to_theta);
-
+        double diff_angle = angles::shortest_angular_distance(from_theta,
+                                                              to_theta);
         double foot_separation_half = foot_separation/2;
 
         double shift_to_x = -sin(to_theta) * foot_separation_half;
@@ -46,8 +47,6 @@ namespace footstep_planner
 
             to_x -= shift_from_x;
             to_y -= shift_from_y;
-
-            diff_angle = -diff_angle;
         }
         else
         {
@@ -56,10 +55,13 @@ namespace footstep_planner
 
             to_x += shift_from_x;
             to_y += shift_from_y;
+
+            diff_angle = -diff_angle;
         }
         to_x -= from_x;
         to_y -= from_y;
 
+        // TODO: check
         double from_theta_cos = cos(-from_theta);
         double from_theta_sin = sin(-from_theta);
         footstep_x = from_theta_cos*to_x - from_theta_sin*to_y;
@@ -69,12 +71,12 @@ namespace footstep_planner
 
 
     bool
-    performable(int x, int y, int theta,
+    performable(int footstep_x, int footstep_y, int footstep_theta,
                 int max_footstep_x, int max_footstep_y, int max_footstep_theta,
                 int max_inv_footstep_x, int max_inv_footstep_y,
                 int max_inv_footstep_theta,
                 int num_angle_bins,
-                Leg from_leg)
+                Leg footstep_leg)
     {
         bool in_range_x = false;
         bool in_range_y = false;
@@ -82,32 +84,35 @@ namespace footstep_planner
 
         // shift theta from range [0..num_angle_bins) to
         // [-num_angle_bins/2..num_angle_bins/2)
-        theta -= num_angle_bins;
+        if (footstep_theta >= num_angle_bins/2)
+            footstep_theta -= num_angle_bins;
 
-        if (x <= max_footstep_x && x >= -max_inv_footstep_x)
+        if (footstep_x <= max_footstep_x && footstep_x >= -max_inv_footstep_x)
         {
             in_range_x = true;
         }
-        if (from_leg == RIGHT)
+        if (footstep_leg == RIGHT)
         {
-            if (y <= max_footstep_y && y >= -max_inv_footstep_y)
+            if (footstep_y <=  max_footstep_y &&
+                footstep_y >= -max_inv_footstep_y)
             {
                 in_range_y = true;
             }
-            if (theta <=  max_footstep_theta &&
-                theta >= -max_inv_footstep_theta)
+            if (footstep_theta <=  max_footstep_theta &&
+                footstep_theta >= -max_inv_footstep_theta)
             {
                 in_range_theta = true;
             }
         }
         else // from_leg == LEFT
         {
-            if (y >= -max_footstep_y && y <= max_inv_footstep_y)
+            if (footstep_y >= -max_footstep_y &&
+                footstep_y <=  max_inv_footstep_y)
             {
                 in_range_y = true;
             }
-            if (theta >= -max_footstep_theta &&
-                theta <=  max_inv_footstep_theta)
+            if (footstep_theta >= -max_footstep_theta &&
+                footstep_theta <=  max_inv_footstep_theta)
             {
                 in_range_theta = true;
             }

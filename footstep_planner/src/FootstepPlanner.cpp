@@ -150,13 +150,13 @@ namespace footstep_planner
         // discretise planner settings
         int max_footstep_x = cont_2_disc(ivMaxFootstepX, ivCellSize);
         int max_footstep_y = cont_2_disc(ivMaxFootstepY, ivCellSize);
-        int max_footstep_theta = angle_cont_2_disc(ivMaxFootstepTheta,
+        int max_footstep_theta = angle_state_2_cell(ivMaxFootstepTheta,
                                                    ivNumAngleBins);
         int max_inv_footstep_x = cont_2_disc(ivMaxInvFootstepX,
                                                       ivCellSize);
         int max_inv_footstep_y = cont_2_disc(ivMaxInvFootstepY,
                                                       ivCellSize);
-        int max_inv_footstep_theta = angle_cont_2_disc(ivMaxInvFootstepTheta,
+        int max_inv_footstep_theta = angle_state_2_cell(ivMaxInvFootstepTheta,
                                                        ivNumAngleBins);
 
         // initialize the heuristic
@@ -228,6 +228,57 @@ namespace footstep_planner
         else
             ROS_INFO_STREAM("Search direction: backward planning");
         setupPlanner();
+
+
+////TODO: remove when finished
+//        PlanningState cur(103, 12, 65, LEFT, ivCellSize, ivNumAngleBins,
+//                          max_hash_size);
+//        State cur_state;
+//        cur_state.x = cell_2_state(cur.getX(), ivCellSize);
+//        cur_state.y = cell_2_state(cur.getY(), ivCellSize);
+//        cur_state.theta = angle_cell_2_state(cur.getTheta(), ivNumAngleBins);
+//        cur_state.leg = cur.getLeg();
+//        Footstep fs(0.1, 0.5, -M_PI/8, ivCellSize, ivNumAngleBins, max_hash_size,
+//                    ivFootSeparation);
+//        PlanningState suc = fs.performMeOnThisState(cur);
+//        double suc_state_x = cell_2_state(suc.getX(), ivCellSize);
+//        double suc_state_y = cell_2_state(suc.getY(), ivCellSize);
+//        double suc_state_theta = angle_cell_2_state(suc.getTheta(),
+//                                                    ivNumAngleBins);
+//        PlanningState pred = fs.revertMeOnThisState(suc);
+//        double pred_state_x = cell_2_state(pred.getX(), ivCellSize);
+//        double pred_state_y = cell_2_state(pred.getY(), ivCellSize);
+//        double pred_state_theta = angle_cell_2_state(pred.getTheta(),
+//                                                     ivNumAngleBins);
+////        double suc_footstep_x, suc_footstep_y, suc_footstep_theta;
+////        get_footstep(cur.getLeg(), ivFootSeparation,
+////                     cur_state.x, cur_state.y, cur_state.theta,
+////                     suc_state_x, suc_state_y, suc_state_theta,
+////                     suc_footstep_x, suc_footstep_y, suc_footstep_theta);
+////        int disc_suc_footstep_x = cont_2_disc(suc_footstep_x, ivCellSize);
+////        int disc_suc_footstep_y = cont_2_disc(suc_footstep_y, ivCellSize);
+////        int disc_suc_footstep_theta = angle_state_2_cell(suc_footstep_theta,
+////                                                         ivNumAngleBins);
+//        ROS_INFO("from: x=%f, y=%f, theta=%f (%i, %i, %i)",
+//                 cur_state.x, cur_state.y, cur_state.theta,
+//                 cur.getX(), cur.getY(), cur.getTheta());
+//        ROS_INFO("to: x=%f, y=%f, theta=%f (%i, %i, %i)",
+//                 suc_state_x, suc_state_y, suc_state_theta,
+//                 suc.getX(), suc.getY(), suc.getTheta());
+////        ROS_INFO("footstep (from->to): x=%f, y=%f, theta=%f (%i, %i, %i)",
+////                 suc_footstep_x, suc_footstep_y, suc_footstep_theta,
+////                 disc_suc_footstep_x, disc_suc_footstep_y,
+////                 disc_suc_footstep_theta);
+////        ROS_INFO("performable? %i", performable(
+////                 disc_suc_footstep_x, disc_suc_footstep_y,
+////                 disc_suc_footstep_theta,
+////                 max_footstep_x, max_footstep_y, max_footstep_theta,
+////                 max_inv_footstep_x, max_inv_footstep_y, max_inv_footstep_theta,
+////                 ivNumAngleBins, cur.getLeg()));
+//        ROS_INFO("pred: x=%f, y=%f, theta=%f (%i, %i, %i)",
+//                pred_state_x, pred_state_y, pred_state_theta,
+//                pred.getX(), pred.getY(), pred.getTheta());
+//        exit(0);
     }
 
 
@@ -545,7 +596,8 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlanner::setStart(const geometry_msgs::PoseStampedConstPtr& start_pose)
+    FootstepPlanner::setStart(
+            const geometry_msgs::PoseStampedConstPtr& start_pose)
     {
         return setStart(start_pose->pose.position.x,
                         start_pose->pose.position.y,
@@ -684,7 +736,7 @@ namespace footstep_planner
                         // can be placed
                         for (int theta = 0; theta < ivNumAngleBins; ++theta)
                         {
-                            s.theta = angle_disc_2_cont(theta, ivNumAngleBins);
+                            s.theta = angle_cell_2_state(theta, ivNumAngleBins);
                             changed_states.push_back(s);
                         }
 

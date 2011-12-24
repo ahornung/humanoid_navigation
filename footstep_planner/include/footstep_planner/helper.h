@@ -93,30 +93,50 @@ namespace footstep_planner
     }
 
 
-	inline int angle_cont_2_disc(double angle, int angle_bin_num)
+	inline int angle_state_2_cell(double angle, int angle_bin_num)
 	{
         double bin_size_half = TWO_PI / angle_bin_num / 2;
-        return (int)(angles::normalize_angle_positive(angle + bin_size_half) /
-                     TWO_PI * angle_bin_num);
+        return int(angles::normalize_angle_positive(angle + bin_size_half) /
+                   TWO_PI * angle_bin_num);
 	}
 
 
-	inline double angle_disc_2_cont(int angle, int angle_bin_num)
+	inline double angle_cell_2_state(int angle, int angle_bin_num)
 	{
         double bin_size = TWO_PI / angle_bin_num;
         return angle * bin_size;
 	}
 
 
-	inline int cont_2_disc(double value, double cell_size)
+	// NOTE: this should only be used discretize a State to a PlanningState; use
+	// cont_2_disc for lengths
+	inline int state_2_cell(double value, double cell_size)
 	{
-		return (int)floor(value / cell_size);
+		return int(floor(value / cell_size));
 	}
 
 
-	inline double disc_2_cont(int value, double cell_size)
+	// TODO: add method getState to the PlanningState-class
+
+    // NOTE: this should only be used to get a State from a discretized
+	// PlanningState; use disc_2_cont for lengths
+	inline double cell_2_state(int value, double cell_size)
 	{
 	    return (double(value) * cell_size + cell_size/2);
+	}
+
+
+	// NOTE: use this only to discretize a length
+	inline int cont_2_disc(double length, double cell_size)
+	{
+        return int(length / cell_size);
+	}
+
+
+	// NOTE: use this only to get a continuous length from a discretized one
+	inline double disc_2_cont(int length, double cell_size)
+	{
+	    return (double(length) * cell_size);
 	}
 
 
@@ -140,7 +160,7 @@ namespace footstep_planner
                       double& footstep_x, double& footstep_y,
                       double& footstep_theta);
 
-    bool performable(int x, int y, int theta,
+    bool performable(int footstep_x, int footstep_y, int footstep_theta,
                      int max_footstep_x, int max_footstep_y,
                      int max_footstep_theta,
                      int max_inv_footstep_x, int max_inv_footstep_y,

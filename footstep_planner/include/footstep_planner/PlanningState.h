@@ -48,7 +48,8 @@ namespace footstep_planner
 	     * @brief x, y and theta as discrete bin values (as used internally by
 	     * the planner)
 	     */
-	    PlanningState(int x, int y, int theta, Leg leg, int max_hash_size);
+	    PlanningState(int x, int y, int theta, Leg leg,
+                      double cell_size, int num_angle_bins, int max_hash_size);
 
 	    /// Create a PlanningState from a State
         PlanningState(const State& s, double cell_size, int num_angle_bins,

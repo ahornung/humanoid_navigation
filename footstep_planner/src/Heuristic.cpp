@@ -53,10 +53,10 @@ namespace footstep_planner
 			return 0;
 
 		// in meter
-		return euclidean_distance(disc_2_cont(from.getX(), ivCellSize),
-		                          disc_2_cont(from.getY(), ivCellSize),
-		                          disc_2_cont(to.getX(), ivCellSize),
-		                          disc_2_cont(to.getY(), ivCellSize));
+		return euclidean_distance(cell_2_state(from.getX(), ivCellSize),
+		                          cell_2_state(from.getY(), ivCellSize),
+		                          cell_2_state(to.getX(), ivCellSize),
+		                          cell_2_state(to.getY(), ivCellSize));
 
 	}
 
@@ -85,17 +85,17 @@ namespace footstep_planner
 			return 0;
 
 		// in meter
-        double dist = euclidean_distance(disc_2_cont(from.getX(), ivCellSize),
-                                         disc_2_cont(from.getY(), ivCellSize),
-                                         disc_2_cont(to.getX(), ivCellSize),
-                                         disc_2_cont(to.getY(), ivCellSize));
+        double dist = euclidean_distance(cell_2_state(from.getX(), ivCellSize),
+                                         cell_2_state(from.getY(), ivCellSize),
+                                         cell_2_state(to.getX(), ivCellSize),
+                                         cell_2_state(to.getY(), ivCellSize));
 		double expected_steps = dist / ivMaxStepWidth;
 		// we could replace this by working on ints (w. all normalization)
 		// int disc_diff_angle = abs(from.getTheta() - to.getTheta());
 		// double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
 		double diff_angle = 0.0;
 		if (ivDiffAngleCost > 0.0)
-			diff_angle = std::abs(angles::shortest_angular_distance(angle_disc_2_cont(from.getTheta(), ivNumAngleBins),angle_disc_2_cont(to.getTheta(), ivNumAngleBins)));
+			diff_angle = std::abs(angles::shortest_angular_distance(angle_cell_2_state(from.getTheta(), ivNumAngleBins),angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
 
 		return (dist + expected_steps * ivStepCost + diff_angle * ivDiffAngleCost);
 	}

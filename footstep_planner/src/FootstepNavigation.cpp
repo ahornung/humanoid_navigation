@@ -40,8 +40,10 @@ namespace footstep_planner
         ivFootstepService = nh_public.serviceClient<humanoid_nav_msgs::StepTargetService>("cmd_step_srv");
 
         // subscribers
-        ivGridMapSub = nh_public.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepNavigation::mapCallback, this);
-		ivGoalPoseSub = nh_public.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepNavigation::goalPoseCallback, this);
+        ivGridMapSub = nh_public.subscribe<nav_msgs::OccupancyGrid>(
+                "map", 1, &FootstepNavigation::mapCallback, this);
+		ivGoalPoseSub = nh_public.subscribe<geometry_msgs::PoseStamped>(
+		        "goal", 1, &FootstepNavigation::goalPoseCallback, this);
         // subscribe to robot pose to get latest time
         ivRobotPoseSub = nh_public.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 5, &FootstepNavigation::robotPoseCallback, this);
 
@@ -51,7 +53,8 @@ namespace footstep_planner
 
         nh_private.param("accuracy/footstep/x", ivFootstepAccuracyX, 0.01);
         nh_private.param("accuracy/footstep/y", ivFootstepAccuracyY, 0.01);
-        nh_private.param("accuracy/footstep/theta", ivFootstepAccuracyTheta, 0.15);
+        nh_private.param("accuracy/footstep/theta", ivFootstepAccuracyTheta,
+                         0.15);
 
         double max_footstep_x, max_footstep_y, max_footstep_theta;
         double max_inv_footstep_x, max_inv_footstep_y, max_inv_footstep_theta;
@@ -61,13 +64,16 @@ namespace footstep_planner
         nh_private.param("foot/max/step/theta", max_footstep_theta, 0.349);
         nh_private.param("foot/max/inverse/step/x", max_inv_footstep_x, 0.04);
         nh_private.param("foot/max/inverse/step/y", max_inv_footstep_y, 0.01);
-        nh_private.param("foot/max/inverse/step/theta", max_inv_footstep_theta, 0.05);
+        nh_private.param("foot/max/inverse/step/theta", max_inv_footstep_theta,
+                         0.05);
         ivMaxFootstepX = cont_2_disc(max_footstep_x, ivCellSize);
         ivMaxFootstepY = cont_2_disc(max_footstep_y, ivCellSize);
-        ivMaxFootstepTheta = angle_cont_2_disc(max_footstep_theta, ivNumAngleBins);
+        ivMaxFootstepTheta = angle_state_2_cell(max_footstep_theta,
+                                                ivNumAngleBins);
         ivMaxInvFootstepX = cont_2_disc(max_inv_footstep_x, ivCellSize);
         ivMaxInvFootstepY = cont_2_disc(max_inv_footstep_y, ivCellSize);
-        ivMaxInvFootstepTheta = angle_cont_2_disc(max_inv_footstep_theta, ivNumAngleBins);
+        ivMaxInvFootstepTheta = angle_state_2_cell(max_inv_footstep_theta,
+                                                   ivNumAngleBins);
 
         nh_private.param("accuracy/cell_size", ivCellSize, 0.01);
         nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 64);
@@ -147,7 +153,6 @@ namespace footstep_planner
     			ivFootstepService.call(step_service);
     		}
     	}
-
     	// perform last step (0,0,0) so the feet are again parallel
     	if (current->leg == RIGHT)
     		step.leg = humanoid_nav_msgs::StepTarget::left;
@@ -170,36 +175,38 @@ namespace footstep_planner
     {
     	// calculate the necessary footstep to reach the foot placement
     	tf::Transform footstep_transform;
-    	Leg support_leg;
+    	Leg support_foot_leg;
     	if (footstep.leg == humanoid_nav_msgs::StepTarget::right)
-    		support_leg = LEFT;
+    		support_foot_leg = LEFT;
     	else // footstep.leg == LEFT
-    		support_leg = RIGHT;
-    	double x, y, theta;
-    	get_footstep(support_leg, ivFootSeparation,
+    		support_foot_leg = RIGHT;
+    	double footstep_x, footstep_y, footstep_theta;
+    	get_footstep(support_foot_leg, ivFootSeparation,
                      support_foot.getOrigin().x(),
                      support_foot.getOrigin().y(),
                      tf::getYaw(support_foot.getRotation()),
     				 foot_placement.x,
     				 foot_placement.y,
     				 foot_placement.theta,
-    				 x, y, theta);
+    				 footstep_x, footstep_y, footstep_theta);
 
-    	int disc_x = cont_2_disc(x, ivCellSize);
-        int disc_y = cont_2_disc(y, ivCellSize);
-        int disc_theta = angle_cont_2_disc(theta, ivNumAngleBins);
-        bool reached = performable(disc_x, disc_y, disc_theta,
+    	int disc_footstep_x = cont_2_disc(footstep_x, ivCellSize);
+        int disc_footstep_y = cont_2_disc(footstep_y, ivCellSize);
+        int disc_footstep_theta = angle_state_2_cell(footstep_theta,
+                                                     ivNumAngleBins);
+        bool reached = performable(disc_footstep_x, disc_footstep_y,
+                                   disc_footstep_theta,
                                    ivMaxFootstepX, ivMaxFootstepY,
                                    ivMaxFootstepTheta,
                                    ivMaxInvFootstepX, ivMaxInvFootstepY,
                                    ivMaxInvFootstepTheta,
                                    ivNumAngleBins,
-                                   support_leg);
+                                   support_foot_leg);
         if (reached)
         {
-            footstep.pose.x = x;
-            footstep.pose.y = y;
-            footstep.pose.theta = theta;
+            footstep.pose.x = footstep_x;
+            footstep.pose.y = footstep_y;
+            footstep.pose.theta = footstep_theta;
 
             return true;
         }
@@ -308,10 +315,9 @@ namespace footstep_planner
 
 
     void
-    FootstepNavigation::getFootTransform(const std::string& foot_id,
-    		const std::string& world_frame_id,
-    		const ros::Time& time,
-    		tf::Transform& foot)
+    FootstepNavigation::getFootTransform(
+            const std::string& foot_id, const std::string& world_frame_id,
+    		const ros::Time& time, tf::Transform& foot)
     {
     	tf::StampedTransform stamped_foot_transform;
     	// TODO: try/catch if tf not available?

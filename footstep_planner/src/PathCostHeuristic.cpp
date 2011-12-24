@@ -58,11 +58,12 @@ namespace footstep_planner
         unsigned int from_x;
         unsigned int from_y;
         // could be removed after more testing (then use ...noBounds... again)
-        bool valid = ivMapPtr->worldToMap(disc_2_cont(from.getX(), ivCellSize),
-                                     disc_2_cont(from.getY(), ivCellSize),
-                                     from_x, from_y);
+        bool valid = ivMapPtr->worldToMap(cell_2_state(from.getX(), ivCellSize),
+                                          cell_2_state(from.getY(), ivCellSize),
+                                          from_x, from_y);
         assert(valid);
-        double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(from_x, from_y)) / 1000;
+        double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(
+                from_x, from_y)) / 1000;
         double expected_steps = dist / ivMaxStepWidth;
         // we could replace this by working on ints (w. all normalization)
         // int disc_diff_angle = abs(from.getTheta() - to.getTheta());
@@ -71,8 +72,8 @@ namespace footstep_planner
         if (ivDiffAngleCost > 0.0)
         {
         	diff_angle = std::abs(angles::shortest_angular_distance(
-        	        angle_disc_2_cont(from.getTheta(), ivNumAngleBins),
-        	        angle_disc_2_cont(to.getTheta(), ivNumAngleBins)));
+        	        angle_cell_2_state(from.getTheta(), ivNumAngleBins),
+        	        angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
         }
 
         return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
@@ -94,14 +95,15 @@ namespace footstep_planner
 
         unsigned int start_x;
         unsigned int start_y;
-        bool valid = ivMapPtr->worldToMap(disc_2_cont(start.getX(), ivCellSize),
-                                          disc_2_cont(start.getY(), ivCellSize),
-                                          start_x, start_y);
+        bool valid = ivMapPtr->worldToMap(
+                cell_2_state(start.getX(), ivCellSize),
+                cell_2_state(start.getY(), ivCellSize),
+                start_x, start_y);
         assert(valid);
         unsigned int goal_x;
         unsigned int goal_y;
-        valid = ivMapPtr->worldToMap(disc_2_cont(goal.getX(), ivCellSize),
-		                             disc_2_cont(goal.getY(), ivCellSize),
+        valid = ivMapPtr->worldToMap(cell_2_state(goal.getX(), ivCellSize),
+		                             cell_2_state(goal.getY(), ivCellSize),
 		                             goal_x, goal_y);
         assert(valid);
 

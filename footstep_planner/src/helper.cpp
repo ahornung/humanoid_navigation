@@ -32,9 +32,13 @@ namespace footstep_planner
                       double& footstep_x, double& footstep_y,
                       double& footstep_theta)
     {
-        double diff_angle = angles::shortest_angular_distance(from_theta,
-                                                              to_theta);
+        footstep_theta = angles::shortest_angular_distance(from_theta,
+                                                           to_theta);
+
         double foot_separation_half = foot_separation/2;
+
+        double theta_cos = cos(-from_theta);
+        double theta_sin = sin(-from_theta);
 
         double shift_to_x = -sin(to_theta) * foot_separation_half;
         double shift_to_y =  cos(to_theta) * foot_separation_half;
@@ -42,31 +46,34 @@ namespace footstep_planner
         double shift_from_y =  cos(from_theta) * foot_separation_half;
         if (support_leg == RIGHT)
         {
-            to_x -= shift_to_x;
-            to_y -= shift_to_y;
+            to_x -= (shift_to_x + shift_from_x + from_x);
+            to_y -= (shift_to_y + shift_from_y + from_y);
 
-            to_x -= shift_from_x;
-            to_y -= shift_from_y;
+            footstep_x = theta_cos * to_x - theta_sin * to_y;
+            footstep_y = theta_sin * to_x + theta_cos * to_y;
         }
         else
         {
-            to_x += shift_to_x;
-            to_y += shift_to_y;
+            to_x += (shift_to_x + shift_from_x - from_x);
+            to_y += (shift_to_y + shift_from_y - from_y);
 
-            to_x += shift_from_x;
-            to_y += shift_from_y;
-
-            diff_angle = -diff_angle;
+            footstep_x =  theta_cos * to_x - theta_sin * to_y;
+            footstep_y = -theta_sin * to_x - theta_cos * to_y;
+            footstep_theta *= -1;
         }
-        to_x -= from_x;
-        to_y -= from_y;
+    }
 
-        // TODO: check
-        double from_theta_cos = cos(-from_theta);
-        double from_theta_sin = sin(-from_theta);
-        footstep_x = from_theta_cos*to_x - from_theta_sin*to_y;
-        footstep_y = from_theta_sin*to_x + from_theta_cos*to_y;
-        footstep_theta = diff_angle;
+
+    void get_footstep_int(Leg support_leg,
+            int from_x, int from_y, int from_theta,
+            int to_x, int to_y, int to_theta,
+            float foot_separation,
+            float cell_size, int num_angle_bins)
+    {
+        double cont_theta_from = angle_cell_2_state(from_theta, num_angle_bins);
+        double cont_theta_to = angle_cell_2_state(to_theta, num_angle_bins);
+
+        int foot_separation_half = discretize(foot_separation / 2, cell_size);
     }
 
 
@@ -75,47 +82,24 @@ namespace footstep_planner
                 int max_footstep_x, int max_footstep_y, int max_footstep_theta,
                 int max_inv_footstep_x, int max_inv_footstep_y,
                 int max_inv_footstep_theta,
-                int num_angle_bins,
-                Leg footstep_leg)
+                int num_angle_bins)
     {
         bool in_range_x = false;
         bool in_range_y = false;
         bool in_range_theta = false;
 
-        // shift theta from range [0..num_angle_bins) to
-        // [-num_angle_bins/2..num_angle_bins/2)
-        if (footstep_theta >= num_angle_bins/2)
-            footstep_theta -= num_angle_bins;
-
-        if (footstep_x <= max_footstep_x && footstep_x >= -max_inv_footstep_x)
+        if (footstep_x <= max_footstep_x && footstep_x >= max_inv_footstep_x)
         {
             in_range_x = true;
         }
-        if (footstep_leg == RIGHT)
+        if (footstep_y <= max_footstep_y && footstep_y >= max_inv_footstep_y)
         {
-            if (footstep_y <=  max_footstep_y &&
-                footstep_y >= -max_inv_footstep_y)
-            {
-                in_range_y = true;
-            }
-            if (footstep_theta <=  max_footstep_theta &&
-                footstep_theta >= -max_inv_footstep_theta)
-            {
-                in_range_theta = true;
-            }
+            in_range_y = true;
         }
-        else // from_leg == LEFT
+        if (footstep_theta <= max_footstep_theta &&
+            footstep_theta >= max_inv_footstep_theta)
         {
-            if (footstep_y >= -max_footstep_y &&
-                footstep_y <=  max_inv_footstep_y)
-            {
-                in_range_y = true;
-            }
-            if (footstep_theta >= -max_footstep_theta &&
-                footstep_theta <=  max_inv_footstep_theta)
-            {
-                in_range_theta = true;
-            }
+            in_range_theta = true;
         }
 
         return in_range_x && in_range_y && in_range_theta;

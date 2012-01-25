@@ -22,4 +22,4 @@ foot:
   max:
     step: {x: 0.22, y: 0.12, theta: 0.7}
     inverse:
-      step: {x: 0.1, y: 0.02, theta: 0.4}
+      step: {x: -0.1, y: -0.02, theta: -0.4}

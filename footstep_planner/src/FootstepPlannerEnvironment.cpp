@@ -448,8 +448,8 @@ namespace footstep_planner
         getFootstep(from.getLeg(), from, to,
                     cont_footstep_x, cont_footstep_y, cont_footstep_theta);
 
-        int footstep_x = cont_2_disc(cont_footstep_x, ivCellSize);
-        int footstep_y = cont_2_disc(cont_footstep_y, ivCellSize);
+        int footstep_x = discretize(cont_footstep_x, ivCellSize);
+        int footstep_y = discretize(cont_footstep_y, ivCellSize);
         int footstep_theta = angle_state_2_cell(cont_footstep_theta,
                                                 ivNumAngleBins);
         return performable(footstep_x, footstep_y,
@@ -457,8 +457,7 @@ namespace footstep_planner
                            ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
                            ivMaxInvFootstepX, ivMaxInvFootstepY,
                            ivMaxInvFootstepTheta,
-                           ivNumAngleBins,
-                           from.getLeg());
+                           ivNumAngleBins);
     }
 
 
@@ -664,6 +663,7 @@ namespace footstep_planner
         }
     }
 
+
     void
     FootstepPlannerEnvironment::GetRandomSuccsatDistance(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CLowV)
     {
@@ -834,7 +834,7 @@ namespace footstep_planner
 	bool
 	FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
 	{
-		// TODO: check if needed
+		// TODO: check if needed --> NOTE: hash tags are not unique
 		return (StateID1 == StateID2);
 	}
 

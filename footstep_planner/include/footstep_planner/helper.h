@@ -116,27 +116,24 @@ namespace footstep_planner
 	}
 
 
-	// TODO: add method getState to the PlanningState-class
+	// TODO: add method getState to the PlanningState-class???
 
     // NOTE: this should only be used to get a State from a discretized
 	// PlanningState; use disc_2_cont for lengths
 	inline double cell_2_state(int value, double cell_size)
 	{
-	    return (double(value) * cell_size + cell_size/2);
+	    return (double(value) + 0.5) * cell_size;
 	}
 
 
-	// NOTE: use this only to discretize a length
-	inline int cont_2_disc(double length, double cell_size)
+	// NOTE: use this only to discretize a length by a certain factor
+	inline int discretize(double length, double factor)
 	{
-        return int(length / cell_size);
-	}
-
-
-	// NOTE: use this only to get a continuous length from a discretized one
-	inline double disc_2_cont(int length, double cell_size)
-	{
-	    return (double(length) * cell_size);
+	    int ret = int(length / factor + 0.5);
+	    if (length >= 0)
+	        return ret;
+	    else
+	        return ret - 1;
 	}
 
 
@@ -160,13 +157,29 @@ namespace footstep_planner
                       double& footstep_x, double& footstep_y,
                       double& footstep_theta);
 
+    void get_footstep_int(Leg support_leg,
+                int from_x, int from_y, int from_theta,
+                int to_x, int to_y, int to_theta);
+
+    /**
+     * @param footstep_x
+     * @param footstep_y
+     * @param footstep_theta
+     * @param max_footstep_x
+     * @param max_footstep_y
+     * @param max_footstep_theta
+     * @param max_inv_footstep_x
+     * @param max_inv_footstep_y
+     * @param max_inv_footstep_theta has to be in [-num_angle_bins/2..num_angle_bins/2)
+     * @param num_angle_bins
+     * @return
+     */
     bool performable(int footstep_x, int footstep_y, int footstep_theta,
                      int max_footstep_x, int max_footstep_y,
                      int max_footstep_theta,
                      int max_inv_footstep_x, int max_inv_footstep_y,
                      int max_inv_footstep_theta,
-                     int num_angle_bins,
-                     Leg from_leg);
+                     int num_angle_bins);
 
 	/**
 	 * Checking if a footstep (represented by its center and orientation (x, y, theta))

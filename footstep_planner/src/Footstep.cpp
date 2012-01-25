@@ -104,7 +104,7 @@ namespace footstep_planner
 
         if (current.getLeg() == RIGHT)
         {
-            footstep_xy xy = ivDiscSuccessorRight[theta];
+        	footstep_xy xy = ivDiscSuccessorRight[theta];
             x += xy.first;
             y += xy.second;
             theta += ivTheta;
@@ -112,13 +112,14 @@ namespace footstep_planner
         }
         else // leg == LEFT
         {
-            footstep_xy xy = ivDiscSuccessorLeft[theta];
+        	footstep_xy xy = ivDiscSuccessorLeft[theta];
             x += xy.first;
             y += xy.second;
             theta -= ivTheta;
             leg = RIGHT;
         }
-        // theta has to be in [0..72)
+
+        // theta has to be in [0..ivNumAngleBins)
         if (theta < 0)
             theta += ivNumAngleBins;
         else if (theta >= ivNumAngleBins)
@@ -155,7 +156,7 @@ namespace footstep_planner
             theta += ivTheta;
             leg = LEFT;
         }
-        // theta has to be in [0..72)
+        // theta has to be in [0..ivNumAngleBins)
         if (theta < 0)
             theta += ivNumAngleBins;
         else if (theta >= ivNumAngleBins)
@@ -203,9 +204,10 @@ namespace footstep_planner
             global_theta -= ivTheta;
         }
 
-        *footstep_x = cont_2_disc(cont_footstep_x, ivCellSize);
-        *footstep_y = cont_2_disc(cont_footstep_y, ivCellSize);
+        *footstep_x = discretize(cont_footstep_x, ivCellSize);
+        *footstep_y = discretize(cont_footstep_y, ivCellSize);
 
+        // theta has to be in [0..ivNumAngleBins)
         if (global_theta < 0)
             global_theta += ivNumAngleBins;
         else if (global_theta >= ivNumAngleBins)

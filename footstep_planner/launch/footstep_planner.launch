@@ -2,6 +2,7 @@
 
   <node name="footstep_planner" pkg="footstep_planner" type="footstep_planner_node" >
     <rosparam file="$(find footstep_planner)/config/planning_params.yaml" command="load" />
+    <rosparam file="$(find footstep_planner)/config/planning_params_asimo.yaml" command="load" />
     <rosparam file="$(find footstep_planner)/config/footsteps_asimo.yaml" command="load" />
   </node>
 

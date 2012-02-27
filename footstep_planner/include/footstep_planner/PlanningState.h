@@ -70,8 +70,6 @@ namespace footstep_planner
 		int getY() const { return ivY; };
 
 		unsigned int getHashTag() const { return ivHashTag; };
-		// TODO: move to helper?
-		unsigned int calculateHashTag(int max_hash_size) const;
 
 		int getId() const { return ivId; };
 

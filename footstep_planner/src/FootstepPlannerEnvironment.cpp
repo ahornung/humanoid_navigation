@@ -298,7 +298,7 @@ namespace footstep_planner
         s->x = cell_2_state(planning_state->getX(), ivCellSize);
         s->y = cell_2_state(planning_state->getY(), ivCellSize);
         s->theta = angle_cell_2_state(planning_state->getTheta(),
-                                     ivNumAngleBins);
+                                      ivNumAngleBins);
         s->leg = planning_state->getLeg();
 
         return true;
@@ -398,7 +398,7 @@ namespace footstep_planner
         else
             start = ivStateId2State[ivStartFootIdRight];
 
-        return reachableState(*start, from);
+        return reachable(*start, from);
     }
 
 
@@ -412,7 +412,7 @@ namespace footstep_planner
         else
             goal = ivStateId2State[ivGoalFootIdRight];
 
-        return reachableState(from, *goal);
+        return reachable(from, *goal);
     }
 
 
@@ -439,8 +439,8 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlannerEnvironment::reachableState(const PlanningState& from,
-	                                           const PlanningState& to)
+    FootstepPlannerEnvironment::reachable(const PlanningState& from,
+	                                      const PlanningState& to)
     {
         double cont_footstep_x;
         double cont_footstep_y;
@@ -452,8 +452,7 @@ namespace footstep_planner
         int footstep_y = discretize(cont_footstep_y, ivCellSize);
         int footstep_theta = angle_state_2_cell(cont_footstep_theta,
                                                 ivNumAngleBins);
-        return performable(footstep_x, footstep_y,
-                           footstep_theta,
+        return performable(footstep_x, footstep_y, footstep_theta,
                            ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
                            ivMaxInvFootstepX, ivMaxInvFootstepY,
                            ivMaxInvFootstepTheta,

@@ -109,8 +109,11 @@ namespace footstep_planner
         std::string ivFootIDLeft;
         std::string ivMapFrameID;
 
-        double ivFootstepAccuracyX, ivFootstepAccuracyY, ivFootstepAccuracyTheta;
         double ivFootSeparation;
+        double ivAccuracyX, ivAccuracyY, ivAccuracyTheta;
+        double ivContMaxFootstepX, ivContMaxFootstepY, ivContMaxFootstepTheta;
+        double ivContMaxInvFootstepX, ivContMaxInvFootstepY,
+               ivContMaxInvFootstepTheta;
         int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
         int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
         double ivCellSize;

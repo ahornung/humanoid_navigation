@@ -1,0 +1,22 @@
+### Planning parameterization for the Aldebaran Robotics Nao humanoid ##########
+
+# cost to perform one footstep (in addition to distance costs, corresponds to 'meters')
+step_cost: 0.01
+# cost to estimate the difference between the current orientation and the goal 
+# orientation; used in the heuristic it can easily overestimate the true path 
+# cost since this cost is not incorporated in each step
+diff_angle_cost: 0.0
+
+accuracy:
+  # footstep collision check accuracy
+  # - 0 (just the circumcircle of the foot)
+  # - 1 (just the incircle of the foot)
+  # - 2 (circumcircle and incircle recursivly checked for the whole foot)
+  collision_check: 2
+  
+  cell_size: 0.001
+  
+  num_angle_bins: 128
+  
+  # the smaller the better a performed footstep has to fit into a planned one
+  footstep: {x: 0.005, y: 0.005, theta: 0.05}

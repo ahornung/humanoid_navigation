@@ -64,19 +64,6 @@ namespace footstep_planner
     }
 
 
-    void get_footstep_int(Leg support_leg,
-            int from_x, int from_y, int from_theta,
-            int to_x, int to_y, int to_theta,
-            float foot_separation,
-            float cell_size, int num_angle_bins)
-    {
-        double cont_theta_from = angle_cell_2_state(from_theta, num_angle_bins);
-        double cont_theta_to = angle_cell_2_state(to_theta, num_angle_bins);
-
-        int foot_separation_half = discretize(foot_separation / 2, cell_size);
-    }
-
-
     bool
     performable(int footstep_x, int footstep_y, int footstep_theta,
                 int max_footstep_x, int max_footstep_y, int max_footstep_theta,
@@ -96,8 +83,41 @@ namespace footstep_planner
         {
             in_range_y = true;
         }
-        if (footstep_theta <= max_footstep_theta &&
-            footstep_theta >= max_inv_footstep_theta)
+		if (footstep_theta <=  max_footstep_theta &&
+		    footstep_theta >= -max_inv_footstep_theta)
+		{
+			in_range_theta = true;
+		}
+
+        return in_range_x && in_range_y && in_range_theta;
+    }
+
+
+    bool
+    performable_cont(double footstep_x, double footstep_y,
+                     double footstep_theta, double max_footstep_x,
+                     double max_footstep_y, double max_footstep_theta,
+                     double max_inv_footstep_x, double max_inv_footstep_y,
+                     double max_inv_footstep_theta, double accuracy_x,
+                     double accuracy_y, double accuracy_theta)
+    {
+        bool in_range_x = false;
+        bool in_range_y = false;
+        bool in_range_theta = false;
+
+        // NOTE: '>' and '<' are sufficient since float values are compared
+        if (footstep_x < max_footstep_x + accuracy_x &&
+            footstep_x > max_inv_footstep_x - accuracy_x)
+        {
+            in_range_x = true;
+        }
+        if (footstep_y < max_footstep_y + accuracy_y &&
+            footstep_y > max_inv_footstep_y - accuracy_y)
+        {
+            in_range_y = true;
+        }
+        if (footstep_theta < max_footstep_theta + accuracy_theta &&
+            footstep_theta > max_inv_footstep_theta - accuracy_theta)
         {
             in_range_theta = true;
         }
@@ -160,5 +180,16 @@ namespace footstep_planner
 		                        accuracy, distance_map) ||
 				collision_check(x-x_shift, y-y_shift, theta, h_new, w_new,
                                 accuracy, distance_map));
+	}
+
+
+	void
+	get_state(int x, int y, int theta, Leg leg, double cell_size,
+	          int num_angle_bins, State* s)
+	{
+		s->x = cell_2_state(x, cell_size);
+		s->y = cell_2_state(y, cell_size);
+		s->theta = angle_cell_2_state(theta, num_angle_bins);
+		s->leg = leg;
 	}
 }

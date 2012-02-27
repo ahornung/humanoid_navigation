@@ -116,8 +116,6 @@ namespace footstep_planner
 	}
 
 
-	// TODO: add method getState to the PlanningState-class???
-
     // NOTE: this should only be used to get a State from a discretized
 	// PlanningState; use disc_2_cont for lengths
 	inline double cell_2_state(int value, double cell_size)
@@ -137,6 +135,7 @@ namespace footstep_planner
 	}
 
 
+	// TODO: measure performance whether inline is useful here or not
 	inline unsigned int int_hash(int key)
 	{
         key += (key << 12);
@@ -151,23 +150,29 @@ namespace footstep_planner
 	}
 
 
+	// TODO: measure performance whether inline is useful here or not
+	inline unsigned int calc_hash_tag(int x, int y, int theta, int leg,
+	                                  int max_hash_size)
+	{
+        return int_hash((int_hash(x) << 3) + (int_hash(y) << 2) +
+                        (int_hash(theta) << 1) + (int_hash(leg)))
+                        % max_hash_size;
+	}
+
+
     void get_footstep(Leg support_leg, double foot_separation,
                       double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,
                       double& footstep_x, double& footstep_y,
                       double& footstep_theta);
 
-    void get_footstep_int(Leg support_leg,
-                int from_x, int from_y, int from_theta,
-                int to_x, int to_y, int to_theta);
-
     /**
      * @param footstep_x
      * @param footstep_y
-     * @param footstep_theta
+     * @param footstep_theta has to be in [-num_angle_bins/2..num_angle_bins/2)
      * @param max_footstep_x
      * @param max_footstep_y
-     * @param max_footstep_theta
+     * @param max_footstep_theta has to be in [-num_angle_bins/2..num_angle_bins/2)
      * @param max_inv_footstep_x
      * @param max_inv_footstep_y
      * @param max_inv_footstep_theta has to be in [-num_angle_bins/2..num_angle_bins/2)
@@ -180,6 +185,25 @@ namespace footstep_planner
                      int max_inv_footstep_x, int max_inv_footstep_y,
                      int max_inv_footstep_theta,
                      int num_angle_bins);
+
+    /**
+     * @param footstep_x
+     * @param footstep_y
+     * @param footstep_theta has to be in (-pi..+pi]
+     * @param max_footstep_x
+     * @param max_footstep_y
+     * @param max_footstep_theta has to be in (-pi..+pi]
+     * @param max_inv_footstep_x
+     * @param max_inv_footstep_y
+     * @param max_inv_footstep_theta has to be in (-pi..+pi]
+     * @return
+     */
+    bool performable_cont(double footstep_x, double footstep_y,
+                          double footstep_theta, double max_footstep_x,
+                          double max_footstep_y, double max_footstep_theta,
+                          double max_inv_footstep_x, double max_inv_footstep_y,
+                          double max_inv_footstep_theta, double accuracy_x,
+                          double accuracy_y, double accuracy_theta);
 
 	/**
 	 * Checking if a footstep (represented by its center and orientation (x, y, theta))
@@ -198,6 +222,10 @@ namespace footstep_planner
 	bool collision_check(double x, double y, double theta,
                          double height, double width, int accuracy,
 						 const GridMap2D& distanceMap);
+
+	/// Used to generate a State (continuous) from a PlanningState (discrete)
+	void get_state(int x, int y, int theta, Leg leg, double cell_size,
+	               int num_angle_bins, State* s);
 }
 
 #endif  /* HUMANOID_SBPL_HELPER_H_ */

@@ -4,6 +4,6 @@
   <include file="$(find nao_remote)/launch/nao_remote.launch" />
   <include file="$(find nao_nav)/launch/fake_loc_from_odom.launch" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(find footstep_planner)/maps/sample.yaml" />
-  <include file="$(find footstep_planner)/launch/rviz_footstep_planning.launch" />
+  <include file="$(find footstep_planner)/launch/rviz_footstep_navigation.launch" />
   <include file="$(find footstep_planner)/launch/footstep_navigation_nao.launch" />
 </launch>

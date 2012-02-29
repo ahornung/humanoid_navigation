@@ -877,122 +877,22 @@ namespace footstep_planner
         marker.header.stamp = ros::Time::now();
         marker.header.frame_id = ivMapPtr->getFrameID();
 
-        // TODO: uncomment again
-//		// add the missing start foot to the publish vector for visualization:
-//        if (ivPath.front().leg == LEFT)
-//        	footstepToMarker(ivStartFootRight, &marker);
-//        else
-//        	footstepToMarker(ivStartFootLeft, &marker);
-//		marker.id = markers_counter++;
-//		markers.push_back(marker);
+		// add the missing start foot to the publish vector for visualization:
+        if (ivPath.front().leg == LEFT)
+        	footstepToMarker(ivStartFootRight, &marker);
+        else
+        	footstepToMarker(ivStartFootLeft, &marker);
+		marker.id = markers_counter++;
+		markers.push_back(marker);
 
         // add the footsteps of the path to the publish vector
 		bool first_it = true;
         state_iter_t path_iter = getPathBegin();
         for(; path_iter != getPathEnd(); path_iter++)
         {
-        	// TODO: uncomment again
-//			footstepToMarker(*path_iter, &marker);
-//			marker.id = markers_counter++;
-//			markers.push_back(marker);
-
-            // TODO: remove after debug
-            if (first_it)
-            {
-				footstepToMarker(*path_iter, &marker);
-				marker.id = markers_counter++;
-				markers.push_back(marker);
-
-            	State state_first = *path_iter;
-            	PlanningState first(state_first, ivCellSize, ivNumAngleBins,
-            	                    65536);
-
-            	path_iter++;
-                footstepToMarker(*path_iter, &marker);
-                marker.id = markers_counter++;
-                markers.push_back(marker);
-                State state_second = *path_iter;
-            	PlanningState second(state_second, ivCellSize, ivNumAngleBins,
-            	                     65536);
-
-                // TODO: remove after debug
-                int max_footstep_x = discretize(ivMaxFootstepX, ivCellSize);
-                int max_footstep_y = discretize(ivMaxFootstepY, ivCellSize);
-                int max_footstep_theta = angle_state_2_cell(
-                		ivMaxFootstepTheta, ivNumAngleBins);
-                int max_inv_footstep_x = discretize(
-                		ivMaxInvFootstepX, ivCellSize);
-                int max_inv_footstep_y = discretize(
-                		ivMaxInvFootstepY, ivCellSize);
-                int max_inv_footstep_theta = angle_state_2_cell(
-                		ivMaxInvFootstepTheta, ivNumAngleBins);
-                if (max_inv_footstep_theta > ivNumAngleBins/2)
-                    max_inv_footstep_theta -= ivNumAngleBins;
-                ROS_INFO("--- continuous accuracies ---");
-                ROS_INFO("max footstep (%f, %f, %f)", ivMaxFootstepX, ivMaxFootstepY,
-                		ivMaxFootstepTheta);
-                ROS_INFO("max inv footstep (%f, %f, %f)", ivMaxInvFootstepX,
-                		ivMaxInvFootstepY, ivMaxInvFootstepTheta);
-                ROS_INFO("--- discrete accuracies ---");
-                ROS_INFO("max footstep (%i, %i, %i)",
-                		max_footstep_x, max_footstep_y, max_footstep_theta);
-                ROS_INFO("max inv footstep (%i, %i, %i)\n", max_inv_footstep_x,
-                		max_inv_footstep_y, max_inv_footstep_theta);
-
-            	ROS_INFO("first (%f, %f, %f, %i) (disc: (%i, %i, %i))",
-            			state_first.x, state_first.y, state_first.theta,
-            			first.getLeg(),
-            			first.getX(), first.getY(), first.getTheta());
-            	ROS_INFO("second (%f, %f, %f, %i) (disc: (%i, %i, %i))",
-            			state_second.x, state_second.y, state_second.theta,
-            			second.getLeg(),
-            			second.getX(), second.getY(), second.getTheta());
-
-            	double step_x, step_y, step_theta;
-                double from_x = cell_2_state(first.getX(), ivCellSize);
-                double from_y = cell_2_state(first.getY(), ivCellSize);
-                double from_theta = angle_cell_2_state(first.getTheta(),
-                                                       ivNumAngleBins);
-                double to_x = cell_2_state(second.getX(), ivCellSize);
-                double to_y = cell_2_state(second.getY(), ivCellSize);
-                double to_theta = angle_cell_2_state(second.getTheta(),
-                                                     ivNumAngleBins);
-                get_footstep(first.getLeg(), ivFootSeparation,
-                             from_x, from_y, from_theta,
-                             to_x, to_y, to_theta,
-                             step_x, step_y, step_theta);
-                int disc_step_x = discretize(step_x, ivCellSize);
-                int disc_step_y = discretize(step_y, ivCellSize);
-                int disc_step_theta = angle_state_2_cell(
-                		step_theta, ivNumAngleBins);
-
-                ROS_INFO("footstep (%f, %f, %f) (disc: (%i, %i, %i))",
-                		step_x, step_y, step_theta,
-                		disc_step_x, disc_step_y, disc_step_theta);
-
-                bool can_be_performed = performable(
-                		disc_step_x, disc_step_y, disc_step_theta,
-                        max_footstep_x, max_footstep_y, max_footstep_theta,
-                        max_inv_footstep_x, max_inv_footstep_y,
-                        max_inv_footstep_theta,
-                        ivNumAngleBins);
-
-                ROS_INFO("performable? %i\n", can_be_performed);
-
-                Footstep f(step_x, step_y, step_theta,
-                           ivCellSize, ivNumAngleBins, 65536, ivFootSeparation);
-                PlanningState next = f.performMeOnThisState(first);
-                State state_next;
-                get_state(next.getX(), next.getY(), next.getTheta(),
-                          next.getLeg(), ivCellSize, ivNumAngleBins,
-                          &state_next);
-                ROS_INFO("calculated next step (%f, %f, %f, %i) (disc: (%i, %i,"
-				         " %i))\n", state_next.x, state_next.y, state_next.theta,
-				         state_next.leg, next.getX(), next.getY(),
-				         next.getTheta());
-
-            	first_it = false;
-            }
+			footstepToMarker(*path_iter, &marker);
+			marker.id = markers_counter++;
+			markers.push_back(marker);
         }
         if (markers_counter < ivLastMarkerMsgSize)
         {

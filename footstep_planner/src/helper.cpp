@@ -25,7 +25,8 @@
 
 namespace footstep_planner
 {
-    // TODO: get_footstep should be working for int
+	// TODO: BUGFIX!!!
+    // TODO: should get_footstep should be working for int?
     void get_footstep(Leg support_leg, double foot_separation,
                       double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,

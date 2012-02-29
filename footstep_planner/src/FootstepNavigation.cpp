@@ -83,17 +83,33 @@ namespace footstep_planner
         ivMaxInvFootstepTheta = angle_state_2_cell(ivContMaxInvFootstepTheta,
                                                    ivNumAngleBins);
 
-//        // TODO: remove after debug
-//        ROS_INFO("--- discrete accuracies ---");
-//        ROS_INFO("max footstep (%i, %i, %i)", ivMaxFootstepX, ivMaxFootstepY,
-//        		ivMaxFootstepTheta);
-//        ROS_INFO("max inv footstep (%i, %i, %i)", ivMaxInvFootstepX,
-//        		ivMaxInvFootstepY, ivMaxInvFootstepTheta);
-//        ROS_INFO("--- continuous accuracies ---");
-//        ROS_INFO("max footstep (%f, %f, %f)",
-//        		ivContMaxFootstepX, ivContMaxFootstepY, ivContMaxFootstepTheta);
-//        ROS_INFO("max inv footstep (%f, %f, %f)\n", ivContMaxInvFootstepX,
-//        		ivContMaxInvFootstepY, ivContMaxInvFootstepTheta);
+        // TODO: remove after debug
+        double cell_size = ivCellSize;
+        int num_angle_bins = ivNumAngleBins;
+        int disc_x = state_2_cell(0.237349, cell_size);
+        int disc_y = state_2_cell(0.759533, cell_size);
+        int disc_theta = angle_state_2_cell(0.294842, num_angle_bins);
+        double cont_x = cell_2_state(disc_x, cell_size);
+        double cont_y = cell_2_state(disc_y, cell_size);
+        double cont_theta = angle_cell_2_state(disc_theta, num_angle_bins);
+        ROS_INFO("cell size: %f", cell_size);
+        ROS_INFO("num angle bins: %i", num_angle_bins);
+        ROS_INFO("(0.237349, 0.759533, 0.294842) --> (%i, %i, %i) --> (%f, %f, "
+        		 "%f)\n", disc_x, disc_y, disc_theta, cont_x, cont_y,
+        		 cont_theta);
+        ROS_INFO("--- max footstep ---");
+        ROS_INFO("max footstep (%i, %i, %i)", ivMaxFootstepX, ivMaxFootstepY,
+        		 ivMaxFootstepTheta);
+        ROS_INFO("max inv footstep (%i, %i, %i)", ivMaxInvFootstepX,
+        		 ivMaxInvFootstepY, ivMaxInvFootstepTheta);
+        ROS_INFO("--- max inverted footstep ---");
+        ROS_INFO("max footstep (%f, %f, %f)",
+        		 ivContMaxFootstepX, ivContMaxFootstepY,
+        		 ivContMaxFootstepTheta);
+        ROS_INFO("max inv footstep (%f, %f, %f)\n", ivContMaxInvFootstepX,
+        		 ivContMaxInvFootstepY, ivContMaxInvFootstepTheta);
+        ROS_INFO("accuracies: (%f, %f, %f)\n", ivAccuracyX, ivAccuracyY,
+        		 ivAccuracyTheta);
     }
 
 
@@ -116,9 +132,14 @@ namespace footstep_planner
     	// calculate and perform relative footsteps until goal is reached
     	bool performable = false;
     	state_iter_t next_foot_placement = ivPlanner.getPathBegin();
-    	while (next_foot_placement != ivPlanner.getPathEnd())
+
+    	// TODO: get rid of current_foot_placement later
+    	State cur_foot_placement_planned = *next_foot_placement;
+
+    	while (next_foot_placement != ivPlanner.getPathEnd() &&
+    	       (next_foot_placement++) != ivPlanner.getPathEnd())
     	{
-    		if (next_foot_placement->leg == RIGHT)
+    		if (next_foot_placement->leg == LEFT)
     		{
     			support_foot_id = ivFootIDRight;
     			step.leg = humanoid_nav_msgs::StepTarget::left;
@@ -134,72 +155,14 @@ namespace footstep_planner
     			getFootTransform(support_foot_id, ivMapFrameID, ivLastRobotTime,
     			                 support_foot);
     		}
-
-//    		// TODO: remove later
-//    		current_state = *next_foot_placement;
-//
-//    		// TODO: remove later
-//    		ROS_INFO("--- difference between calculated state and actual "
-//    				 "state ---");
-//    		ROS_INFO("calculated state (%f, %f, %f", next_foot_placement->x,
-//    				 next_foot_placement->y, next_foot_placement->theta);
-//    		ROS_INFO("actual state (%f, %f, %f)",
-//    				 support_foot.getOrigin().x(),
-//    				 support_foot.getOrigin().y(),
-//    				 tf::getYaw(support_foot.getRotation()));
-
-			// get next state to calculate relative footstep
-    		next_foot_placement++;
-
-//    		// TODO: remove later
-//    		ROS_INFO("--- calculated footstep between current state and next "
-//    				 "state ---");
-//    		ROS_INFO("current state (%f, %f, %f, %s)",
-//    		         support_foot.getOrigin().x(),
-//    		         support_foot.getOrigin().y(),
-//    		         tf::getYaw(support_foot.getRotation()),
-//    		         support_foot_id.c_str());
-//    		ROS_INFO("next (planned) state (%f, %f, %f, %i)",
-//    		         next_foot_placement->x, next_foot_placement->y,
-//    		         next_foot_placement->theta, next_foot_placement->leg);
-
     		// calculate relative step
-    		performable = getFootstep(support_foot, *next_foot_placement, step);
+    		performable = getFootstep(support_foot, *next_foot_placement,
+                                      step);
 
-//    		// TODO: remove later
-//    		ROS_INFO("--- calculated relative footstep and performability ---");
-//    		ROS_INFO("step (%f, %f, %f)", step.pose.x, step.pose.y,
-//    		         step.pose.theta);
-//    		ROS_INFO("performable? %i", performablee);
-//
-//    		// TODO: remove later
-//    		ROS_INFO("--- calculate relative foostep from both planning states "
-//    				 "---");
-//    		double step_x, step_y, step_theta;
-//    		Leg leg;
-//    		if (step.leg == RIGHT) leg = LEFT;
-//    		else leg = RIGHT;
-//    		get_footstep(
-//    				leg, ivFootSeparation,
-//    				current_state.x, current_state.y, current_state.theta,
-//    				next_foot_placement->x, next_foot_placement->y,
-//    				next_foot_placement->theta,
-//    				step_x, step_y, step_theta);
-//    		int disc_step_x = discretize(step_x, ivCellSize);
-//			int disc_step_y = discretize(step_y, ivCellSize);
-//			int disc_step_theta = angle_state_2_cell(
-//					step_theta, ivNumAngleBins);
-//    		performable = performable(
-//    				disc_step_x, disc_step_y, disc_step_theta,
-//    				ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
-//    				ivMaxInvFootstepX, ivMaxInvFootstepY,
-//    				ivMaxInvFootstepTheta,
-//    				ivNumAngleBins);
-//    		ROS_INFO("step (%f, %f, %f)", step_x, step_y, step_theta);
-//    		ROS_INFO("disc step (%i, %i, %i)",
-//    				disc_step_x, disc_step_y, disc_step_theta);
-//    		ROS_INFO("performable? %i", performablee);
-//    		exit(0);
+    		// DEBUG
+    		footstepExecutionDebug(cur_foot_placement_planned, support_foot,
+    		                       *next_foot_placement);
+    		cur_foot_placement_planned = *next_foot_placement;
 
     		// if step cannot be performed initialize replanning..
     		if (!performable)
@@ -207,7 +170,6 @@ namespace footstep_planner
     			ROS_INFO("Footstep cannot be performed: new path planning "
     					 "necessary");
 
-    			// TODO: uncomment this later
     			if (updateStart())
     			{
                     if (ivPlanner.replan())
@@ -230,6 +192,7 @@ namespace footstep_planner
     			ivFootstepService.call(step_service);
     		}
     	}
+
     	// perform last step (0,0,0) so the feet are again parallel
     	if (next_foot_placement->leg == RIGHT)
     		step.leg = humanoid_nav_msgs::StepTarget::left;
@@ -244,6 +207,85 @@ namespace footstep_planner
     }
 
 
+    void
+    FootstepNavigation::footstepExecutionDebug(
+    		const State& cur_foot_placement_planned,
+    		const tf::Transform& cur_foot_placement,
+    		const State& next_foot_placement_planned)
+    {
+    	ROS_INFO("--- compare calculated state and actual footstep placement");
+		ROS_INFO("calculated state (%f, %f, %f)",
+				 cur_foot_placement_planned.x,
+				 cur_foot_placement_planned.y,
+				 cur_foot_placement_planned.theta);
+		ROS_INFO("actual state (%f, %f, %f)",
+		         cur_foot_placement.getOrigin().x(),
+				 cur_foot_placement.getOrigin().y(),
+				 tf::getYaw(cur_foot_placement.getRotation()));
+
+		ROS_INFO("--- actual footstep placement and next (planned) footstep "
+				 "placement");
+		ROS_INFO("current (%f, %f, %f, %I)",
+		         cur_foot_placement.getOrigin().x(),
+				 cur_foot_placement.getOrigin().y(),
+				 tf::getYaw(cur_foot_placement.getRotation()),
+				 cur_foot_placement_planned.leg);
+		Leg leg;
+		if (cur_foot_placement_planned.leg == RIGHT) leg = LEFT;
+		else leg = RIGHT;
+		ROS_INFO("next (%f, %f, %f, %i)",
+		         next_foot_placement_planned.x,
+		         next_foot_placement_planned.y,
+		         next_foot_placement_planned.theta,
+		         next_foot_placement_planned.leg);
+
+		ROS_INFO("--- relative footstep and practicability");
+		humanoid_nav_msgs::StepTarget footstep;
+		bool performable_test = getFootstep(cur_foot_placement,
+		                               next_foot_placement_planned,
+		                               footstep);
+		ROS_INFO("step (%f, %f, %f, %i)", footstep.pose.x, footstep.pose.y,
+		         footstep.pose.theta, footstep.leg);
+		ROS_INFO("performable? %i", performable_test);
+
+		ROS_INFO("--- calculated relative footstep (between the planned "
+				 "states");
+		double step_x, step_y, step_theta;
+		get_footstep(next_foot_placement_planned.leg,
+		             ivFootSeparation,
+		             cur_foot_placement_planned.x,
+		             cur_foot_placement_planned.y,
+		             cur_foot_placement_planned.theta,
+		             next_foot_placement_planned.x,
+		             next_foot_placement_planned.y,
+		             next_foot_placement_planned.theta,
+		             step_x, step_y, step_theta);
+		int disc_step_x = discretize(step_x, ivCellSize);
+		int disc_step_y = discretize(step_y, ivCellSize);
+		int disc_step_theta = angle_state_2_cell(step_theta, ivNumAngleBins);
+		performable_test = performable(
+				disc_step_x, disc_step_y, disc_step_theta,
+				ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
+				ivMaxInvFootstepX, ivMaxInvFootstepY,
+				ivMaxInvFootstepTheta,
+				ivNumAngleBins);
+		ROS_INFO("from (%f, %f, %f, %i) to (%f, %f, %f, %i)",
+				 cur_foot_placement_planned.x,
+				 cur_foot_placement_planned.y,
+				 cur_foot_placement_planned.theta,
+				 cur_foot_placement_planned.leg,
+				 next_foot_placement_planned.x,
+				 next_foot_placement_planned.y,
+				 next_foot_placement_planned.theta,
+				 next_foot_placement_planned.leg);
+		ROS_INFO("step (%f, %f, %f)", step_x, step_y, step_theta);
+		ROS_INFO("disc step (%i, %i, %i)", disc_step_x, disc_step_y,
+		         disc_step_theta);
+		ROS_INFO("performable? %i", performable_test);
+		ROS_INFO("---------------------------------------------------------\n");
+    }
+
+
     bool
     FootstepNavigation::getFootstep(
             const tf::Transform& support_foot,
@@ -253,7 +295,7 @@ namespace footstep_planner
     	// calculate the necessary footstep to reach the foot placement
     	tf::Transform footstep_transform;
     	Leg support_foot_leg;
-    	if (footstep.leg == humanoid_nav_msgs::StepTarget::right)
+    	if (foot_placement.leg == RIGHT)
     		support_foot_leg = LEFT;
     	else // footstep.leg == LEFT
     		support_foot_leg = RIGHT;
@@ -273,30 +315,38 @@ namespace footstep_planner
                 ivContMaxInvFootstepTheta,
                 ivAccuracyX, ivAccuracyY, ivAccuracyTheta);
 
+		// clip footsteps if necessary (i.e. clip accuracies) - only necessary
+        // when footstep is performable
         if (performable)
         {
-        	// clip footsteps if necessary (i.e. clip accuracies)
-        	if (footstep_x > ivContMaxFootstepX)
-        		footstep_x = ivContMaxFootstepX;
-        	else if (footstep_x < ivContMaxInvFootstepX)
-        		footstep_x = ivContMaxInvFootstepX;
-        	if (footstep_y > ivContMaxFootstepY)
-        		footstep_y = ivContMaxFootstepY;
-        	else if (footstep_y < ivContMaxInvFootstepY)
-        		footstep_y = ivContMaxInvFootstepY;
-        	if (footstep_theta > ivContMaxFootstepTheta)
-        		footstep_theta = ivContMaxFootstepTheta;
-        	else if (footstep_theta < ivContMaxInvFootstepTheta)
-        		footstep_theta = ivContMaxInvFootstepTheta;
-
-            footstep.pose.x = footstep_x;
-            footstep.pose.y = footstep_y;
-            footstep.pose.theta = footstep_theta;
-
-            return true;
+			if (footstep_x >= ivContMaxFootstepX)
+				footstep_x = ivContMaxFootstepX;
+			else if (footstep_x <= ivContMaxInvFootstepX)
+				footstep_x = ivContMaxInvFootstepX;
+			if (footstep_y >= ivContMaxFootstepY)
+				footstep_y = ivContMaxFootstepY;
+			else if (footstep_y <= ivContMaxInvFootstepY)
+				footstep_y = ivContMaxInvFootstepY;
+			if (footstep_theta >= ivContMaxFootstepTheta)
+				footstep_theta = ivContMaxFootstepTheta;
+			else if (footstep_theta <= ivContMaxInvFootstepTheta)
+				footstep_theta = ivContMaxInvFootstepTheta;
         }
-        else
-        	return false;
+
+		// transform relative footstep to global footstep
+		footstep.pose.x = footstep_x;
+		if (support_foot_leg == LEFT)
+		{
+			footstep.pose.y = -footstep_y;
+			footstep.pose.theta = -footstep_theta;
+		}
+		else
+		{
+			footstep.pose.y = footstep_y;
+			footstep.pose.theta = footstep_theta;
+		}
+
+		return performable;
     }
 
 

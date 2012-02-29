@@ -141,8 +141,7 @@ namespace footstep_planner
         boost::shared_ptr<PathCostHeuristic> ivPathCostHeuristicPtr;
 
         std::vector<Footstep> ivFootstepSet;
-
-        std::vector<State> ivPath;
+		std::vector<State> ivPath;
 
         State ivStartFootLeft;
         State ivStartFootRight;

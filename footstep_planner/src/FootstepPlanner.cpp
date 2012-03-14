@@ -921,6 +921,46 @@ namespace footstep_planner
     }
 
 
+    // TODO: remove after debug
+    void
+    FootstepPlanner::broadcastStepDebug(const State& cur, const State& next)
+    {
+        visualization_msgs::Marker marker;
+        visualization_msgs::MarkerArray broadcast_msg;
+        std::vector<visualization_msgs::Marker> markers;
+
+        int markers_counter = 0;
+
+        marker.header.stamp = ros::Time::now();
+        marker.header.frame_id = ivMapPtr->getFrameID();
+
+        footstepToMarker(cur, &marker);
+		marker.id = markers_counter++;
+		markers.push_back(marker);
+
+        footstepToMarker(next, &marker);
+		marker.id = markers_counter++;
+		markers.push_back(marker);
+
+        if (markers_counter < ivLastMarkerMsgSize)
+        {
+            for(int j = markers_counter; j < ivLastMarkerMsgSize; j++)
+            {
+                marker.ns = ivMarkerNamespace;
+                marker.id = j;
+                marker.action = visualization_msgs::Marker::DELETE;
+
+                markers.push_back(marker);
+            }
+        }
+
+        broadcast_msg.markers = markers;
+        ivLastMarkerMsgSize = markers.size();
+
+        ivFootstepPathVisPub.publish(broadcast_msg);
+    }
+
+
     void
     FootstepPlanner::broadcastPathVis()
     {

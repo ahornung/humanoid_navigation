@@ -115,8 +115,11 @@ namespace footstep_planner
 		state_iter_t getPathEnd() const { return ivPath.end(); };
 		int getPathSize() { return ivPath.size(); };
 
+		// TODO: remove after debug
+		void broadcastStepDebug(const State& cur, const State& next);
+
     protected:
-		// TODO: remove later
+		// TODO: remove after debug
 		void broadcastChangedStatesVis(
 		        const std::vector<State>& changed_states);
         void broadcastExpandedNodesVis();

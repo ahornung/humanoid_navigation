@@ -137,11 +137,11 @@ namespace footstep_planner
     		ROS_ERROR("no plan available. return.");
     		return;
     	}
-    	next_foot_placement++;
 
     	// TODO: get rid of current_foot_placement after debug
     	State cur_foot_placement = *next_foot_placement;
 
+    	next_foot_placement++;
     	while (next_foot_placement != ivPlanner.getPathEnd())
     	{
     		if (next_foot_placement->leg == LEFT)
@@ -167,6 +167,7 @@ namespace footstep_planner
     		footstepExecutionDebug(cur_foot_placement, support_foot,
     		                       *next_foot_placement);
     		cur_foot_placement = *next_foot_placement;
+    		next_foot_placement++;
 
     		// if step cannot be performed initialize replanning..
     		if (!performable)
@@ -196,8 +197,6 @@ namespace footstep_planner
     			step_service.request.step = step;
     			ivFootstepService.call(step_service);
     		}
-
-    		next_foot_placement++;
     	}
 
     	// perform last step (0,0,0) so the feet are again parallel
@@ -257,7 +256,7 @@ namespace footstep_planner
 		ROS_INFO("performable? %i", performable_test);
 
 		ROS_INFO("--- calculated relative footstep (between the planned "
-				 "states");
+				 "states)");
 		double step_x, step_y, step_theta;
 		get_footstep(cur_foot_placement_planned.leg,
 		             ivFootSeparation,
@@ -286,10 +285,51 @@ namespace footstep_planner
 				 next_foot_placement_planned.y,
 				 next_foot_placement_planned.theta,
 				 next_foot_placement_planned.leg);
-		ROS_INFO("step (%f, %f, %f)", step_x, step_y, step_theta);
-		ROS_INFO("disc step (%i, %i, %i)", disc_step_x, disc_step_y,
-		         disc_step_theta);
+		ROS_INFO("step (%f, %f, %f) (disc: (%i, %i, %i))",
+				 step_x, step_y, step_theta, disc_step_x,
+				 disc_step_y, disc_step_theta);
 		ROS_INFO("performable? %i", performable_test);
+
+		ROS_INFO("--- performance test (planned states with actual footstep)");
+		State state_cur, state_next;
+		Footstep step(step_x, step_y, step_theta, ivCellSize, ivNumAngleBins,
+					  65536, ivFootSeparation);
+		PlanningState cur(cur_foot_placement_planned, ivCellSize,
+				          ivNumAngleBins, 65536);
+		PlanningState next = step.performMeOnThisState(cur);
+		get_state(cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg(),
+				  ivCellSize, ivNumAngleBins, &state_cur);
+		get_state(next.getX(), next.getY(), next.getTheta(), next.getLeg(),
+						  ivCellSize, ivNumAngleBins, &state_next);
+		ROS_INFO("footstep (%f, %f, %f)", step_x, step_y, step_theta);
+		ROS_INFO("from state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
+				 state_cur.x, state_cur.y, state_cur.theta, state_cur.leg,
+				 cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg());
+		ROS_INFO("to state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
+				 state_next.x, state_next.y, state_next.theta, state_next.leg,
+				 next.getX(), next.getY(), next.getTheta(), next.getLeg());
+
+
+		ROS_INFO("--- performance test (actual ones)");
+		step = Footstep(step_x, step_y, step_theta, ivCellSize, ivNumAngleBins,
+		                65536, ivFootSeparation);
+		cur = PlanningState(cur_foot_placement.getOrigin().x(),
+		                    cur_foot_placement.getOrigin().y(),
+		                    tf::getYaw(cur_foot_placement.getRotation()),
+		                    cur_foot_placement_planned.leg,
+		                    ivCellSize, ivNumAngleBins, 65536);
+		next = step.performMeOnThisState(cur);
+		get_state(cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg(),
+				  ivCellSize, ivNumAngleBins, &state_cur);
+		get_state(next.getX(), next.getY(), next.getTheta(), next.getLeg(),
+						  ivCellSize, ivNumAngleBins, &state_next);
+		ROS_INFO("footstep (%f, %f, %f)", step_x, step_y, step_theta);
+		ROS_INFO("from state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
+				 state_cur.x, state_cur.y, state_cur.theta, state_cur.leg,
+				 cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg());
+		ROS_INFO("to state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
+				 state_next.x, state_next.y, state_next.theta, state_next.leg,
+				 next.getX(), next.getY(), next.getTheta(), next.getLeg());
 		ROS_INFO("---------------------------------------------------------\n");
     }
 
@@ -371,6 +411,51 @@ namespace footstep_planner
     FootstepNavigation::goalPoseCallback(
             const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
+//    	// TODO: remove after debug
+//    	std::string support_foot_id = ivFootIDLeft;
+//    	std::string next_support_foot_id = ivFootIDRight;
+//    	Leg support_foot_leg = LEFT;
+//    	Footstep fs(0.035, 0.035, 0.3, ivCellSize, ivNumAngleBins, 65536,
+//    	            ivFootSeparation);
+//
+//    	tf::Transform support_foot;
+//		getFootTransform(support_foot_id, ivMapFrameID, ivLastRobotTime,
+//		                 support_foot);
+//		State state_cur, state_next;
+//		state_cur.x = support_foot.getOrigin().x();
+//		state_cur.y = support_foot.getOrigin().y();
+//		state_cur.theta = tf::getYaw(support_foot.getRotation());
+//		state_cur.leg = support_foot_leg;
+//		PlanningState cur(state_cur, ivCellSize, ivNumAngleBins, 65536);
+//		PlanningState next = fs.performMeOnThisState(cur);
+//		get_state(next.getX(), next.getY(), next.getTheta(), next.getLeg(),
+//		          ivCellSize, ivNumAngleBins, &state_next);
+//    	humanoid_nav_msgs::StepTarget step;
+//		bool performable = getFootstep(support_foot, state_next, step);
+//		ROS_INFO("--- footstep execution debug");
+//		ROS_INFO("from (%f, %f, %f, %i)", state_cur.x, state_cur.y,
+//		         state_cur.theta, state_cur.leg);
+//		ROS_INFO("to (%f, %f, %f, %i)", state_next.x, state_next.y,
+//		         state_next.theta, state_next.leg);
+//		ROS_INFO("calc footstep (%f, %f, %f)", step.pose.x, step.pose.y,
+//		         step.pose.theta);
+//		ROS_INFO("performable? %i\n", performable);
+//		if (performable)
+//		{
+//			ivPlanner.broadcastStepDebug(state_cur, state_next);
+//		}
+//		humanoid_nav_msgs::StepTargetService step_service;
+//		step_service.request.step = step;
+//    	ivFootstepService.call(step_service);
+//    	getFootTransform(next_support_foot_id, ivMapFrameID, ivLastRobotTime,
+//    			         support_foot);
+//    	ROS_INFO("placement (%f, %f, %f)\n",
+//		         support_foot.getOrigin().x(),
+//		         support_foot.getOrigin().y(),
+//		         tf::getYaw(support_foot.getRotation()));
+//    	return;
+
+
         if (ivExecutingFootsteps)
         {
             ROS_INFO("currently walking down a footstep path; no planning "

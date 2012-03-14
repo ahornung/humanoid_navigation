@@ -1,0 +1,19 @@
+### Footstep parameterization for the Aldebaran Robotics Nao humanoid ##########
+
+### footstep settings ##########################################################
+# Footstep displacement vectors (in meter / rad)
+# WARNING: data type has to be float since integers will cause an exception
+footsteps/x:     [0.0, 0.035, 0.035, 0.035, 0.035, 0.0, 0.000, 0.000,-0.035,-0.035,-0.035,-0.035, 0.00, 0.025]
+footsteps/y:     [0.0, 0.000, 0.000, 0.035, 0.035, 0.0, 0.035, 0.035, 0.000, 0.000, 0.035, 0.035,-0.01,-0.010]
+footsteps/theta: [0.0, 0.000, 0.300, 0.000, 0.300, 0.3, 0.000, 0.300, 0.000, 0.300, 0.000, 0.300, 0.00, 0.000]
+
+### foot settings ##############################################################
+foot:
+  size: {x: 0.16, y: 0.06, z: 0.015}
+  separation: 0.095
+  origin_shift: {x: 0.02, y: 0.0}
+  max:
+    step: {x: 0.035, y: 0.035, theta: 0.3}
+    inverse:
+      step: {x: -0.035, y: -0.005, theta: -0.045}
+

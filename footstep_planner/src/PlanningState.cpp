@@ -43,9 +43,7 @@ namespace footstep_planner
           ivLeg(leg),
           ivId(-1),
           ivHashTag(calc_hash_tag(ivX, ivY, ivTheta, ivLeg, max_hash_size))
-    {
-        assert(false);
-    }
+    {}
 
     PlanningState::PlanningState(int x, int y, int theta, Leg leg,
                                  double cell_size, int num_angle_bins,
@@ -54,10 +52,9 @@ namespace footstep_planner
            ivY(y),
            ivTheta(theta),
            ivLeg(leg),
+           ivId(-1),
            ivHashTag(calc_hash_tag(ivX, ivY, ivTheta, ivLeg, max_hash_size))
-    {
-
-    }
+    {}
 
 
     PlanningState::PlanningState(const State& s, double cell_size,

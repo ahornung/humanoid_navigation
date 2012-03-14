@@ -190,7 +190,8 @@ namespace footstep_planner
 	{
 		s->x = cell_2_state(x, cell_size);
 		s->y = cell_2_state(y, cell_size);
-		s->theta = angle_cell_2_state(theta, num_angle_bins);
+		s->theta = angles::normalize_angle(
+				angle_cell_2_state(theta, num_angle_bins));
 		s->leg = leg;
 	}
 }

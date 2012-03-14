@@ -3,7 +3,7 @@
   <node name="footstep_navigation" pkg="footstep_planner" type="footstep_navigation_node" >
     <rosparam file="$(find footstep_planner)/config/planning_params.yaml" command="load" />
     <rosparam file="$(find footstep_planner)/config/planning_params_nao.yaml" command="load" />
-    <rosparam file="$(find footstep_planner)/config/footsteps_nao.yaml" command="load" />
+    <rosparam file="$(find footstep_planner)/config/navigation_footsteps_nao.yaml" command="load" />
   </node>
 
 </launch>

@@ -132,12 +132,17 @@ namespace footstep_planner
     	// calculate and perform relative footsteps until goal is reached
     	bool performable = false;
     	state_iter_t next_foot_placement = ivPlanner.getPathBegin();
+    	if (next_foot_placement == ivPlanner.getPathEnd())
+    	{
+    		ROS_ERROR("no plan available. return.");
+    		return;
+    	}
+    	next_foot_placement++;
 
-    	// TODO: get rid of current_foot_placement later
-    	State cur_foot_placement_planned = *next_foot_placement;
+    	// TODO: get rid of current_foot_placement after debug
+    	State cur_foot_placement = *next_foot_placement;
 
-    	while (next_foot_placement != ivPlanner.getPathEnd() &&
-    	       (next_foot_placement++) != ivPlanner.getPathEnd())
+    	while (next_foot_placement != ivPlanner.getPathEnd())
     	{
     		if (next_foot_placement->leg == LEFT)
     		{
@@ -156,19 +161,19 @@ namespace footstep_planner
     			                 support_foot);
     		}
     		// calculate relative step
-    		performable = getFootstep(support_foot, *next_foot_placement,
-                                      step);
+    		performable = getFootstep(support_foot, *next_foot_placement, step);
 
     		// DEBUG
-    		footstepExecutionDebug(cur_foot_placement_planned, support_foot,
+    		footstepExecutionDebug(cur_foot_placement, support_foot,
     		                       *next_foot_placement);
-    		cur_foot_placement_planned = *next_foot_placement;
+    		cur_foot_placement = *next_foot_placement;
 
     		// if step cannot be performed initialize replanning..
     		if (!performable)
     		{
     			ROS_INFO("Footstep cannot be performed: new path planning "
     					 "necessary");
+    			exit(0);
 
     			if (updateStart())
     			{
@@ -191,16 +196,19 @@ namespace footstep_planner
     			step_service.request.step = step;
     			ivFootstepService.call(step_service);
     		}
+
+    		next_foot_placement++;
     	}
 
     	// perform last step (0,0,0) so the feet are again parallel
-    	if (next_foot_placement->leg == RIGHT)
+    	if (step.leg == humanoid_nav_msgs::StepTarget::right)
     		step.leg = humanoid_nav_msgs::StepTarget::left;
     	else // supportLeg == LLEG
     		step.leg = humanoid_nav_msgs::StepTarget::right;
     	step.pose.x = 0;
     	step.pose.y = 0;
     	step_service.request.step = step;
+
     	ivFootstepService.call(step_service);
 
     	ivExecutingFootsteps = false;
@@ -225,7 +233,7 @@ namespace footstep_planner
 
 		ROS_INFO("--- actual footstep placement and next (planned) footstep "
 				 "placement");
-		ROS_INFO("current (%f, %f, %f, %I)",
+		ROS_INFO("current (%f, %f, %f, %i)",
 		         cur_foot_placement.getOrigin().x(),
 				 cur_foot_placement.getOrigin().y(),
 				 tf::getYaw(cur_foot_placement.getRotation()),
@@ -251,7 +259,7 @@ namespace footstep_planner
 		ROS_INFO("--- calculated relative footstep (between the planned "
 				 "states");
 		double step_x, step_y, step_theta;
-		get_footstep(next_foot_placement_planned.leg,
+		get_footstep(cur_foot_placement_planned.leg,
 		             ivFootSeparation,
 		             cur_foot_placement_planned.x,
 		             cur_foot_placement_planned.y,

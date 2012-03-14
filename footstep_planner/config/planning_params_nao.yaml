@@ -19,4 +19,4 @@ accuracy:
   num_angle_bins: 128
   
   # the smaller the better a performed footstep has to fit into a planned one
-  footstep: {x: 0.0025, y: 0.0025, theta: 0.025}
+  footstep: {x: 0.01, y: 0.01, theta: 0.05}

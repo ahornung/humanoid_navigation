@@ -164,7 +164,7 @@ namespace footstep_planner
     		performable = getFootstep(support_foot, *next_foot_placement, step);
 
     		// DEBUG
-    		footstepExecutionDebug(cur_foot_placement, support_foot,
+    		debugFootstepExecution(cur_foot_placement, support_foot,
     		                       *next_foot_placement);
     		cur_foot_placement = *next_foot_placement;
     		next_foot_placement++;
@@ -215,7 +215,7 @@ namespace footstep_planner
 
 
     void
-    FootstepNavigation::footstepExecutionDebug(
+    FootstepNavigation::debugFootstepExecution(
     		const State& cur_foot_placement_planned,
     		const tf::Transform& cur_foot_placement,
     		const State& next_foot_placement_planned)
@@ -254,82 +254,6 @@ namespace footstep_planner
 		ROS_INFO("step (%f, %f, %f, %i)", footstep.pose.x, footstep.pose.y,
 		         footstep.pose.theta, footstep.leg);
 		ROS_INFO("performable? %i", performable_test);
-
-		ROS_INFO("--- calculated relative footstep (between the planned "
-				 "states)");
-		double step_x, step_y, step_theta;
-		get_footstep(cur_foot_placement_planned.leg,
-		             ivFootSeparation,
-		             cur_foot_placement_planned.x,
-		             cur_foot_placement_planned.y,
-		             cur_foot_placement_planned.theta,
-		             next_foot_placement_planned.x,
-		             next_foot_placement_planned.y,
-		             next_foot_placement_planned.theta,
-		             step_x, step_y, step_theta);
-		int disc_step_x = discretize(step_x, ivCellSize);
-		int disc_step_y = discretize(step_y, ivCellSize);
-		int disc_step_theta = angle_state_2_cell(step_theta, ivNumAngleBins);
-		performable_test = performable(
-				disc_step_x, disc_step_y, disc_step_theta,
-				ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
-				ivMaxInvFootstepX, ivMaxInvFootstepY,
-				ivMaxInvFootstepTheta,
-				ivNumAngleBins);
-		ROS_INFO("from (%f, %f, %f, %i) to (%f, %f, %f, %i)",
-				 cur_foot_placement_planned.x,
-				 cur_foot_placement_planned.y,
-				 cur_foot_placement_planned.theta,
-				 cur_foot_placement_planned.leg,
-				 next_foot_placement_planned.x,
-				 next_foot_placement_planned.y,
-				 next_foot_placement_planned.theta,
-				 next_foot_placement_planned.leg);
-		ROS_INFO("step (%f, %f, %f) (disc: (%i, %i, %i))",
-				 step_x, step_y, step_theta, disc_step_x,
-				 disc_step_y, disc_step_theta);
-		ROS_INFO("performable? %i", performable_test);
-
-		ROS_INFO("--- performance test (planned states with actual footstep)");
-		State state_cur, state_next;
-		Footstep step(step_x, step_y, step_theta, ivCellSize, ivNumAngleBins,
-					  65536, ivFootSeparation);
-		PlanningState cur(cur_foot_placement_planned, ivCellSize,
-				          ivNumAngleBins, 65536);
-		PlanningState next = step.performMeOnThisState(cur);
-		get_state(cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg(),
-				  ivCellSize, ivNumAngleBins, &state_cur);
-		get_state(next.getX(), next.getY(), next.getTheta(), next.getLeg(),
-						  ivCellSize, ivNumAngleBins, &state_next);
-		ROS_INFO("footstep (%f, %f, %f)", step_x, step_y, step_theta);
-		ROS_INFO("from state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
-				 state_cur.x, state_cur.y, state_cur.theta, state_cur.leg,
-				 cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg());
-		ROS_INFO("to state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
-				 state_next.x, state_next.y, state_next.theta, state_next.leg,
-				 next.getX(), next.getY(), next.getTheta(), next.getLeg());
-
-
-		ROS_INFO("--- performance test (actual ones)");
-		step = Footstep(step_x, step_y, step_theta, ivCellSize, ivNumAngleBins,
-		                65536, ivFootSeparation);
-		cur = PlanningState(cur_foot_placement.getOrigin().x(),
-		                    cur_foot_placement.getOrigin().y(),
-		                    tf::getYaw(cur_foot_placement.getRotation()),
-		                    cur_foot_placement_planned.leg,
-		                    ivCellSize, ivNumAngleBins, 65536);
-		next = step.performMeOnThisState(cur);
-		get_state(cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg(),
-				  ivCellSize, ivNumAngleBins, &state_cur);
-		get_state(next.getX(), next.getY(), next.getTheta(), next.getLeg(),
-						  ivCellSize, ivNumAngleBins, &state_next);
-		ROS_INFO("footstep (%f, %f, %f)", step_x, step_y, step_theta);
-		ROS_INFO("from state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
-				 state_cur.x, state_cur.y, state_cur.theta, state_cur.leg,
-				 cur.getX(), cur.getY(), cur.getTheta(), cur.getLeg());
-		ROS_INFO("to state (%f, %f, %f, %i) (disc: (%i, %i, %i, %i))",
-				 state_next.x, state_next.y, state_next.theta, state_next.leg,
-				 next.getX(), next.getY(), next.getTheta(), next.getLeg());
 		ROS_INFO("---------------------------------------------------------\n");
     }
 

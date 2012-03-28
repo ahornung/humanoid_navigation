@@ -95,7 +95,7 @@ namespace footstep_planner
         /// Main execution loop, will be called from a boost::thread
         void executeFootsteps();
 
-        void footstepExecutionDebug(
+        void debugFootstepExecution(
         		const State& cur_foot_placement_planned,
         		const tf::Transform& cur_foot_placement,
         		const State& next_foot_placement_planned);

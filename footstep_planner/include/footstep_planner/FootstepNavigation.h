@@ -28,6 +28,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <humanoid_nav_msgs/ClipFootstep.h>
 #include <humanoid_nav_msgs/StepTargetService.h>
 #include <humanoid_nav_msgs/PlanFootsteps.h>
 #include <footstep_planner/FootstepPlanner.h>
@@ -69,6 +70,10 @@ namespace footstep_planner
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
+        void debugFootstepExecution(const tf::Transform& from,
+		                            const State& from_planned,
+		                            const State& to_planned);
+
         void run();
 
         /// @brief Obtains the pose of the robot's foot from tf
@@ -95,16 +100,15 @@ namespace footstep_planner
         /// Main execution loop, will be called from a boost::thread
         void executeFootsteps();
 
-        void debugFootstepExecution(
-        		const State& cur_foot_placement_planned,
-        		const tf::Transform& cur_foot_placement,
-        		const State& next_foot_placement_planned);
+        bool performable(const humanoid_nav_msgs::ClipFootstep& step);
+
 
         FootstepPlanner ivPlanner;
 
         ros::Subscriber ivGridMapSub, ivRobotPoseSub, ivGoalPoseSub;
         ros::Publisher  ivPathVisPub;
-        ros::ServiceClient ivFootstepService;
+        ros::ServiceClient ivFootstepSrv;
+        ros::ServiceClient ivClipFootstepSrv;
         tf::TransformListener ivTransformListener;
         boost::mutex ivRobotPoseUpdateMutex;
 
@@ -114,13 +118,7 @@ namespace footstep_planner
         std::string ivFootIDLeft;
         std::string ivMapFrameID;
 
-        double ivFootSeparation;
         double ivAccuracyX, ivAccuracyY, ivAccuracyTheta;
-        double ivContMaxFootstepX, ivContMaxFootstepY, ivContMaxFootstepTheta;
-        double ivContMaxInvFootstepX, ivContMaxInvFootstepY,
-               ivContMaxInvFootstepTheta;
-        int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
-        int    ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
         double ivCellSize;
         int    ivNumAngleBins;
         bool   ivExecutingFootsteps;

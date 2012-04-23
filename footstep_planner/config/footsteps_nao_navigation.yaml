@@ -2,6 +2,8 @@
 
 ### footstep settings ##########################################################
 # Footstep displacement vectors (in meter / rad)
+# NOTE: not all footsteps within the max values can be performed since the
+#       boundary of allowd footsteps is an ellipse
 # WARNING: data type has to be float since integers will cause an exception
 footsteps/x:     [0.000,0.040,0.026,0.040,0.026,-0.014,0.000,-0.014,-0.040,-0.054,-0.040,-0.054,0.000,0.030]
 footsteps/y:     [0.095,0.095,0.093,0.135,0.133, 0.093,0.135, 0.133, 0.095, 0.093, 0.135, 0.133,0.085,0.085]
@@ -11,7 +13,9 @@ footsteps/theta: [0.000,0.000,0.300,0.000,0.300, 0.300,0.000, 0.300, 0.000, 0.30
 foot:
   size: {x: 0.16, y: 0.06, z: 0.015}
   origin_shift: {x: 0.02, y: 0.0}
+  # NOTE: box of allowed footstep has to be smaller than the one from
+  # Aldebaran's API
   max:
-    step: {x: 0.06, y: 0.16, theta: 0.3}
+    step: {x: 0.06, y: 0.14, theta: 0.3}
     inverse:
-      step: {x: -0.04, y: 0.088, theta: 0.0}
+      step: {x: -0.03, y: 0.09, theta: -0.1}

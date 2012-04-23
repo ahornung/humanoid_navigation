@@ -162,7 +162,6 @@ namespace footstep_planner
         ros::Publisher  ivStartPoseVisPub;
         ros::ServiceServer ivFootstepPlanService;
 
-        double ivFootSeparation;
         double ivOriginFootShiftX, ivOriginFootShiftY;
         double ivFootsizeX, ivFootsizeY, ivFootsizeZ;
         double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;

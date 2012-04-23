@@ -25,42 +25,30 @@
 
 namespace footstep_planner
 {
-	// TODO: BUGFIX!!!
     // TODO: should get_footstep should be working for int?
-    void get_footstep(Leg support_leg, double foot_separation,
-                      double from_x, double from_y, double from_theta,
+    void get_footstep(double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,
-                      double& footstep_x, double& footstep_y,
+                      Leg support_leg, double& footstep_x, double& footstep_y,
                       double& footstep_theta)
     {
         footstep_theta = angles::shortest_angular_distance(from_theta,
                                                            to_theta);
 
-        double foot_separation_half = foot_separation/2;
-
         double theta_cos = cos(-from_theta);
         double theta_sin = sin(-from_theta);
-
-        double shift_to_x = -sin(to_theta) * foot_separation_half;
-        double shift_to_y =  cos(to_theta) * foot_separation_half;
-        double shift_from_x = -sin(from_theta) * foot_separation_half;
-        double shift_from_y =  cos(from_theta) * foot_separation_half;
+		to_x -= from_x;
+		to_y -= from_y;
+		// TODO: improve code
         if (support_leg == RIGHT)
         {
-            to_x -= (shift_to_x + shift_from_x + from_x);
-            to_y -= (shift_to_y + shift_from_y + from_y);
-
             footstep_x = theta_cos * to_x - theta_sin * to_y;
             footstep_y = theta_sin * to_x + theta_cos * to_y;
         }
         else
         {
-            to_x += (shift_to_x + shift_from_x - from_x);
-            to_y += (shift_to_y + shift_from_y - from_y);
-
             footstep_x =  theta_cos * to_x - theta_sin * to_y;
             footstep_y = -theta_sin * to_x - theta_cos * to_y;
-            footstep_theta *= -1;
+            footstep_theta = -footstep_theta;
         }
     }
 
@@ -106,7 +94,6 @@ namespace footstep_planner
         bool in_range_y = false;
         bool in_range_theta = false;
 
-        // NOTE: '>' and '<' are sufficient since float values are compared
         if (footstep_x < max_footstep_x + accuracy_x &&
             footstep_x > max_inv_footstep_x - accuracy_x)
         {

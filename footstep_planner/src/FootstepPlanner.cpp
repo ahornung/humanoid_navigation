@@ -86,7 +86,6 @@ namespace footstep_planner
         nh_private.param("foot/size/x", ivFootsizeX, 0.16);
         nh_private.param("foot/size/y", ivFootsizeY, 0.06);
         nh_private.param("foot/size/z", ivFootsizeZ, 0.015);
-        nh_private.param("foot/separation", ivFootSeparation, 0.095);
         nh_private.param("foot/origin_shift/x", ivOriginFootShiftX, 0.02);
         nh_private.param("foot/origin_shift/y", ivOriginFootShiftY, 0.0);
         nh_private.param("foot/max/step/x", ivMaxFootstepX, 0.04);
@@ -140,8 +139,7 @@ namespace footstep_planner
             double y = (double)discretization_list_y[i];
             double theta = (double)discretization_list_theta[i];
 
-            Footstep f(x, y, theta, ivCellSize, ivNumAngleBins, max_hash_size,
-                       ivFootSeparation);
+            Footstep f(x, y, theta, ivCellSize, ivNumAngleBins, max_hash_size);
             ivFootstepSet.push_back(f);
 
             double cur_step_width = sqrt(x*x + y*y);
@@ -154,13 +152,11 @@ namespace footstep_planner
         int max_footstep_x = discretize(ivMaxFootstepX, ivCellSize);
         int max_footstep_y = discretize(ivMaxFootstepY, ivCellSize);
         int max_footstep_theta = angle_state_2_cell(ivMaxFootstepTheta,
-                                                   ivNumAngleBins);
-        int max_inv_footstep_x = discretize(ivMaxInvFootstepX,
-                                             ivCellSize);
-        int max_inv_footstep_y = discretize(ivMaxInvFootstepY,
-                                                      ivCellSize);
+		                                            ivNumAngleBins);
+        int max_inv_footstep_x = discretize(ivMaxInvFootstepX, ivCellSize);
+        int max_inv_footstep_y = discretize(ivMaxInvFootstepY, ivCellSize);
         int max_inv_footstep_theta = angle_state_2_cell(ivMaxInvFootstepTheta,
-                                                       ivNumAngleBins);
+		                                                ivNumAngleBins);
         if (max_inv_footstep_theta > ivNumAngleBins/2)
             max_inv_footstep_theta -= ivNumAngleBins;
 
@@ -200,7 +196,6 @@ namespace footstep_planner
         ivPlannerEnvironmentPtr.reset(
                 new FootstepPlannerEnvironment(ivFootstepSet,
                                                h,
-                                               ivFootSeparation,
                                                ivOriginFootShiftX,
                                                ivOriginFootShiftY,
                                                ivFootsizeX,
@@ -355,6 +350,12 @@ namespace footstep_planner
             }
             ivPath.push_back(s);
         }
+
+        // add last neutral step
+        if (ivPath.back().leg == RIGHT)
+            ivPath.push_back(ivGoalFootLeft);
+        else // last_leg == LEFT
+            ivPath.push_back(ivGoalFootRight);
 
         return true;
     }
@@ -754,8 +755,10 @@ namespace footstep_planner
     FootstepPlanner::getFootPosition(const State& robot, Leg side)
     {
 
-        double shift_x = -sin(robot.theta) * ivFootSeparation/2;
-        double shift_y =  cos(robot.theta) * ivFootSeparation/2;
+        double shift_x = -sin(robot.theta) *
+                          (ivMaxFootstepY + ivMaxInvFootstepY) / 4.0;
+        double shift_y =  cos(robot.theta) *
+                          (ivMaxFootstepY + ivMaxInvFootstepY) / 4.0;
 
         double sign = -1.0;
         if (side == LEFT)
@@ -886,7 +889,6 @@ namespace footstep_planner
 		markers.push_back(marker);
 
         // add the footsteps of the path to the publish vector
-		bool first_it = true;
         state_iter_t path_iter = getPathBegin();
         for(; path_iter != getPathEnd(); path_iter++)
         {

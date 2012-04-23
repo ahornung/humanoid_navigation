@@ -29,7 +29,6 @@ namespace footstep_planner
     FootstepPlannerEnvironment::FootstepPlannerEnvironment(
             const  std::vector<Footstep>& footstep_set,
             const  boost::shared_ptr<Heuristic> heuristic,
-            double foot_separation,
             double origin_foot_shift_x,
             double origin_foot_shift_y,
             double footsize_x,
@@ -55,7 +54,6 @@ namespace footstep_planner
           ivpStateHash2State(NULL),
           ivFootstepSet(footstep_set),
           ivHeuristicConstPtr(heuristic),
-          ivFootSeparation(foot_separation),
           ivOriginFootShiftX(origin_foot_shift_x),
           ivOriginFootShiftY(origin_foot_shift_y),
           ivFootsizeX(footsize_x),
@@ -297,8 +295,8 @@ namespace footstep_planner
         const PlanningState* planning_state = ivStateId2State[id];
         s->x = cell_2_state(planning_state->getX(), ivCellSize);
         s->y = cell_2_state(planning_state->getY(), ivCellSize);
-        s->theta = angle_cell_2_state(planning_state->getTheta(),
-                                      ivNumAngleBins);
+        s->theta = angles::normalize_angle(
+        		angle_cell_2_state(planning_state->getTheta(), ivNumAngleBins));
         s->leg = planning_state->getLeg();
 
         return true;
@@ -431,10 +429,8 @@ namespace footstep_planner
         double to_y = cell_2_state(to.getY(), ivCellSize);
         double to_theta = angle_cell_2_state(to.getTheta(), ivNumAngleBins);
 
-        get_footstep(support_leg, ivFootSeparation,
-                     from_x, from_y, from_theta,
-                     to_x, to_y, to_theta,
-                     footstep_x, footstep_y, footstep_theta);
+        get_footstep(from_x, from_y, from_theta, to_x, to_y, to_theta,
+                     support_leg, footstep_x, footstep_y, footstep_theta);
     }
 
 

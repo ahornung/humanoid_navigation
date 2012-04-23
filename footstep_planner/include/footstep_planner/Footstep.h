@@ -40,15 +40,14 @@ namespace footstep_planner
 	{
 	public:
 		Footstep(double x, double y, double theta,
-	             double cell_size, int num_angle_bins, int max_hash_size,
-	             double foot_separation);
+	             double cell_size, int num_angle_bins, int max_hash_size);
 		~Footstep();
 
 		PlanningState performMeOnThisState(const PlanningState& current) const;
 
         PlanningState revertMeOnThisState(const PlanningState& current) const;
 
-        void updateNumAngleBins(int num);
+        void debugPrint(const PlanningState& current);
 
 	private:
         typedef std::pair<int, int> footstep_xy;
@@ -56,7 +55,7 @@ namespace footstep_planner
 		void init();
 
         int calculateForwardStep(Leg leg, int global_theta,
-                                 int* footstep_x, int* footstep_y) const;
+		                         int* footstep_x, int* footstep_y) const;
 
         int ivTheta;
 
@@ -68,8 +67,6 @@ namespace footstep_planner
 
 		int ivNumAngleBins;
 		int ivMaxHashSize;
-
-		double ivFootSeparation;
 
         std::vector<footstep_xy> ivDiscSuccessorLeft;
         std::vector<footstep_xy> ivDiscSuccessorRight;

@@ -1,6 +1,6 @@
 <launch>
   # naoqi should be running right now
-  <include file="$(find nao_driver)/launch/nao_driver.launch" />
+  <include file="$(find nao_driver)/launch/nao_driver_2.launch" />
   <include file="$(find nao_remote)/launch/nao_remote.launch" />
   <include file="$(find nao_nav)/launch/fake_loc_from_odom.launch" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(find footstep_planner)/maps/sample.yaml" />

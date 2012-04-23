@@ -47,7 +47,6 @@ namespace footstep_planner
         FootstepPlannerEnvironment(
                 const  std::vector<Footstep>& footstep_set,
                 const  boost::shared_ptr<Heuristic> heuristic,
-                double foot_separation,
                 double origin_foot_shift_x,
                 double origin_foot_shift_y,
                 double footsize_x,
@@ -185,7 +184,6 @@ namespace footstep_planner
         const std::vector<Footstep>& ivFootstepSet;
         const boost::shared_ptr<Heuristic> ivHeuristicConstPtr;
 
-        const double ivFootSeparation;
         const double ivOriginFootShiftX, ivOriginFootShiftY;
         const double ivFootsizeX, ivFootsizeY;
         /// discretized int in cell size

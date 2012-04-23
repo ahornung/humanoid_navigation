@@ -35,9 +35,8 @@ namespace footstep_planner
 	 * #########################################################################
 	 */
 
-	Footstep::Footstep(double x, double y, double theta,
-                       double cell_size, int num_angle_bins,
-                       int max_hash_size, double foot_separation)
+	Footstep::Footstep(double x, double y, double theta, double cell_size,
+	                   int num_angle_bins, int max_hash_size)
 		: ivTheta(angle_state_2_cell(theta, num_angle_bins)),
           ivContX(x),
 		  ivContY(y),
@@ -45,7 +44,6 @@ namespace footstep_planner
           ivCellSize(cell_size),
 		  ivNumAngleBins(num_angle_bins),
 		  ivMaxHashSize(max_hash_size),
-		  ivFootSeparation(foot_separation),
 		  ivDiscSuccessorLeft(num_angle_bins),
 		  ivDiscSuccessorRight(num_angle_bins),
 		  ivDiscPredecessorLeft(num_angle_bins),
@@ -60,16 +58,6 @@ namespace footstep_planner
 
 
 	void
-	Footstep::updateNumAngleBins(int num)
-	{
-		double x = angle_cell_2_state(ivContTheta, ivNumAngleBins);
-	    ivNumAngleBins = num;
-	    ivContTheta = angle_state_2_cell(x, num);
-	    init();
-	}
-
-
-	void
 	Footstep::init()
 	{
 	    int backward_angle;
@@ -78,13 +66,13 @@ namespace footstep_planner
 
         for (int a = 0; a < ivNumAngleBins; ++a)
         {
-            backward_angle = calculateForwardStep(RIGHT, a, &footstep_x,
-                                                  &footstep_y);
+            backward_angle = calculateForwardStep(RIGHT, a,
+			                                      &footstep_x, &footstep_y);
             ivDiscSuccessorRight[a] = footstep_xy(footstep_x, footstep_y);
             ivDiscPredecessorLeft[backward_angle] = footstep_xy(-footstep_x,
                                                                 -footstep_y);
-            backward_angle = calculateForwardStep(LEFT, a, &footstep_x,
-                                                  &footstep_y);
+            backward_angle = calculateForwardStep(LEFT, a,
+			                                      &footstep_x, &footstep_y);
             ivDiscSuccessorLeft[a] = footstep_xy(footstep_x, footstep_y);
             ivDiscPredecessorRight[backward_angle] = footstep_xy(-footstep_x,
                                                                  -footstep_y);
@@ -174,36 +162,23 @@ namespace footstep_planner
 	{
 	    double cont_footstep_x, cont_footstep_y;
 	    double cont_global_theta = angle_cell_2_state(global_theta,
-                                                      ivNumAngleBins);
-        double foot_separation_half = ivFootSeparation/2;
-
+		                                              ivNumAngleBins);
         double theta_cos = cos(cont_global_theta);
         double theta_sin = sin(cont_global_theta);
         if (leg == RIGHT)
         {
-            cont_footstep_x = theta_cos * ivContX -
-                              theta_sin * (ivContY + foot_separation_half);
-            cont_footstep_y = theta_sin * ivContX +
-                              theta_cos * (ivContY + foot_separation_half);
-            cont_global_theta += ivContTheta;
-            cont_footstep_x -= sin(cont_global_theta) * foot_separation_half;
-            cont_footstep_y += cos(cont_global_theta) * foot_separation_half;
+            cont_footstep_x = theta_cos * ivContX - theta_sin * ivContY;
+            cont_footstep_y = theta_sin * ivContX + theta_cos * ivContY;
 
             global_theta += ivTheta;
         }
         else // leg == LEFT
         {
-            cont_footstep_x = theta_cos * ivContX +
-                              theta_sin * (ivContY + foot_separation_half);
-            cont_footstep_y = theta_sin * ivContX -
-                              theta_cos * (ivContY + foot_separation_half);
-            cont_global_theta -= ivContTheta;
-            cont_footstep_x += sin(cont_global_theta) * foot_separation_half;
-            cont_footstep_y -= cos(cont_global_theta) * foot_separation_half;
+            cont_footstep_x = theta_cos * ivContX + theta_sin * ivContY;
+            cont_footstep_y = theta_sin * ivContX - theta_cos * ivContY;
 
             global_theta -= ivTheta;
         }
-
         *footstep_x = discretize(cont_footstep_x, ivCellSize);
         *footstep_y = discretize(cont_footstep_y, ivCellSize);
 
@@ -213,5 +188,17 @@ namespace footstep_planner
         else if (global_theta >= ivNumAngleBins)
             global_theta -= ivNumAngleBins;
         return global_theta;
+	}
+
+
+	void
+	Footstep::debugPrint(const PlanningState& current)
+	{
+		footstep_xy fs;
+		if (current.getLeg() == RIGHT)
+			fs = ivDiscSuccessorRight[current.getTheta()];
+		else
+			fs = ivDiscSuccessorLeft[current.getTheta()];
+		ROS_INFO("disc footstep (%i, %i, %i)", fs.first, fs.second, ivTheta);
 	}
 } // end of namespace

@@ -30,6 +30,7 @@
 
 #include <gridmap_2d/GridMap2D.h>
 #include <angles/angles.h>
+#include <tf/tf.h>
 
 #include <math.h>
 
@@ -95,7 +96,7 @@ namespace footstep_planner
 
 	inline int angle_state_2_cell(double angle, int angle_bin_num)
 	{
-        double bin_size_half = TWO_PI / angle_bin_num / 2;
+        double bin_size_half = TWO_PI / angle_bin_num / 2.0;
         return int(angles::normalize_angle_positive(angle + bin_size_half) /
                    TWO_PI * angle_bin_num);
 	}
@@ -127,11 +128,7 @@ namespace footstep_planner
 	// NOTE: use this only to discretize a length by a certain factor
 	inline int discretize(double length, double factor)
 	{
-	    int ret = int(length / factor + 0.5);
-	    if (length >= 0)
-	        return ret;
-	    else
-	        return ret - 1;
+		return int(floor((length / factor) + 0.5));
 	}
 
 
@@ -160,10 +157,9 @@ namespace footstep_planner
 	}
 
 
-    void get_footstep(Leg support_leg, double foot_separation,
-                      double from_x, double from_y, double from_theta,
+    void get_footstep(double from_x, double from_y, double from_theta,
                       double to_x, double to_y, double to_theta,
-                      double& footstep_x, double& footstep_y,
+                      Leg support_leg, double& footstep_x, double& footstep_y,
                       double& footstep_theta);
 
     /**

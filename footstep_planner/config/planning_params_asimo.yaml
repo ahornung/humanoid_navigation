@@ -13,10 +13,10 @@ accuracy:
   # - 1 (just the incircle of the foot)
   # - 2 (circumcircle and incircle recursivly checked for the whole foot)
   collision_check: 2
-  
+
   cell_size: 0.005
-  
+
   num_angle_bins: 64
-  
+
   # the smaller the better a performed footstep has to fit into a planned one
   footstep: {x: 0.01, y: 0.01, theta: 0.1}

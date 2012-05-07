@@ -11,9 +11,9 @@ footsteps/theta: [0.000,0.000,0.300,0.000,0.300, 0.300,0.000, 0.300, 0.000, 0.30
 
 ### foot settings ##############################################################
 foot:
-  size: {x: 0.16, y: 0.06, z: 0.015}
+  size: {x: 0.16, y: 0.088, z: 0.015}
   separation: 0.095
-  origin_shift: {x: 0.02, y: 0.0}
+  origin_shift: {x: 0.02, y: 0.006}
   # NOTE: box of allowed footstep has to be smaller than the one from
   # Aldebaran's API
   max:

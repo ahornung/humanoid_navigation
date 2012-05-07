@@ -163,6 +163,7 @@ namespace footstep_planner
         ros::ServiceServer ivFootstepPlanService;
 
         double ivOriginFootShiftX, ivOriginFootShiftY;
+        double ivFootSeparation;
         double ivFootsizeX, ivFootsizeY, ivFootsizeZ;
         double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
         double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;

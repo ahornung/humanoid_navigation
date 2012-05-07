@@ -326,7 +326,8 @@ namespace footstep_planner
         if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
         {
             boost::shared_ptr<PathCostHeuristic> h =
-            		boost::dynamic_pointer_cast<PathCostHeuristic>(ivHeuristicConstPtr);
+            		boost::dynamic_pointer_cast<PathCostHeuristic>(
+            				ivHeuristicConstPtr);
             MDPConfig MDPCfg;
             InitializeMDPCfg(&MDPCfg);
             const PlanningState* start = ivStateId2State[MDPCfg.startstateid];
@@ -415,8 +416,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::getFootstep(Leg support_leg,
-                                            const PlanningState& from,
+    FootstepPlannerEnvironment::getFootstep(const PlanningState& from,
                                             const PlanningState& to,
                                             double& footstep_x,
                                             double& footstep_y,
@@ -429,8 +429,8 @@ namespace footstep_planner
         double to_y = cell_2_state(to.getY(), ivCellSize);
         double to_theta = angle_cell_2_state(to.getTheta(), ivNumAngleBins);
 
-        get_footstep(from_x, from_y, from_theta, to_x, to_y, to_theta,
-                     support_leg, footstep_x, footstep_y, footstep_theta);
+        get_footstep(from_x, from_y, from_theta, from.getLeg(), to_x, to_y,
+                     to_theta, footstep_x, footstep_y, footstep_theta);
     }
 
 
@@ -441,8 +441,8 @@ namespace footstep_planner
         double cont_footstep_x;
         double cont_footstep_y;
         double cont_footstep_theta;
-        getFootstep(from.getLeg(), from, to,
-                    cont_footstep_x, cont_footstep_y, cont_footstep_theta);
+        getFootstep(from, to, cont_footstep_x, cont_footstep_y,
+		            cont_footstep_theta);
 
         int footstep_x = discretize(cont_footstep_x, ivCellSize);
         int footstep_y = discretize(cont_footstep_y, ivCellSize);

@@ -16,7 +16,8 @@
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lfootstep_planner"/>
   </export>  
   
-	<depend package="humanoid_nav_msgs"/>
+  <depend package="actionlib"/>
+  <depend package="humanoid_nav_msgs"/>
   <depend package="gridmap_2d"/>
   <depend package="map_server"/>
   <depend package="roscpp"/>

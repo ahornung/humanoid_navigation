@@ -25,10 +25,9 @@
 
 namespace footstep_planner
 {
-    // TODO: should get_footstep should be working for int?
     void get_footstep(double from_x, double from_y, double from_theta,
-                      double to_x, double to_y, double to_theta,
-                      Leg support_leg, double& footstep_x, double& footstep_y,
+    		          Leg from_leg, double to_x, double to_y, double to_theta,
+                      double& footstep_x, double& footstep_y,
                       double& footstep_theta)
     {
         footstep_theta = angles::shortest_angular_distance(from_theta,
@@ -38,8 +37,7 @@ namespace footstep_planner
         double theta_sin = sin(-from_theta);
 		to_x -= from_x;
 		to_y -= from_y;
-		// TODO: improve code
-        if (support_leg == RIGHT)
+        if (from_leg == RIGHT)
         {
             footstep_x = theta_cos * to_x - theta_sin * to_y;
             footstep_y = theta_sin * to_x + theta_cos * to_y;
@@ -60,6 +58,9 @@ namespace footstep_planner
                 int max_inv_footstep_theta,
                 int num_angle_bins)
     {
+    	// TODO: introduce ellipsoid peformance check like the one from by Nao's
+    	// API
+
         bool in_range_x = false;
         bool in_range_y = false;
         bool in_range_theta = false;
@@ -72,8 +73,8 @@ namespace footstep_planner
         {
             in_range_y = true;
         }
-		if (footstep_theta <=  max_footstep_theta &&
-		    footstep_theta >= -max_inv_footstep_theta)
+		if (footstep_theta <= max_footstep_theta &&
+		    footstep_theta >= max_inv_footstep_theta)
 		{
 			in_range_theta = true;
 		}

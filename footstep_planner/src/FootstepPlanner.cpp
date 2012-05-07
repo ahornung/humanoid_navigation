@@ -83,9 +83,11 @@ namespace footstep_planner
 		ivChangedCellsLimit = (unsigned int) changed_cells_limit;
 
         // - footstep settings
+		// TODO: update the footstep settings
         nh_private.param("foot/size/x", ivFootsizeX, 0.16);
         nh_private.param("foot/size/y", ivFootsizeY, 0.06);
         nh_private.param("foot/size/z", ivFootsizeZ, 0.015);
+        nh_private.param("foot/separation", ivFootSeparation, 0.1);
         nh_private.param("foot/origin_shift/x", ivOriginFootShiftX, 0.02);
         nh_private.param("foot/origin_shift/y", ivOriginFootShiftY, 0.0);
         nh_private.param("foot/max/step/x", ivMaxFootstepX, 0.04);
@@ -230,6 +232,17 @@ namespace footstep_planner
         else
             ROS_INFO_STREAM("Search direction: backward planning");
         setupPlanner();
+
+        ROS_INFO("Max footstep values:");
+        ROS_INFO("x: %f (%i), y: %f (%i), theta: %f (%i)",
+		         ivMaxFootstepX, max_footstep_x,
+		         ivMaxFootstepY, max_footstep_y,
+		         ivMaxFootstepTheta, max_footstep_theta);
+        ROS_INFO("Max inverse footstep values:");
+        ROS_INFO("x: %f (%i), y: %f (%i), theta: %f (%i)",
+		         ivMaxInvFootstepX, max_inv_footstep_x,
+		         ivMaxInvFootstepY, max_inv_footstep_y,
+		         ivMaxInvFootstepTheta, max_inv_footstep_theta);
     }
 
 
@@ -755,10 +768,8 @@ namespace footstep_planner
     FootstepPlanner::getFootPosition(const State& robot, Leg side)
     {
 
-        double shift_x = -sin(robot.theta) *
-                          (ivMaxFootstepY + ivMaxInvFootstepY) / 4.0;
-        double shift_y =  cos(robot.theta) *
-                          (ivMaxFootstepY + ivMaxInvFootstepY) / 4.0;
+        double shift_x = -sin(robot.theta) * ivFootSeparation / 2.0;
+        double shift_y =  cos(robot.theta) * ivFootSeparation / 2.0;
 
         double sign = -1.0;
         if (side == LEFT)

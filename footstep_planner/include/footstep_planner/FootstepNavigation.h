@@ -25,13 +25,16 @@
 #ifndef FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_
 #define FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_
 
+#include <actionlib/client/simple_action_client.h>
+#include <footstep_planner/FootstepPlanner.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <humanoid_nav_msgs/ClipFootstep.h>
-#include <humanoid_nav_msgs/StepTargetService.h>
+#include <humanoid_nav_msgs/ExecFootstepsAction.h>
+#include <humanoid_nav_msgs/ExecFootstepsFeedback.h>
 #include <humanoid_nav_msgs/PlanFootsteps.h>
-#include <footstep_planner/FootstepPlanner.h>
+#include <humanoid_nav_msgs/StepTargetService.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
@@ -91,7 +94,7 @@ namespace footstep_planner
          *
          * @return false if the calculated footstep does not reach footPlacement (out of limits)
          */
-        bool getFootstep(const tf::Transform& supportFoot,
+        bool getFootstep(const State& supportFoot,
                          const State& footPlacement,
                          humanoid_nav_msgs::StepTarget& footstep);
 
@@ -99,6 +102,14 @@ namespace footstep_planner
 
         /// Main execution loop, will be called from a boost::thread
         void executeFootsteps();
+        void executeFootsteps2();
+
+        void activeCallback();
+        void doneCallback(
+        		const actionlib::SimpleClientGoalState& state,
+                const humanoid_nav_msgs::ExecFootstepsResultConstPtr& result);
+        void feedbackCallback(
+        		const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
 
         bool performable(const humanoid_nav_msgs::ClipFootstep& step);
 
@@ -122,6 +133,11 @@ namespace footstep_planner
         double ivCellSize;
         int    ivNumAngleBins;
         bool   ivExecutingFootsteps;
+
+        double ivFeedbackRate;
+
+    	actionlib::SimpleActionClient<
+				humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
     };
 }
 

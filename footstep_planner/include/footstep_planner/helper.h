@@ -158,8 +158,8 @@ namespace footstep_planner
 
 
     void get_footstep(double from_x, double from_y, double from_theta,
-                      double to_x, double to_y, double to_theta,
-                      Leg support_leg, double& footstep_x, double& footstep_y,
+    		          Leg from_leg, double to_x, double to_y, double to_theta,
+                      double& footstep_x, double& footstep_y,
                       double& footstep_theta);
 
     /**

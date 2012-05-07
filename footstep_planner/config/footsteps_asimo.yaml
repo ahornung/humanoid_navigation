@@ -3,16 +3,17 @@
 ### footstep settings ##########################################################
 # Footstep displacement vectors (in meter / rad)
 # WARNING: data type has to be float/double, integers will cause an exception
-footsteps/x:     [0.00, 0.22, 0.00,-0.03, 0.14, 0.12, 0.08,-0.02,-0.10, 0.0]
-footsteps/y:     [0.16, 0.16, 0.28, 0.16, 0.24, 0.00, 0.24, 0.24, 0.16, 0.0]
-footsteps/theta: [0.00, 0.00, 0.00, 0.70, 0.30,-0.40, 0.00, 0.30, 0.00, 0.0]
+footsteps/x:     [0.00, 0.22, 0.00,-0.08, 0.12, 0.15, 0.08,-0.04,-0.10, 0.00]
+footsteps/y:     [0.14, 0.14, 0.26, 0.12, 0.22, 0.11, 0.22, 0.22, 0.14, 0.12]
+footsteps/theta: [0.00, 0.00, 0.00, 0.70, 0.30,-0.40, 0.00, 0.30, 0.00, 0.00]
 
 ### foot settings ##############################################################
 foot:
   size: {x: 0.16, y: 0.10, z: 0.015}
+  separation: 0.14
   origin_shift: {x: 0.02, y: 0.0}
   max:
     step: {x: 0.22, y: 0.28, theta: 0.7}
     inverse:
-      step: {x: -0.1, y: 0.0, theta: -0.4}
+      step: {x: -0.1, y: 0.12, theta: -0.4}
 

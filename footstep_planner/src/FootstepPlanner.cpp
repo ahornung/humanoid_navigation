@@ -219,7 +219,7 @@ namespace footstep_planner
 
         // set up planner
         if (ivPlannerType == "ARAPlanner" || ivPlannerType == "ADPlanner"
-        		|| ivPlannerType == "RSTARPlanner" || ivPlannerType == "ANAPlanner"){
+        		|| ivPlannerType == "RSTARPlanner" ){
             ROS_INFO_STREAM("Planning with " << ivPlannerType);
         }
         else
@@ -268,10 +268,11 @@ namespace footstep_planner
         {
             ivPlannerPtr.reset(new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
                                                 ivForwardSearch));
-        } else if (ivPlannerType == "ANAPlanner"){
-        	ivPlannerPtr.reset(new anaPlanner(ivPlannerEnvironmentPtr.get(),
-        	                                                ivForwardSearch));
         }
+//        else if (ivPlannerType == "ANAPlanner"){
+//        	ivPlannerPtr.reset(new anaPlanner(ivPlannerEnvironmentPtr.get(),
+//        	                                                ivForwardSearch));
+//        }
     }
 
 

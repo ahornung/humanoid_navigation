@@ -42,6 +42,8 @@ namespace footstep_planner
         // ..publishers
         ivExpandedStatesVisPub = nh_private.advertise<
                 sensor_msgs::PointCloud>("expanded_states", 1);
+        ivRandomStatesVisPub = nh_private.advertise<
+                sensor_msgs::PointCloud>("random_states", 1);
         ivFootstepPathVisPub = nh_private.advertise<
                 visualization_msgs::MarkerArray>("footsteps_array", 1);
         ivHeuristicPathVisPub = nh_private.advertise<
@@ -216,9 +218,8 @@ namespace footstep_planner
                                                ivForwardSearch));
 
         // set up planner
-        if (ivPlannerType == "ARAPlanner" || ivPlannerType == "ADPlanner" ||
-            ivPlannerType == "RSTARPlanner")
-        {
+        if (ivPlannerType == "ARAPlanner" || ivPlannerType == "ADPlanner"
+        		|| ivPlannerType == "RSTARPlanner" || ivPlannerType == "ANAPlanner"){
             ROS_INFO_STREAM("Planning with " << ivPlannerType);
         }
         else
@@ -267,6 +268,9 @@ namespace footstep_planner
         {
             ivPlannerPtr.reset(new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
                                                 ivForwardSearch));
+        } else if (ivPlannerType == "ANAPlanner"){
+        	ivPlannerPtr.reset(new anaPlanner(ivPlannerEnvironmentPtr.get(),
+        	                                                ivForwardSearch));
         }
     }
 
@@ -321,6 +325,7 @@ namespace footstep_planner
 
             ivPlanExists = extractSolution(solution_state_ids);
             broadcastExpandedNodesVis();
+            broadcastRandomNodesVis();
 
             if (!ivPlanExists)
             {
@@ -933,6 +938,45 @@ namespace footstep_planner
         ivFootstepPathVisPub.publish(broadcast_msg);
     }
 
+    void
+    FootstepPlanner::broadcastRandomNodesVis()
+    {
+    	if (ivRandomStatesVisPub.getNumSubscribers() > 0){
+			sensor_msgs::PointCloud cloud_msg;
+			geometry_msgs::Point32 point;
+			std::vector<geometry_msgs::Point32> points;
+			visualization_msgs::Marker marker;
+			visualization_msgs::MarkerArray broadcast_msg;
+			std::vector<visualization_msgs::Marker> markers;
+
+			int markers_counter = 0;
+
+			marker.header.stamp = ros::Time::now();
+			marker.header.frame_id = ivMapPtr->getFrameID();
+
+            State s;
+			FootstepPlannerEnvironment::exp_states_iter_t state_id_iter;
+			for(state_id_iter = ivPlannerEnvironmentPtr->getRandomStatesStart();
+					state_id_iter != ivPlannerEnvironmentPtr->getRandomStatesEnd();
+					state_id_iter++)
+			{
+				if (!ivPlannerEnvironmentPtr->getState(*state_id_iter, &s)){
+					ROS_WARN("Could not get random state %d", *state_id_iter);
+				} else {
+					point.x = s.x;
+					point.y = s.y;
+					point.z = 0.01;
+					points.push_back(point);
+				}
+			}
+			cloud_msg.header.stamp = ros::Time::now();
+			cloud_msg.header.frame_id = ivMapPtr->getFrameID();
+
+			cloud_msg.points = points;
+
+			ivRandomStatesVisPub.publish(cloud_msg);
+    	}
+    }
 
     // TODO: remove after debug
     void

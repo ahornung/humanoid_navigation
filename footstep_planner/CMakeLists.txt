@@ -33,9 +33,6 @@ set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
 )
 
 rosbuild_add_library(${PROJECT_NAME} ${FOOTSTEP_PLANNER_FILES})
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
 rosbuild_add_executable(footstep_planner_node src/footstep_planner.cpp)
 target_link_libraries(footstep_planner_node ${PROJECT_NAME})
 rosbuild_add_executable(footstep_navigation_node src/footstep_navigation.cpp)

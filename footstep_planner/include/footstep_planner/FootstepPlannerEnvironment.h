@@ -90,6 +90,16 @@ namespace footstep_planner
             return ivExpandedStates.end();
         };
 
+        exp_states_iter_t getRandomStatesStart()
+        {
+            return ivRandomStates.begin();
+        };
+
+        exp_states_iter_t getRandomStatesEnd()
+        {
+            return ivRandomStates.end();
+        };
+
         /// overloaded from SBPL, returns costs in mm (truncated as int)
         int GetFromToHeuristic(int FromStateID, int ToStateID);
 
@@ -142,6 +152,7 @@ namespace footstep_planner
 
         /// to scale continuous values in meter to discrete mm
         static const int cvMmScale = 1000;
+
 
     private:
         int  stepCost(const PlanningState& a, const PlanningState& b);
@@ -196,10 +207,14 @@ namespace footstep_planner
         const double ivCellSize;
         const int    ivNumAngleBins;
         const bool   ivForwardSearch;
+        const int 	 ivNumRandomNeighbors;  ///< number of random neighbors for R*
+        const int    ivRandomNeighborsDist; ///< distance of random neighbors for R* (discretized in cells)
+
 
         boost::shared_ptr<GridMap2D> ivMapPtr;
 
         exp_states_t ivExpandedStates;
+        exp_states_t ivRandomStates; ///< random intermediate states for R*
 
     };
 }

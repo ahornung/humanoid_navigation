@@ -53,10 +53,16 @@ namespace footstep_planner
     };
 
 
-    /// euclidean distance between two coordinates
+    /// euclidean distance between two integer coordinates (cells)
     inline double euclidean_distance(int x1, int y1, int x2, int y2)
     {
         return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+    }
+
+    /// squared euclidean distance between two integer coordinates (cells)
+    inline double euclidean_distance_sq(int x1, int y1, int x2, int y2)
+    {
+        return (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2);
     }
 
 
@@ -64,6 +70,12 @@ namespace footstep_planner
     inline double euclidean_distance(double x1, double y1, double x2, double y2)
     {
         return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+    }
+
+    /// squared euclidean distance between two coordinates
+    inline double euclidean_distance_sq(double x1, double y1, double x2, double y2)
+    {
+        return (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2);
     }
 
 

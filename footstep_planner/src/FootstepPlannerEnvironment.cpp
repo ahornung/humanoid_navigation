@@ -69,7 +69,9 @@ namespace footstep_planner
           ivHashTableSize(hash_table_size),
           ivCellSize(cell_size),
           ivNumAngleBins(num_angle_bins),
-          ivForwardSearch(forward_search)
+          ivForwardSearch(forward_search),
+          ivNumRandomNeighbors(20),
+          ivRandomNeighborsDist(1.0/ivCellSize)
     {}
 
 
@@ -379,6 +381,7 @@ namespace footstep_planner
         StateID2IndexMapping.clear();
 
         ivExpandedStates.clear();
+        ivRandomStates.clear();
 
         ivGoalFootIdLeft = -1;
         ivGoalFootIdRight = -1;
@@ -662,11 +665,6 @@ namespace footstep_planner
     void
     FootstepPlannerEnvironment::GetRandomSuccsatDistance(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CLowV)
     {
-    	//number of random neighbors
-    	int nNumofNeighs = 20;
-    	//distance at which the neighbors are generated
-    	double randomNeighborDist = 0.5;
-    	int nDist_c = randomNeighborDist / ivCellSize;
 
     	assert(SourceStateID < ivStateId2State.size());
     	const PlanningState* currentState = ivStateId2State[SourceStateID];
@@ -677,17 +675,12 @@ namespace footstep_planner
 
     	//get the successors
     	bool bSuccs = true;
-    	GetRandomNeighs(currentState, SuccIDV, CLowV, nNumofNeighs, nDist_c, bSuccs);
+    	GetRandomNeighs(currentState, SuccIDV, CLowV, ivNumRandomNeighbors, ivRandomNeighborsDist, bSuccs);
     }
 
     void
     FootstepPlannerEnvironment::GetRandomPredsatDistance(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CLowV)
     {
-    	//number of random neighbors
-    	int nNumofNeighs = 20;
-    	//distance at which the neighbors are generated
-    	double randomNeighborDist = 0.5;
-    	int nDist_c = randomNeighborDist / ivCellSize;
 
     	assert(TargetStateID < ivStateId2State.size());
     	const PlanningState* currentState = ivStateId2State[TargetStateID];
@@ -698,7 +691,7 @@ namespace footstep_planner
 
     	//get the predecessors
     	bool bSuccs = false;
-    	GetRandomNeighs(currentState, PredIDV, CLowV, nNumofNeighs, nDist_c, bSuccs);
+    	GetRandomNeighs(currentState, PredIDV, CLowV, ivNumRandomNeighbors, ivRandomNeighborsDist, bSuccs);
 
     }
 
@@ -713,61 +706,88 @@ namespace footstep_planner
     	NeighIDV->clear();
     	CLowV->clear();
 
+    	// TODO for testing:
+    	//return;
+
     	//get X, Y for the states
     	int X = currentState->getX();
     	int Y = currentState->getY();
+    	int theta = currentState->getTheta();
 
     	//iterate through random actions
-    	for (int i = 0, nAttempts = 0; i < nNumofNeighs && nAttempts < 5*nNumofNeighs; i++, nAttempts++)
+    	int nAttempts = 0;
+    	for (int i = 0; i < nNumofNeighs && nAttempts < 5*nNumofNeighs; i++, nAttempts++)
     	{
-    		int dX = 0;
-    		int dY = 0;
 
-    		//pick a direction
-    		float fDir = (float)(2*PI_CONST*(((double)rand())/RAND_MAX));
+//    		// random direction
+//    		//pick a direction
+//    		float fDir = (float)(2*PI_CONST*(((double)rand())/RAND_MAX));
+//
+//    		//compute the successor that result from following this direction until one of the coordinates reaches the desired distance
+//    		//decide whether |dX| = dist or |dY| = dist
+//    		float fRadius = 0;
+//    		if(fabs(cos(fDir)) > fabs(sin(fDir)))
+//    		{
+//    			fRadius = (float)((nDist_c+0.5)/fabs(cos(fDir)));
+//    		}
+//    		else
+//    		{
+//    			fRadius = (float)((nDist_c+0.5)/fabs(sin(fDir)));
+//    		}
+//
+//    		int dX = (int)(fRadius*cos(fDir));
+//    		int dY = (int)(fRadius*sin(fDir));
+//
+//    		if((fabs((float)dX) < nDist_c && fabs((float)dY) < nDist_c) || fabs((float)dX) > nDist_c ||
+//    				fabs((float)dY) > nDist_c)
+//    		{
+//    			SBPL_ERROR("ERROR in EnvNav2D genneighs function: dX=%d dY=%d\n", dX, dY);
+//    			throw new SBPL_Exception();
+//    		}
+//
+//    		//get the coords of the state
+//    		int newX = X + dX;
+//    		int newY = Y + dY;
+//    		// TODO: check if both within map first?
+//
+//    		// random theta: // TODO: pick better choice
+//    		//int newTheta = rand() % ivNumAngleBins;
+//    		//int newTheta = angle_state_2_cell(fDir, ivNumAngleBins);
+//    		int newTheta = theta;
+//    		// random left/right
+//    		Leg newLeg = Leg(rand() % 2);
+//    		PlanningState random_state(newX, newY, newTheta, newLeg, ivCellSize, ivNumAngleBins, ivHashTableSize);
 
-    		//compute the successor that result from following this direction until one of the coordinates reaches the desired distance
-    		//decide whether |dX| = dist or |dY| = dist
-    		float fRadius = 0;
-    		if(fabs(cos(fDir)) > fabs(sin(fDir)))
-    		{
-    			fRadius = (float)((nDist_c+0.5)/fabs(cos(fDir)));
+    		// randomly concat. actions until distance reached:
+    		int nDist_sq = nDist_c*nDist_c;
+    		PlanningState randomState(*currentState);
+    		while(euclidean_distance_sq(X, Y, randomState.getX(), randomState.getY()) < nDist_sq){
+    			int randomIdx = rand() % ivFootstepSet.size();
+    			if (bSuccs)
+    				randomState = ivFootstepSet[randomIdx].performMeOnThisState(randomState);
+    			else
+    				randomState = ivFootstepSet[randomIdx].revertMeOnThisState(randomState);
     		}
-    		else
-    		{
-    			fRadius = (float)((nDist_c+0.5)/fabs(sin(fDir)));
-    		}
 
-    		dX = (int)(fRadius*cos(fDir));
-    		dY = (int)(fRadius*sin(fDir));
-
-    		if((fabs((float)dX) < nDist_c && fabs((float)dY) < nDist_c) || fabs((float)dX) > nDist_c ||
-    				fabs((float)dY) > nDist_c)
-    		{
-    			SBPL_ERROR("ERROR in EnvNav2D genneighs function: dX=%d dY=%d\n", dX, dY);
-    			throw new SBPL_Exception();
-    		}
-
-    		//get the coords of the state
-    		int newX = X + dX;
-    		int newY = Y + dY;
-
-    		// random theta: // TODO: pick better choice
-    		int newTheta = rand() % ivNumAngleBins;
-    		Leg newLeg = Leg(rand() % 2);
-    		PlanningState random_state(newX, newY, newTheta, newLeg, ivCellSize, ivNumAngleBins, ivHashTableSize);
 
     		//skip the invalid cells
-    		if(occupied(random_state))
+    		if(occupied(randomState))
     		{
     			i--;
     			continue;
     		}
 
     		//get the state
-            const PlanningState* random_hash_entry = getHashEntry(random_state);
-            if (random_hash_entry == NULL)
-            	random_hash_entry = createNewHashEntry(random_state);
+            const PlanningState* random_hash_entry = getHashEntry(randomState);
+            if (random_hash_entry == NULL){
+            	random_hash_entry = createNewHashEntry(randomState);
+            	ivRandomStates.push_back(random_hash_entry->getId());
+            }
+//            else {
+//            	std::cout << "Existing random state: ";
+//            }
+//            std::cout << random_hash_entry->getId() << " - " << cell_2_state(random_hash_entry->getX(), ivCellSize)  << " " << cell_2_state(random_hash_entry->getY(), ivCellSize)
+//            								<< " " << angle_cell_2_state(random_hash_entry->getTheta(), ivNumAngleBins);
 
     		//compute clow
     		int clow;
@@ -776,6 +796,7 @@ namespace footstep_planner
     		else
     			clow = GetFromToHeuristic(random_hash_entry->getId(), currentState->getId());
 
+    		//std::cout << " clow: " << clow << std::endl;
     		//insert it into the list
     		NeighIDV->push_back(random_hash_entry->getId());
     		CLowV->push_back(clow);
@@ -824,13 +845,21 @@ namespace footstep_planner
     		NeighIDV->push_back(desstateID);
     		CLowV->push_back(clow);
     	}
+
+    	ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d (%d %d)", NeighIDV->size(), nAttempts, currentState->getId(), X, Y);
     }
 
 	bool
 	FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
 	{
 		// TODO: check if needed --> NOTE: hash tags are not unique
-		return (StateID1 == StateID2);
+//		ivStateId2State[StateID1]
+		if (StateID1 != StateID2 && ( *(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]))){
+			ROS_WARN("State ids %d != %d, but states equivalent");
+		}
+
+		return (*(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]));
+		//return (StateID1 == StateID2);
 	}
 
 

@@ -123,6 +123,7 @@ namespace footstep_planner
 		void broadcastChangedStatesVis(
 		        const std::vector<State>& changed_states);
         void broadcastExpandedNodesVis();
+        void broadcastRandomNodesVis();
         void broadcastFootstepPathVis();
         void broadcastHeuristicPathVis();
         void broadcastPathVis();
@@ -156,6 +157,7 @@ namespace footstep_planner
 
         ros::Publisher  ivExpandedStatesVisPub;
         ros::Publisher  ivFootstepPathVisPub;
+        ros::Publisher  ivRandomStatesVisPub;
         ros::Subscriber ivGridMapSub;
         ros::Publisher  ivHeuristicPathVisPub;
         ros::Publisher  ivPathVisPub;

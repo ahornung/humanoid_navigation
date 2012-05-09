@@ -13,8 +13,11 @@
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lgridmap_2d"/>
   </export>
   
-  <depend package="opencv2"/>
   <depend package="nav_msgs"/>
+  <!-- for electric -->
+  <depend package="opencv2"/>
+  <!-- for Fuerte (creates problems with electric...)
+    <rosdep name="opencv2"/>-->
 
 </package>
 

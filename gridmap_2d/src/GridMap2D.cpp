@@ -32,6 +32,7 @@
  */
 
 #include "gridmap_2d/GridMap2D.h"
+#include <ros/console.h>
 
 GridMap2D::GridMap2D()
  : m_frameId("/map")

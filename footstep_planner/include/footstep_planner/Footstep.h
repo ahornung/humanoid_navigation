@@ -24,8 +24,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HUMANOID_SBPL_FOOTSTEP_H_
-#define HUMANOID_SBPL_FOOTSTEP_H_
+#ifndef FOOTSTEP_PLANNER_FOOTSTEP_H_
+#define FOOTSTEP_PLANNER_FOOTSTEP_H_
 
 #include <footstep_planner/PlanningState.h>
 
@@ -34,45 +34,102 @@ namespace footstep_planner
 {
 	/**
 	 * @brief A class representing a footstep (i.e. a translation and rotation
-	 * of a specific foot) that can be performed by a humanoid robot.
+	 * of a specific foot with respect to the supporting leg) that can be
+	 * performed by a humanoid robot.
+	 *
+	 * Since the underlying SBPL is working on discretized states the footsteps
+	 * are also a discretized translations and rotations.
 	 */
 	class Footstep
 	{
 	public:
+		/**
+		 * @brief The constructor takes the continuous translation and rotation
+		 * of the footstep and calculates the respective discretized footstep
+		 * based on the parameters of the discretization.
+		 *
+		 * @param x The (continuous) translation in x direction.
+		 * @param y The (continuous) translation in y direction.
+		 * @param theta The (continuous) rotation.
+		 * @param cell_size Parameter to discretize the translation (see
+		 * PlanningState for further explanation).
+		 * @param num_angle_bins Parameter to discretize the rotation (see
+		 * PlanningState for further explanation).
+		 * @param max_hash_size
+		 */
 		Footstep(double x, double y, double theta,
 	             double cell_size, int num_angle_bins, int max_hash_size);
 		~Footstep();
 
+		/**
+		 * @brief Performs this footstep (translation and rotation) on a given
+		 * planning state.
+		 *
+		 * @param current The planning state representing the robot's current
+		 * supporting leg.
+		 * @return Returns the resulting planning state.
+		 */
 		PlanningState performMeOnThisState(const PlanningState& current) const;
 
+		/**
+		 * @brief Reverts this footstep on a given planning state.
+		 *
+		 * @param current The planning state representing the robot's current
+		 * supporting leg.
+		 * @return The reverted planning state, i.e. the state the robot was in
+		 * if this footstep had not been performed.
+		 */
         PlanningState revertMeOnThisState(const PlanningState& current) const;
 
-        void debugPrint(const PlanningState& current);
-
 	private:
+        /// Typedef representing the (discretized) translation of the footstep.
         typedef std::pair<int, int> footstep_xy;
 
+        /// Initialization method called within the constructor.
 		void init();
 
+		/**
+		 * @brief Discretizes the translation of the footstep for a certain
+		 * (discretized) orientation of a possible state.
+		 *
+		 * @param leg The supporting leg of the possible state.
+		 * @param global_theta The (discretized) orientation of the possible
+		 * state.
+		 * @param footstep_x The resulting (discretized) translation in x
+		 * direction.
+		 * @param footstep_y The resulting (discretized) translation in y
+		 * direction.
+		 * @return The (discretized) orientation of the resulting state after
+		 * performing the footstep. This is used to calculate the (discretized)
+		 * reverted footstep.
+		 */
         int calculateForwardStep(Leg leg, int global_theta,
 		                         int* footstep_x, int* footstep_y) const;
 
+        /// The (discretized) rotation of the footstep.
         int ivTheta;
 
+        /// The (continuous) translation in x direction.
 		double ivContX;
+		/// The (continuous) translation in y direction.
 		double ivContY;
-		double ivContTheta;
 
+		/// The parameter for the discretization of the translation.
 		double ivCellSize;
-
+		/// The parameter for the discretization of the rotation.
 		int ivNumAngleBins;
+
 		int ivMaxHashSize;
 
+		/// The (discretized) translation(s) for a left supporting foot.
         std::vector<footstep_xy> ivDiscSuccessorLeft;
+		/// The (discretized) translation(s) for a right supporting foot.
         std::vector<footstep_xy> ivDiscSuccessorRight;
+        /// The reverted (discretized) translation(s) for a left supporting foot.
         std::vector<footstep_xy> ivDiscPredecessorLeft;
+        /// The reverted (discretized) translation(s) for a right supporting foot.
         std::vector<footstep_xy> ivDiscPredecessorRight;
 	};
 } // end of namespace
 
-#endif  // HUMANOID_SBPL_FOOTSTEP_H_
+#endif  // FOOTSTEP_PLANNER_FOOTSTEP_H_

@@ -527,16 +527,6 @@ namespace footstep_planner
     }
 
 
-    void
-    FootstepPlannerEnvironment::printHashStatistics()
-    {
-#if DEBUG_HASH
-        ROS_INFO("Number of unequal states with equal hash tag: %i",
-                 ivHashFaultCounter);
-#endif
-    }
-
-
     int
     FootstepPlannerEnvironment::GetFromToHeuristic(int FromStateID,
                                                    int ToStateID)
@@ -544,8 +534,8 @@ namespace footstep_planner
     	assert((unsigned int) FromStateID < ivStateId2State.size());
 
     	const PlanningState* from = ivStateId2State[FromStateID];
-    	return cvMmScale * ivHeuristicConstPtr->getHValue(
-    	        *from, *ivStateId2State[ToStateID]);
+    	const PlanningState* to = ivStateId2State[ToStateID];
+    	return cvMmScale * ivHeuristicConstPtr->getHValue(*from, *to);
     }
 
 

@@ -316,8 +316,6 @@ namespace footstep_planner
                                    &path_cost);
         ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;
 
-        ivPlannerEnvironmentPtr->printHashStatistics();
-
         if (ret && solution_state_ids.size() > 0)
         {
             ROS_INFO("Solution of size %zu found after %f s",

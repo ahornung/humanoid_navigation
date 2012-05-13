@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HUMANOID_SBPL_STATE_H_
-#define HUMANOID_SBPL_STATE_H_
+#ifndef FOOTSTEP_PLANNER_PLANNING_STATE_H_
+#define FOOTSTEP_PLANNER_PLANNING_STATE_H_
 
 #include <footstep_planner/helper.h>
 
@@ -30,16 +30,31 @@
 namespace footstep_planner
 {
 	/**
-	 * @brief Representation of the robot's pose (i.e. location and orientation)
-	 * in the search space. More precisely the state points to the robot's
+	 * @brief A class representing the robot's pose (i.e. position and
+	 * orientation). More precisely the planning state points to the robot's
 	 * supporting leg.
+	 *
+	 * Since the underlying SBPL is working on discretized states the planning
+	 * states are also discretized positions and orientations. This is done by
+	 * fitting the positions into a grid and the orientations into bins.
+	 *
+	 * The SBPL can access each planning state via an unique ID. Furthermore
+	 * each planning state can be identified by an (ununique) hash tag generated
+	 * from its position, location and supporting leg.
 	 */
 	class PlanningState
 	{
 	public:
 		/**
-		 * @brief x, y and theta represent the global position and orientation
-		 * of the robot's support leg defined by leg.
+		 * @brief x, y and theta represent the global (continuous) position and
+		 * orientation of the robot's support leg.
+		 *
+		 * @param leg The supporting leg.
+		 * @param cell_size The size of each grid cell discretizing the
+		 * position.
+		 * @param num_angle_bins The number of bins discretizing the
+		 * orientation.
+		 * @param max_hash_size
 		 */
 	    PlanningState(double x, double y, double theta, Leg leg,
                       double cell_size, int num_angle_bins, int max_hash_size);
@@ -51,10 +66,11 @@ namespace footstep_planner
 	    PlanningState(int x, int y, int theta, Leg leg,
                       double cell_size, int num_angle_bins, int max_hash_size);
 
-	    /// Create a PlanningState from a State
+	    /// Create a (discrete) PlanningState from a (continuous) State.
         PlanningState(const State& s, double cell_size, int num_angle_bins,
                       int max_hash_size);
 
+        /// Copy constructor.
 		PlanningState(const PlanningState& s);
 
 		~PlanningState();
@@ -62,6 +78,11 @@ namespace footstep_planner
 		bool operator ==(const PlanningState& s2) const;
 		bool operator !=(const PlanningState& s2) const;
 
+		/**
+		 * @brief Used to attach such an unique ID to the planning state. (This
+		 * cannot be done in the constructor since often such an ID is not known
+		 * when the planning state is created.)
+		 */
 		void setId(unsigned int id) { ivId = id; };
 
 		Leg getLeg() const { return ivLeg; };
@@ -69,20 +90,33 @@ namespace footstep_planner
 		int getX() const { return ivX; };
 		int getY() const { return ivY; };
 
+		/**
+		 * @return Returns the (ununique) hash tag used to identify the planning
+		 * state.
+		 */
 		unsigned int getHashTag() const { return ivHashTag; };
 
+		/**
+		 * @return Returns the (unique) ID used within the SBPL to access the
+		 * planning state.
+		 */
 		int getId() const { return ivId; };
 
 	private:
+		/// Value of the grid cell the position's x value is fitted into.
 		int ivX;
+		/// Value of the grid cell the position's y value is fitted into.
 		int ivY;
+		/// Number of the bin the orientation is fitted into.
 		int ivTheta;
-
+		/// The supporting leg.
 		Leg	ivLeg;
 
+		/// The (unique) ID of the planning state.
 	    int ivId;
 
+	    /// The (ununique) hash tag of the planning state.
 		unsigned int ivHashTag;
 	};
 }
-#endif  /* HUMANOID_SBPL_STATE_H_ */
+#endif  // FOOTSTEP_PLANNER_PLANNINGSTATE_H_

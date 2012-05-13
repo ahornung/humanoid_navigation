@@ -29,18 +29,11 @@
 
 namespace footstep_planner
 {
-	/*
-	 * #########################################################################
-	 * ### class Footstep
-	 * #########################################################################
-	 */
-
 	Footstep::Footstep(double x, double y, double theta, double cell_size,
 	                   int num_angle_bins, int max_hash_size)
 		: ivTheta(angle_state_2_cell(theta, num_angle_bins)),
           ivContX(x),
 		  ivContY(y),
-          ivContTheta(theta),
           ivCellSize(cell_size),
 		  ivNumAngleBins(num_angle_bins),
 		  ivMaxHashSize(max_hash_size),
@@ -188,17 +181,5 @@ namespace footstep_planner
         else if (global_theta >= ivNumAngleBins)
             global_theta -= ivNumAngleBins;
         return global_theta;
-	}
-
-
-	void
-	Footstep::debugPrint(const PlanningState& current)
-	{
-		footstep_xy fs;
-		if (current.getLeg() == RIGHT)
-			fs = ivDiscSuccessorRight[current.getTheta()];
-		else
-			fs = ivDiscSuccessorLeft[current.getTheta()];
-		ROS_INFO("disc footstep (%i, %i, %i)", fs.first, fs.second, ivTheta);
 	}
 } // end of namespace

@@ -478,7 +478,7 @@ namespace footstep_planner
                 footstep_set_iter++)
 			{
 				PlanningState successor =
-						footstep_set_iter->revertMeOnThisState(s);
+						footstep_set_iter->reverseMeOnThisState(s);
 				// check if predecessor exists
 				const PlanningState* successor_hash_entry =
 						getHashEntry(successor);
@@ -580,7 +580,7 @@ namespace footstep_planner
         for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
         {
             const PlanningState predecessor =
-            		footstep_set_iter->revertMeOnThisState(*current);
+            		footstep_set_iter->reverseMeOnThisState(*current);
             if (occupied(predecessor))
                 continue;
 
@@ -756,7 +756,7 @@ namespace footstep_planner
     			if (bSuccs)
     				randomState = ivFootstepSet[randomIdx].performMeOnThisState(randomState);
     			else
-    				randomState = ivFootstepSet[randomIdx].revertMeOnThisState(randomState);
+    				randomState = ivFootstepSet[randomIdx].reverseMeOnThisState(randomState);
     		}
 
 
@@ -858,7 +858,8 @@ namespace footstep_planner
     FootstepPlannerEnvironment::InitializeEnv(const char *sEnvFile)
     {
         // TODO: planner instance can be initialized here (so far not necessary)
-
+        ROS_ERROR("FootstepPlanerEnvironment::InitializeEnv: Hit "
+		          "unimplemented function. Check this!");
         return true;
     }
 
@@ -878,10 +879,9 @@ namespace footstep_planner
     void
     FootstepPlannerEnvironment::PrintEnv_Config(FILE *fOut)
     {
-        // implement this if the planner needs to print out configurations
-
-        ROS_ERROR("SimplePlanner::PrintEnv_Config: Hit  unimplemented function."
-                  " Check this!");
+        // NOTE: implement this if the planner needs to print out configurations
+        ROS_ERROR("FootstepPlanerEnvironment::PrintEnv_Config: Hit "
+		          "unimplemented function. Check this!");
     }
 
 
@@ -923,8 +923,8 @@ namespace footstep_planner
         // (predecessors) but most searches do not require this, so it is not
         // necessary to support this
 
-        ROS_ERROR("SimplePlanner::SetAllActionsandAllOutcomes: Hit "
-                  "unimplemented function. Check this!");
+        ROS_ERROR("FootstepPlannerEnvironment::SetAllActionsandAllOutcomes: Hit"
+                  " unimplemented function. Check this!");
     }
 
 
@@ -937,7 +937,7 @@ namespace footstep_planner
         // (predecessors) but most searches do not require this, so it is not
         // necessary to support this
 
-        ROS_ERROR("SimplePlanner::SetAllPreds: Hit unimplemented "
+        ROS_ERROR("FootstepPlannerEnvironment::SetAllPreds: Hit unimplemented "
                   "function. Check this!");
     }
 

@@ -41,6 +41,10 @@ namespace footstep_planner
 	/**
 	 * @brief A class defining a footstep planner environment for humanoid
 	 * robots used by the SBPL to perform planning tasks.
+	 *
+	 * The environment keeps track of all the planning states expanded during
+	 * the search. Each planning state can be accessed via its ID. Furthermore
+	 *
 	 */
     class FootstepPlannerEnvironment : public DiscreteSpaceInformation
     {
@@ -152,31 +156,37 @@ namespace footstep_planner
         };
 
         /**
-         * @return Returns the costs (in mm, truncated as int) to reach
-         * ToStateID from FromStateID.
+         * @return Returns the costs (in mm, truncated as int) to reach the
+         * planning state ToStateID from within planning state FromStateID.
          */
         int GetFromToHeuristic(int FromStateID, int ToStateID);
 
         /**
-         * @return Returns the heuristic value to reach the goal state from
-         * the state stateID (used for forward planning).
+         * @return Returns the heuristic value to reach the goal from within the
+         * planning state stateID (used for forward planning).
          */
         int GetGoalHeuristic(int stateID);
 
         /**
-         * @return Returns the heuristic value to reach the start state from
-         * the state stateID (used for backward planning).
+         * @return Returns the heuristic value to reach the start from within
+         * the planning state stateID. (Used for backward planning.)
          */
         int GetStartHeuristic(int stateID);
 
         /**
-         * @brief Calculates the predecessor states and the corresponding costs
-         * when reverting the footsteps within state TargetStateID.
+         * @brief Calculates the successor states and the corresponding costs
+         * when performing the footstep set on the planning state SourceStateID.
+         * (Used for forward planning.)
          */
-        void GetPreds(int TargetStateID, std::vector<int> *PredIDV,
+        void GetSuccs(int SourceStateID, std::vector<int> *SuccIDV,
                       std::vector<int> *CostV);
 
-        void GetSuccs(int SourceStateID, std::vector<int> *SuccIDV,
+        /**
+         * @brief Calculates the predecessor states and the corresponding costs
+         * when reversing the footstep set on the planning state TargetStateID.
+         * (Used for backward planning.)
+         */
+        void GetPreds(int TargetStateID, std::vector<int> *PredIDV,
                       std::vector<int> *CostV);
 
         /**
@@ -199,6 +209,7 @@ namespace footstep_planner
 
     	/// @return True if two states meet the same condition. Used for R*.
         bool AreEquivalent(int StateID1, int StateID2);
+
         bool InitializeEnv(const char *sEnvFile);
 
         bool InitializeMDPCfg(MDPConfig *MDPCfg);
@@ -213,6 +224,12 @@ namespace footstep_planner
 
         int SizeofCreatedEnv();
 
+        /**
+         * @return Returns true iff 'to' can be reached by any footstep that can
+         * be performed by the robot from within 'from'. (This method is used to
+         * check whether the goal/start can be reached from within the current
+         * state.)
+         */
         bool reachable(const PlanningState& from, const PlanningState& to);
 
         void getPredsOfGridCells(const std::vector<State>& changed_states,

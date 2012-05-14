@@ -112,7 +112,7 @@ namespace footstep_planner
 
 
     PlanningState
-    Footstep::revertMeOnThisState(const PlanningState& current)
+    Footstep::reverseMeOnThisState(const PlanningState& current)
     const
     {
         Leg leg;

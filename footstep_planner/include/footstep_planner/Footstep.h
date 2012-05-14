@@ -72,14 +72,14 @@ namespace footstep_planner
 		PlanningState performMeOnThisState(const PlanningState& current) const;
 
 		/**
-		 * @brief Reverts this footstep on a given planning state.
+		 * @brief Reverse this footstep on a given planning state.
 		 *
 		 * @param current The planning state representing the robot's current
 		 * supporting leg.
-		 * @return The reverted planning state, i.e. the state the robot was in
+		 * @return The reversed planning state, i.e. the state the robot was in
 		 * if this footstep had not been performed.
 		 */
-        PlanningState revertMeOnThisState(const PlanningState& current) const;
+        PlanningState reverseMeOnThisState(const PlanningState& current) const;
 
 	private:
         /// Typedef representing the (discretized) translation of the footstep.
@@ -101,7 +101,7 @@ namespace footstep_planner
 		 * direction.
 		 * @return The (discretized) orientation of the resulting state after
 		 * performing the footstep. This is used to calculate the (discretized)
-		 * reverted footstep.
+		 * reversed footstep.
 		 */
         int calculateForwardStep(Leg leg, int global_theta,
 		                         int* footstep_x, int* footstep_y) const;
@@ -125,9 +125,9 @@ namespace footstep_planner
         std::vector<footstep_xy> ivDiscSuccessorLeft;
 		/// The (discretized) translation(s) for a right supporting foot.
         std::vector<footstep_xy> ivDiscSuccessorRight;
-        /// The reverted (discretized) translation(s) for a left supporting foot.
+        /// The reversed (discretized) translation(s) for a left supporting foot.
         std::vector<footstep_xy> ivDiscPredecessorLeft;
-        /// The reverted (discretized) translation(s) for a right supporting foot.
+        /// The reversed (discretized) translation(s) for a right supporting foot.
         std::vector<footstep_xy> ivDiscPredecessorRight;
 	};
 } // end of namespace

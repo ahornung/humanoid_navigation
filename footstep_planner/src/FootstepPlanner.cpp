@@ -100,26 +100,26 @@ namespace footstep_planner
         nh_private.param("foot/max/inverse/step/theta", ivMaxInvFootstepTheta,
                          0.05);
 
-        // - footstep discretisation
-        XmlRpc::XmlRpcValue discretization_list_x;
-        XmlRpc::XmlRpcValue discretization_list_y;
-        XmlRpc::XmlRpcValue discretization_list_theta;
-        nh_private.getParam("footsteps/x", discretization_list_x);
-        nh_private.getParam("footsteps/y", discretization_list_y);
-        nh_private.getParam("footsteps/theta", discretization_list_theta);
-        if (discretization_list_x.getType() != XmlRpc::XmlRpcValue::TypeArray)
+        // - footstep discretization
+        XmlRpc::XmlRpcValue footsteps_x;
+        XmlRpc::XmlRpcValue footsteps_y;
+        XmlRpc::XmlRpcValue footsteps_theta;
+        nh_private.getParam("footsteps/x", footsteps_x);
+        nh_private.getParam("footsteps/y", footsteps_y);
+        nh_private.getParam("footsteps/theta", footsteps_theta);
+        if (footsteps_x.getType() != XmlRpc::XmlRpcValue::TypeArray)
             ROS_ERROR("Error reading footsteps/x from config file.");
-        if (discretization_list_y.getType() != XmlRpc::XmlRpcValue::TypeArray)
+        if (footsteps_y.getType() != XmlRpc::XmlRpcValue::TypeArray)
             ROS_ERROR("Error reading footsteps/y from config file.");
-        if (discretization_list_theta.getType() != XmlRpc::XmlRpcValue::TypeArray)
+        if (footsteps_theta.getType() != XmlRpc::XmlRpcValue::TypeArray)
             ROS_ERROR("Error reading footsteps/theta from config file.");
         // check if received footstep discretization is valid
         int size, size_y, size_t;
         try
         {
-            size = discretization_list_x.size();
-            size_y = discretization_list_y.size();
-            size_t = discretization_list_theta.size();
+            size = footsteps_x.size();
+            size_y = footsteps_y.size();
+            size_t = footsteps_theta.size();
 
             if (size != size_y || size != size_t)
             {
@@ -139,9 +139,9 @@ namespace footstep_planner
         double max_step_width = 0;
         for(int i=0; i < size; i++)
         {
-            double x = (double)discretization_list_x[i];
-            double y = (double)discretization_list_y[i];
-            double theta = (double)discretization_list_theta[i];
+            double x = (double)footsteps_x[i];
+            double y = (double)footsteps_y[i];
+            double theta = (double)footsteps_theta[i];
 
             Footstep f(x, y, theta, ivCellSize, ivNumAngleBins, max_hash_size);
             ivFootstepSet.push_back(f);
@@ -151,18 +151,6 @@ namespace footstep_planner
             if (cur_step_width > max_step_width)
                 max_step_width = cur_step_width;
         }
-
-        // discretise planner settings
-        int max_footstep_x = discretize(ivMaxFootstepX, ivCellSize);
-        int max_footstep_y = discretize(ivMaxFootstepY, ivCellSize);
-        int max_footstep_theta = angle_state_2_cell(ivMaxFootstepTheta,
-		                                            ivNumAngleBins);
-        int max_inv_footstep_x = discretize(ivMaxInvFootstepX, ivCellSize);
-        int max_inv_footstep_y = discretize(ivMaxInvFootstepY, ivCellSize);
-        int max_inv_footstep_theta = angle_state_2_cell(ivMaxInvFootstepTheta,
-		                                                ivNumAngleBins);
-        if (max_inv_footstep_theta > ivNumAngleBins/2)
-            max_inv_footstep_theta -= ivNumAngleBins;
 
         // initialize the heuristic
         boost::shared_ptr<Heuristic> h;
@@ -200,16 +188,16 @@ namespace footstep_planner
         ivPlannerEnvironmentPtr.reset(
                 new FootstepPlannerEnvironment(ivFootstepSet,
                                                h,
-                                               ivOriginFootShiftX,
-                                               ivOriginFootShiftY,
                                                ivFootsizeX,
                                                ivFootsizeY,
-                                               max_footstep_x,
-                                               max_footstep_y,
-                                               max_footstep_theta,
-                                               max_inv_footstep_x,
-                                               max_inv_footstep_y,
-                                               max_inv_footstep_theta,
+                                               ivOriginFootShiftX,
+                                               ivOriginFootShiftY,
+                                               ivMaxFootstepX,
+                                               ivMaxFootstepY,
+                                               ivMaxFootstepTheta,
+                                               ivMaxInvFootstepX,
+                                               ivMaxInvFootstepY,
+                                               ivMaxInvFootstepTheta,
                                                step_cost,
                                                ivCollisionCheckAccuracy,
                                                max_hash_size,
@@ -218,8 +206,10 @@ namespace footstep_planner
                                                ivForwardSearch));
 
         // set up planner
-        if (ivPlannerType == "ARAPlanner" || ivPlannerType == "ADPlanner"
-        		|| ivPlannerType == "RSTARPlanner" ){
+        if (ivPlannerType == "ARAPlanner" ||
+		    ivPlannerType == "ADPlanner" ||
+		    ivPlannerType == "RSTARPlanner" )
+        {
             ROS_INFO_STREAM("Planning with " << ivPlannerType);
         }
         else
@@ -229,21 +219,14 @@ namespace footstep_planner
             exit(1);
         }
         if (ivForwardSearch)
-            ROS_INFO_STREAM("Search direction: forward planning");
+        {
+        	ROS_INFO_STREAM("Search direction: forward planning");
+        }
         else
-            ROS_INFO_STREAM("Search direction: backward planning");
+        {
+        	ROS_INFO_STREAM("Search direction: backward planning");
+        }
         setupPlanner();
-
-        ROS_INFO("Max footstep values:");
-        ROS_INFO("x: %f (%i), y: %f (%i), theta: %f (%i)",
-		         ivMaxFootstepX, max_footstep_x,
-		         ivMaxFootstepY, max_footstep_y,
-		         ivMaxFootstepTheta, max_footstep_theta);
-        ROS_INFO("Max inverse footstep values:");
-        ROS_INFO("x: %f (%i), y: %f (%i), theta: %f (%i)",
-		         ivMaxInvFootstepX, max_inv_footstep_x,
-		         ivMaxInvFootstepY, max_inv_footstep_y,
-		         ivMaxInvFootstepTheta, max_inv_footstep_theta);
     }
 
 

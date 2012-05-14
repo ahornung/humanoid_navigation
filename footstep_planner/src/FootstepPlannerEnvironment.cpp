@@ -29,16 +29,16 @@ namespace footstep_planner
     FootstepPlannerEnvironment::FootstepPlannerEnvironment(
             const  std::vector<Footstep>& footstep_set,
             const  boost::shared_ptr<Heuristic> heuristic,
-            double origin_foot_shift_x,
-            double origin_foot_shift_y,
             double footsize_x,
             double footsize_y,
-            int    max_footstep_x,
-            int    max_footstep_y,
-            int    max_footstep_theta,
-            int    max_inverse_footstep_x,
-            int    max_inverse_footstep_y,
-            int    max_inverse_footstep_theta,
+            double origin_foot_shift_x,
+            double origin_foot_shift_y,
+            double max_footstep_x,
+            double max_footstep_y,
+            double max_footstep_theta,
+            double max_inverse_footstep_x,
+            double max_inverse_footstep_y,
+            double max_inverse_footstep_theta,
             double step_cost,
             int    collision_check_accuracy,
             int    hash_table_size,
@@ -46,24 +46,25 @@ namespace footstep_planner
             int    num_angle_bins,
             bool   forward_search)
         : DiscreteSpaceInformation(),
-          ivGoalFootIdLeft(-1),
-          ivGoalFootIdRight(-1),
-          ivStartFootIdLeft(-1),
-          ivStartFootIdRight(-1),
-          ivHashFaultCounter(0),
+          ivIdStartFootLeft(-1),
+          ivIdStartFootRight(-1),
+          ivIdGoalFootLeft(-1),
+          ivIdGoalFootRight(-1),
           ivpStateHash2State(NULL),
           ivFootstepSet(footstep_set),
           ivHeuristicConstPtr(heuristic),
-          ivOriginFootShiftX(origin_foot_shift_x),
-          ivOriginFootShiftY(origin_foot_shift_y),
           ivFootsizeX(footsize_x),
           ivFootsizeY(footsize_y),
-          ivMaxFootstepX(max_footstep_x),
-          ivMaxFootstepY(max_footstep_y),
-          ivMaxFootstepTheta(max_footstep_theta),
-          ivMaxInvFootstepX(max_inverse_footstep_x),
-          ivMaxInvFootstepY(max_inverse_footstep_y),
-          ivMaxInvFootstepTheta(max_inverse_footstep_theta),
+          ivOriginFootShiftX(origin_foot_shift_x),
+          ivOriginFootShiftY(origin_foot_shift_y),
+          ivMaxFootstepX(discretize(max_footstep_x, cell_size)),
+          ivMaxFootstepY(discretize(max_footstep_y, cell_size)),
+          ivMaxFootstepTheta(angle_state_2_cell(max_footstep_theta,
+		                                        num_angle_bins)),
+          ivMaxInvFootstepX(discretize(max_inverse_footstep_x, cell_size)),
+          ivMaxInvFootstepY(discretize(max_inverse_footstep_y, cell_size)),
+          ivMaxInvFootstepTheta(angle_state_2_cell(max_inverse_footstep_theta,
+		                                           num_angle_bins)),
           ivStepCost(cvMmScale * step_cost),
           ivCollisionCheckAccuracy(collision_check_accuracy),
           ivHashTableSize(hash_table_size),
@@ -71,7 +72,7 @@ namespace footstep_planner
           ivNumAngleBins(num_angle_bins),
           ivForwardSearch(forward_search),
           ivNumRandomNeighbors(20),
-          ivRandomNeighborsDist(1.0/ivCellSize)
+          ivRandomNeighborsDist(1.0 / ivCellSize)
     {}
 
 
@@ -98,26 +99,26 @@ namespace footstep_planner
             		new std::vector<const PlanningState*>[ivHashTableSize];
         }
 
-        int start_foot_id_left = ivStartFootIdLeft;
-        int start_foot_id_right = ivStartFootIdRight;
-        int goal_foot_id_left = ivGoalFootIdLeft;
-        int goal_foot_id_right = ivGoalFootIdRight;
+        int start_foot_id_left = ivIdStartFootLeft;
+        int start_foot_id_right = ivIdStartFootRight;
+        int goal_foot_id_left = ivIdGoalFootLeft;
+        int goal_foot_id_right = ivIdGoalFootRight;
 
         updateStart(start_foot_left, start_foot_right);
         updateGoal(goal_foot_left, goal_foot_right);
 
         if (ivForwardSearch)
         {
-			if (goal_foot_id_left != ivGoalFootIdLeft &&
-				goal_foot_id_right != ivGoalFootIdRight)
+			if (goal_foot_id_left != ivIdGoalFootLeft &&
+				goal_foot_id_right != ivIdGoalFootRight)
 			{
 				updateHeuristicValues();
 			}
         }
         else
         {
-			if (start_foot_id_left != ivStartFootIdLeft &&
-				start_foot_id_right != ivStartFootIdRight)
+			if (start_foot_id_left != ivIdStartFootLeft &&
+				start_foot_id_right != ivIdStartFootRight)
 			{
 				updateHeuristicValues();
 			}
@@ -133,18 +134,18 @@ namespace footstep_planner
         if (p_foot_left == NULL)
         {
             p_foot_left = createNewHashEntry(foot_left);
-            ivGoalFootIdLeft = p_foot_left->getId();
+            ivIdGoalFootLeft = p_foot_left->getId();
         }
 
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
             p_foot_right = createNewHashEntry(foot_right);
-            ivGoalFootIdRight = p_foot_right->getId();
+            ivIdGoalFootRight = p_foot_right->getId();
         }
 
-        assert(ivGoalFootIdLeft != -1);
-        assert(ivGoalFootIdRight != -1);
+        assert(ivIdGoalFootLeft != -1);
+        assert(ivIdGoalFootRight != -1);
     }
 
 
@@ -156,18 +157,18 @@ namespace footstep_planner
         if (p_foot_left == NULL)
         {
             p_foot_left = createNewHashEntry(foot_left);
-            ivStartFootIdLeft = p_foot_left->getId();
+            ivIdStartFootLeft = p_foot_left->getId();
         }
 
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
             p_foot_right = createNewHashEntry(foot_right);
-            ivStartFootIdRight = p_foot_right->getId();
+            ivIdStartFootRight = p_foot_right->getId();
         }
 
-        assert(ivStartFootIdLeft != -1);
-        assert(ivStartFootIdRight != -1);
+        assert(ivIdStartFootLeft != -1);
+        assert(ivIdStartFootRight != -1);
     }
 
 
@@ -188,20 +189,12 @@ namespace footstep_planner
         int state_id = ivStateId2State.size();
         assert(state_id < numeric_limits<int>::max());
 
+        // insert the ID of the new state into the corresponding map
         new_state->setId(state_id);
         ivStateId2State.push_back(new_state);
 
+        // insert the new state into the hash map at the corresponding position
         ivpStateHash2State[state_hash].push_back(new_state);
-#if DEBUG_HASH
-        if (ivpStateHash2State[state_hash].size() > 1)
-        {
-            const PlanningState* first = ivpStateHash2State[state_hash].front();
-            if (*first != s)
-            {
-                ivHashFaultCounter++;
-            }
-        }
-#endif
 
         int* entry = new int[NUMOFINDICES_STATEID2IND];
         StateID2IndexMapping.push_back(entry);
@@ -383,10 +376,10 @@ namespace footstep_planner
         ivExpandedStates.clear();
         ivRandomStates.clear();
 
-        ivGoalFootIdLeft = -1;
-        ivGoalFootIdRight = -1;
-        ivStartFootIdLeft = -1;
-        ivStartFootIdRight = -1;
+        ivIdGoalFootLeft = -1;
+        ivIdGoalFootRight = -1;
+        ivIdStartFootLeft = -1;
+        ivIdStartFootRight = -1;
     }
 
 
@@ -396,9 +389,9 @@ namespace footstep_planner
         // NOTE: "goal check" for backward planning
         const PlanningState* start;
         if (from.getLeg() == RIGHT)
-            start = ivStateId2State[ivStartFootIdLeft];
+            start = ivStateId2State[ivIdStartFootLeft];
         else
-            start = ivStateId2State[ivStartFootIdRight];
+            start = ivStateId2State[ivIdStartFootRight];
 
         return reachable(*start, from);
     }
@@ -410,9 +403,9 @@ namespace footstep_planner
         // NOTE: goal check for forward planning
         const PlanningState* goal;
         if (from.getLeg() == RIGHT)
-            goal = ivStateId2State[ivGoalFootIdLeft];
+            goal = ivStateId2State[ivIdGoalFootLeft];
         else
-            goal = ivStateId2State[ivGoalFootIdRight];
+            goal = ivStateId2State[ivIdGoalFootRight];
 
         return reachable(from, *goal);
     }
@@ -542,7 +535,7 @@ namespace footstep_planner
     int
     FootstepPlannerEnvironment::GetGoalHeuristic(int stateID)
     {
-        return GetFromToHeuristic(stateID, ivGoalFootIdLeft);
+        return GetFromToHeuristic(stateID, ivIdGoalFootLeft);
     }
 
 
@@ -562,9 +555,9 @@ namespace footstep_planner
         {
             int start_id;
             if (current->getLeg() == RIGHT)
-                start_id = ivStartFootIdLeft;
+                start_id = ivIdStartFootLeft;
             else
-                start_id = ivStartFootIdRight;
+                start_id = ivIdStartFootRight;
             const PlanningState* start = ivStateId2State[start_id];
             int cost = stepCost(*current, *start);
             PredIDV->push_back(start_id);
@@ -599,7 +592,7 @@ namespace footstep_planner
     int
     FootstepPlannerEnvironment::GetStartHeuristic(int stateID)
     {
-        return GetFromToHeuristic(stateID, ivStartFootIdLeft);
+        return GetFromToHeuristic(stateID, ivIdStartFootLeft);
     }
 
 
@@ -619,9 +612,9 @@ namespace footstep_planner
         {
             int goal_id;
             if (current->getLeg() == RIGHT)
-                goal_id = ivGoalFootIdLeft;
+                goal_id = ivIdGoalFootLeft;
             else
-                goal_id = ivGoalFootIdRight;
+                goal_id = ivIdGoalFootRight;
             const PlanningState* goal = ivStateId2State[goal_id];
             int cost = stepCost(*current, *goal);
             SuccIDV->push_back(goal_id);
@@ -653,7 +646,8 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::GetRandomSuccsatDistance(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CLowV)
+    FootstepPlannerEnvironment::GetRandomSuccsatDistance(int SourceStateID,
+    		std::vector<int>* SuccIDV, std::vector<int>* CLowV)
     {
 
     	assert(SourceStateID < ivStateId2State.size());
@@ -665,11 +659,13 @@ namespace footstep_planner
 
     	//get the successors
     	bool bSuccs = true;
-    	GetRandomNeighs(currentState, SuccIDV, CLowV, ivNumRandomNeighbors, ivRandomNeighborsDist, bSuccs);
+    	GetRandomNeighs(currentState, SuccIDV, CLowV, ivNumRandomNeighbors,
+		                ivRandomNeighborsDist, bSuccs);
     }
 
     void
-    FootstepPlannerEnvironment::GetRandomPredsatDistance(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CLowV)
+    FootstepPlannerEnvironment::GetRandomPredsatDistance(int TargetStateID,
+    		std::vector<int>* PredIDV, std::vector<int>* CLowV)
     {
 
     	assert(TargetStateID < ivStateId2State.size());
@@ -681,7 +677,8 @@ namespace footstep_planner
 
     	//get the predecessors
     	bool bSuccs = false;
-    	GetRandomNeighs(currentState, PredIDV, CLowV, ivNumRandomNeighbors, ivRandomNeighborsDist, bSuccs);
+    	GetRandomNeighs(currentState, PredIDV, CLowV, ivNumRandomNeighbors,
+		                ivRandomNeighborsDist, bSuccs);
 
     }
 
@@ -798,11 +795,11 @@ namespace footstep_planner
     	const PlanningState* goal_left = NULL;
     	const PlanningState* goal_right = NULL;
     	if (bSuccs){
-    		goal_left = ivStateId2State[ivGoalFootIdLeft];
-    		goal_right = ivStateId2State[ivGoalFootIdLeft];
+    		goal_left = ivStateId2State[ivIdGoalFootLeft];
+    		goal_right = ivStateId2State[ivIdGoalFootLeft];
     	} else {
-    		goal_left = ivStateId2State[ivStartFootIdLeft];
-    		goal_right = ivStateId2State[ivStartFootIdLeft];
+    		goal_left = ivStateId2State[ivIdStartFootLeft];
+    		goal_right = ivStateId2State[ivIdStartFootLeft];
     	}
 
 
@@ -836,16 +833,19 @@ namespace footstep_planner
     		CLowV->push_back(clow);
     	}
 
-    	ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d (%d %d)", NeighIDV->size(), nAttempts, currentState->getId(), X, Y);
+    	ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d "
+    	          "(%d %d)", NeighIDV->size(), nAttempts, currentState->getId(),
+    	          X, Y);
     }
 
 	bool
 	FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
 	{
-		// TODO: check if needed --> NOTE: hash tags are not unique
-//		ivStateId2State[StateID1]
-		if (StateID1 != StateID2 && ( *(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]))){
-			ROS_WARN("State ids %d != %d, but states equivalent");
+		if (StateID1 != StateID2 &&
+		    *(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]))
+		{
+			ROS_WARN("State ids %d != %d, but states equivalent",
+			         StateID1, StateID2);
 		}
 
 		return (*(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]));
@@ -869,8 +869,8 @@ namespace footstep_planner
     {
         // NOTE: The internal start and goal ids are set here to the left foot
         // (this affects the calculation of the heuristic values)
-        MDPCfg->goalstateid = ivGoalFootIdLeft;
-        MDPCfg->startstateid = ivStartFootIdLeft;
+        MDPCfg->goalstateid = ivIdGoalFootLeft;
+        MDPCfg->startstateid = ivIdStartFootLeft;
 
         return true;
     }
@@ -894,7 +894,7 @@ namespace footstep_planner
             fOut = stdout;
         }
 
-        if(stateID == ivGoalFootIdLeft && bVerbose)
+        if(stateID == ivIdGoalFootLeft && bVerbose)
         {
             SBPL_FPRINTF(fOut, "the state is a goal state\n");
         }

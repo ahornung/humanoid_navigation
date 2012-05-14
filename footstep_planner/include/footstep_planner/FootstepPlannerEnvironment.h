@@ -44,7 +44,6 @@ namespace footstep_planner
 	 *
 	 * The environment keeps track of all the planning states expanded during
 	 * the search. Each planning state can be accessed via its ID. Furthermore
-	 *
 	 */
     class FootstepPlannerEnvironment : public DiscreteSpaceInformation
     {
@@ -56,44 +55,50 @@ namespace footstep_planner
         /**
 		 * @param footstep_set The set of footsteps used for the path planning.
 		 * @param heuristic The heuristic used by the planner.
+		 * @param footsize_x Size of the foot in x direction.
+		 * @param footsize_y Size of the foot in y direction.
 		 * @param origin_foot_shift_x Shift in x direction from the foot's
 		 * center.
 		 * @param origin_foot_shift_y Shift in y direction from the foot's
 		 * center.
-		 * @param footsize_x Size of the foot in x direction.
-		 * @param footsize_y Size of the foot in y direction.
-		 * @param max_footstep_x The maximal translation in x direction.
-		 * @param max_footstep_y The maximal translation in y direction.
-		 * @param max_footstep_theta The maximal rotation.
-		 * @param max_inverse_footstep_x The minimal translation in x direction.
-		 * @param max_inverse_footstep_y The minimal translation in y direction.
-		 * @param max_inverse_footstep_theta The minimal rotation.
+		 * @param max_footstep_x The maximal translation in x direction
+		 * performable by the robot.
+		 * @param max_footstep_y The maximal translation in y direction
+		 * performable by the robot.
+		 * @param max_footstep_theta The maximal rotation performable by the
+		 * robot.
+		 * @param max_inverse_footstep_x The minimal translation in x direction
+		 * performable by the robot.
+		 * @param max_inverse_footstep_y The minimal translation in y direction
+		 * performable by the robot.
+		 * @param max_inverse_footstep_theta The minimal rotation performable by
+		 * the robot.
 		 * @param step_cost The costs for each step.
 		 * @param collision_check_accuracy Whether to check just the foot's
-		 * inner circle (0), the hole outer circle (1) or exactly the foot
-		 * bounding box (2) for collision.
+		 * circumcircle (0), the incircle (1) or recursively the circumcircle
+		 * and the incircle for the whole foot (2) for collision.
 		 * @param hash_table_size Size of the hash table storing the planning
 		 * states expanded during the search.
-		 * @param cell_size The size of each grid cell discretizing the
-		 * position.
-		 * @param num_angle_bins The number of bins discretizing the
-		 * orientation.
-		 * @param forward_search Whether to use forward_search (1) or backward
+		 * @param cell_size The size of each grid cell used to discretize the
+		 * robot positions.
+		 * @param num_angle_bins The number of bins used to discretize the
+		 * robot orientations.
+		 * @param forward_search Whether to use forward search (1) or backward
 		 * search (0).
 		 */
 		FootstepPlannerEnvironment(
                 const  std::vector<Footstep>& footstep_set,
                 const  boost::shared_ptr<Heuristic> heuristic,
-                double origin_foot_shift_x,
-                double origin_foot_shift_y,
                 double footsize_x,
                 double footsize_y,
-                int    max_footstep_x,
-                int    max_footstep_y,
-                int    max_footstep_theta,
-                int    max_inverse_footstep_x,
-                int    max_inverse_footstep_y,
-                int    max_inverse_footstep_theta,
+                double origin_foot_shift_x,
+                double origin_foot_shift_y,
+                double max_footstep_x,
+                double max_footstep_y,
+                double max_footstep_theta,
+                double max_inverse_footstep_x,
+                double max_inverse_footstep_y,
+                double max_inverse_footstep_theta,
                 double step_cost,
                 int    collision_check_accuracy,
                 int    hash_table_size,
@@ -113,7 +118,7 @@ namespace footstep_planner
                    const State& goal_left, const State& goal_right);
 
         /**
-         * @return Returns true iff the foot in State s is colliding with an
+         * @return True iff the foot in State s is colliding with an
          * obstacle.
          */
         bool occupied(const State& s);
@@ -121,8 +126,7 @@ namespace footstep_planner
         /**
          * @brief Try to resolve a state with a certain ID.
          *
-         * @return Returns true if there is a state with such an ID, false
-         * otherwise.
+         * @return True iff there is a state with such an ID.
          */
         bool getState(unsigned int id, State* s);
 
@@ -132,7 +136,7 @@ namespace footstep_planner
          */
         void reset();
 
-        /// @return Returns the number of exanded states during the search.
+        /// @return The number of exanded states during the search.
         int getNumExpandedStates() { return ivExpandedStates.size(); };
 
         exp_states_iter_t getExpandedStatesStart()
@@ -156,19 +160,19 @@ namespace footstep_planner
         };
 
         /**
-         * @return Returns the costs (in mm, truncated as int) to reach the
+         * @return The costs (in mm, truncated as int) to reach the
          * planning state ToStateID from within planning state FromStateID.
          */
         int GetFromToHeuristic(int FromStateID, int ToStateID);
 
         /**
-         * @return Returns the heuristic value to reach the goal from within the
+         * @return The heuristic value to reach the goal from within the
          * planning state stateID (used for forward planning).
          */
         int GetGoalHeuristic(int stateID);
 
         /**
-         * @return Returns the heuristic value to reach the start from within
+         * @return The heuristic value to reach the start from within
          * the planning state stateID. (Used for backward planning.)
          */
         int GetStartHeuristic(int stateID);
@@ -225,10 +229,10 @@ namespace footstep_planner
         int SizeofCreatedEnv();
 
         /**
-         * @return Returns true iff 'to' can be reached by any footstep that can
-         * be performed by the robot from within 'from'. (This method is used to
-         * check whether the goal/start can be reached from within the current
-         * state.)
+         * @return True iff 'to' can be reached by an arbitrary footstep that
+         * can be performed by the robot from within 'from'. (This method is
+         * used to check whether the goal/start can be reached from within the
+         * current state.)
          */
         bool reachable(const PlanningState& from, const PlanningState& to);
 
@@ -242,12 +246,11 @@ namespace footstep_planner
         static const int cvMmScale = 1000;
 
     private:
-        /// @return Returns the step cost for reaching b from a.
+        /// @return The step cost for reaching 'b' from within 'a'.
         int  stepCost(const PlanningState& a, const PlanningState& b);
 
         /**
-         * @return Returns true iff the foot in PlanningState s is colliding
-         * with an obstacle.
+         * @return True iff the foot in 's' is colliding with an obstacle.
          */
         bool occupied(const PlanningState& s);
 
@@ -256,60 +259,147 @@ namespace footstep_planner
 		                     std::vector<int>* CLowV,
 		                     int nNumofNeighs, int nDist_c, bool bSuccs);
 
+        /// Wrapper for FootstepPlannerEnvironment::createNewHashEntry(PlanningState).
         const PlanningState* createNewHashEntry(const State& s);
+
+        /**
+         * @brief Creates a new planning state for 's' and inserts it into the
+         * maps (PlanningState::ivStateId2State,
+         * PlanningState::ivpStateHash2State)
+         *
+         * @return A pointer to the newly created PlanningState.
+         */
         const PlanningState* createNewHashEntry(const PlanningState& s);
+
+        /// Wrapper for FootstepPlannerEnvironment::getHashEntry(PlanningState).
         const PlanningState* getHashEntry(const State& s);
+
+        /**
+         * @return The pointer to the planning state 's' stored in
+         * FootstepPlannerEnvironment::ivpStateHash2State.
+         */
         const PlanningState* getHashEntry(const PlanningState& s);
 
+        /**
+         * @return True iff 'goal' can be reached by an arbitrary footstep.
+         * (Used for forward planning.)
+         */
         bool closeToGoal(const PlanningState& from);
+
+        /**
+         * @return True iff 'start' can be reached by an arbitrary footstep.
+         * (Used for backward planning.)
+         */
         bool closeToStart(const PlanningState& from);
 
+        /// @brief Update the goal pose for both feet.
         void updateGoal(const State& foot_left, const State& foot_right);
+        /// @brief Update the start pose for both feet.
         void updateStart(const State& foot_left, const State& right_right);
 
+        /// @brief Update the heuristic values (e.g. after the map has changed).
         void updateHeuristicValues();
 
+        /**
+         * @brief Calculates the arbitrary footstep needed to reach 'to' from
+         * within 'from'
+         */
         void getFootstep(const PlanningState& from, const PlanningState& to,
 		                 double& footstep_x, double& footstep_y,
 		                 double& footstep_theta) const;
 
+        /// < operator for planning states.
         struct less
         {
             bool operator ()(const PlanningState* a,
                              const PlanningState* b) const;
         };
 
-		int ivGoalFootIdLeft;
-        int ivGoalFootIdRight;
-        int ivStartFootIdLeft;
-        int ivStartFootIdRight;
-        int ivHashFaultCounter;
+        /// ID of left foot's start pose.
+		int ivIdStartFootLeft;
+		/// ID of left foot's start pose.
+		int ivIdStartFootRight;
+        /// ID of left foot's goal pose.
+		int ivIdGoalFootLeft;
+        /// ID of right foot's goal pose.
+        int ivIdGoalFootRight;
 
+        /**
+         * @brief Maps from an ID to the corresponding PlanningState. (Used in
+         * the SBPL to access a certain PlanningState.)
+         */
         std::vector<const PlanningState*>  ivStateId2State;
+
+        /**
+         * @brief Maps from a hash tag to a list of corresponding planning
+         * states. (Used in FootstepPlannerEnvironment to identify a certain
+         * PlanningState.)
+         */
         std::vector<const PlanningState*>* ivpStateHash2State;
 
+        /// The set of footsteps used for the path planning.
         const std::vector<Footstep>& ivFootstepSet;
+
+        /// The heuristic function used by the planner.
         const boost::shared_ptr<Heuristic> ivHeuristicConstPtr;
 
-        const double ivOriginFootShiftX, ivOriginFootShiftY;
-        const double ivFootsizeX, ivFootsizeY;
-        /// discretized int in cell size
-        const int    ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
-        /// discretized int in cell size
-        const int    ivMaxInvFootstepX, ivMaxInvFootstepY,
-                     ivMaxInvFootstepTheta;
-        const int    ivStepCost;
+        /// Size of the foot in x direction.
+        const double ivFootsizeX;
+        /// Size of the foot in y direction.
+        const double ivFootsizeY;
+
+        /// Shift in x direction from the foot's center.
+        const double ivOriginFootShiftX;
+        /// Shift in y direction from the foot's center.
+        const double ivOriginFootShiftY;
+
+        /// The maximal translation in x direction (discretized in cell size).
+        const int ivMaxFootstepX;
+        /// The maximal translation in y direction (discretized in cell size).
+		const int ivMaxFootstepY;
+		/// The maximal rotation (discretized into bins).
+		const int ivMaxFootstepTheta;
+
+		/// The minimal translation in x direction (discretized in cell size).
+		const int ivMaxInvFootstepX;
+		/// The minimal translation in y direction (discretized in cell size).
+        const int ivMaxInvFootstepY;
+        /// The minimal rotation (discretized into bins).
+        const int ivMaxInvFootstepTheta;
+
+        /**
+         * @brief The costs for each step (discretized with the helpf of
+         * cvMmScale).
+         */
+        const int ivStepCost;
+
+        /**
+         * @brief Whether to check just the foot's inner circle (0), the hole
+         * outer circle (1) or exactly the foot's bounding box (2) for
+         * collision.
+         */
         const int    ivCollisionCheckAccuracy;
+
+        /**
+         * @brief Size of the hash table storing the planning states expanded
+         * during the search. (Also referred to by max_hash_size.)
+         */
         const int    ivHashTableSize;
+
+        /// The size of each grid cell used to discretize the robot positions.
         const double ivCellSize;
+        /// The number of bins used to discretize the robot orientations.
         const int    ivNumAngleBins;
+
+        /// Whether to use forward search (1) or backward search (0).
         const bool   ivForwardSearch;
+
         /// < number of random neighbors for R*
         const int 	 ivNumRandomNeighbors;
         /// < distance of random neighbors for R* (discretized in cells)
         const int    ivRandomNeighborsDist;
 
-
+        /// Pointer to the map.
         boost::shared_ptr<GridMap2D> ivMapPtr;
 
         exp_states_t ivExpandedStates;

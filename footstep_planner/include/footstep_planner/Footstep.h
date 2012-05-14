@@ -55,7 +55,7 @@ namespace footstep_planner
 		 * PlanningState for further explanation).
 		 * @param num_angle_bins Parameter to discretize the rotation (see
 		 * PlanningState for further explanation).
-		 * @param max_hash_size
+		 * @param max_hash_size The maximal hash size.
 		 */
 		Footstep(double x, double y, double theta,
 	             double cell_size, int num_angle_bins, int max_hash_size);
@@ -67,7 +67,7 @@ namespace footstep_planner
 		 *
 		 * @param current The planning state representing the robot's current
 		 * supporting leg.
-		 * @return Returns the resulting planning state.
+		 * @return The resulting planning state.
 		 */
 		PlanningState performMeOnThisState(const PlanningState& current) const;
 
@@ -119,6 +119,7 @@ namespace footstep_planner
 		/// The parameter for the discretization of the rotation.
 		int ivNumAngleBins;
 
+		/// The maximal hash size.
 		int ivMaxHashSize;
 
 		/// The (discretized) translation(s) for a left supporting foot.

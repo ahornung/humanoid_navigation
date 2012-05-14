@@ -61,7 +61,7 @@ namespace footstep_planner
 
 	    /**
 	     * @brief x, y and theta as discrete bin values (as used internally by
-	     * the planner)
+	     * the planner).
 	     */
 	    PlanningState(int x, int y, int theta, Leg leg,
                       double cell_size, int num_angle_bins, int max_hash_size);
@@ -91,13 +91,13 @@ namespace footstep_planner
 		int getY() const { return ivY; };
 
 		/**
-		 * @return Returns the (ununique) hash tag used to identify the planning
+		 * @return The (ununique) hash tag used to identify the planning
 		 * state.
 		 */
 		unsigned int getHashTag() const { return ivHashTag; };
 
 		/**
-		 * @return Returns the (unique) ID used within the SBPL to access the
+		 * @return The (unique) ID used within the SBPL to access the
 		 * planning state.
 		 */
 		int getId() const { return ivId; };

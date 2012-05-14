@@ -162,5 +162,4 @@ namespace footstep_planner
 				humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
     };
 }
-
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

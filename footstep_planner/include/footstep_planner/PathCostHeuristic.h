@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HUMANOID_SBPL_PATHHEURISTIC_H_
-#define HUMANOID_SBPL_PATHHEURISTIC_H_
+#ifndef FOOTSTEP_PLANNER_PATHCOSTHEURISTIC_H_
+#define FOOTSTEP_PLANNER_PATHCOSTHEURISTIC_H_
 
 #include <footstep_planner/Heuristic.h>
 #include <gridmap_2d/GridMap2D.h>
@@ -40,7 +40,7 @@ namespace footstep_planner
         virtual ~PathCostHeuristic();
 
         virtual double getHValue(const PlanningState& from,
-                         const PlanningState& to) const;
+		                         const PlanningState& to) const;
 
         bool calculateDistances(const PlanningState& start,
                                 const PlanningState& goal);
@@ -63,5 +63,5 @@ namespace footstep_planner
 
         void resetGrid();
     };
-} // end of namespace
-#endif
+}
+#endif  // FOOTSTEP_PLANNER_PATHCOSTHEURISTIC_H_

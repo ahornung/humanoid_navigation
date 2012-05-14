@@ -164,8 +164,6 @@ namespace footstep_planner
 				updateHeuristicValues();
 			}
         }
-
-
     }
 
 
@@ -867,6 +865,9 @@ namespace footstep_planner
         // (this affects the calculation of the heuristic values)
         MDPCfg->goalstateid = ivIdGoalFootLeft;
         MDPCfg->startstateid = ivIdStartFootLeft;
+
+        assert(ivIdGoalFootLeft != -1);
+        assert(ivIdStartFootLeft != -1);
 
         return true;
     }

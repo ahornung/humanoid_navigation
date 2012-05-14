@@ -2,7 +2,7 @@
 // SVN $Id$
 
 /*
- * A footstep planner for humanoid robots
+ * A footstep planner for humanoid robots.
  *
  * Copyright 2010-2011 Johannes Garimort, Armin Hornung, University of Freiburg
  * http://www.ros.org/wiki/footstep_planner
@@ -89,11 +89,11 @@ namespace footstep_planner
 
 		/**
 		 * @brief Sets the goal pose as a robot pose centered between two feet.
-         * (Wrapper for FootstepPlanner::setGoal(x, y, theta).)
 		 *
 		 * @return True if the two foot poses have been set successfully.
 		 */
         bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
+
         /**
          * @brief Sets the goal pose as a robot pose centered between two feet.
          *
@@ -103,18 +103,18 @@ namespace footstep_planner
 
         /**
          * @brief Sets the start pose as a robot pose centered between two feet.
-         * (Wrapper for FootstepPlanner::setStart(left, right).)
          *
          * @return True if the two foot poses have been set successfully.
          */
         bool setStart(const geometry_msgs::PoseStampedConstPtr& start_pose);
+
         /**
          * @brief Sets the start pose as a robot pose centered between two feet.
-         * (Wrapper for FootstepPlanner::setStart(left, right).)
          *
          * @return True if the two foot poses have been set successfully.
          */
         bool setStart(float x, float y, float theta);
+
         /**
          * @brief Sets the start pose as position of left and right footsteps.
          *

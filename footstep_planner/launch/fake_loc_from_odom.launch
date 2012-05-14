@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="fake_localization" type="fake_localization" name="fake_localization">
+    <remap from="base_pose_ground_truth" to="odom" />
+    <remap from="initialpose" to="nao_corrected_initialpose" />
+    <param name="base_frame_id" value="torso" />
+    <param name="delta_x" value="0.0" />
+    <param name="delta_y" value="0.0" />
+    <param name="delta_yaw" value="0.0" />
+  </node>
+
+  <node pkg="footstep_planner" type="corrected_initialpose.py" name="corrected_initialpose" />
+</launch>

@@ -28,7 +28,8 @@ namespace footstep_planner
 {
 	FootstepNavigation::FootstepNavigation()
         : ivLastRobotTime(0),
-          ivIdFootRight("/r_sole"), ivIdFootLeft("/l_sole"),
+          ivIdFootRight("/r_sole"),
+          ivIdFootLeft("/l_sole"),
           ivIdMapFrame("map"),
           ivExecutingFootsteps(false),
           ivFootstepsExecution("footsteps_execution", true)
@@ -406,7 +407,7 @@ namespace footstep_planner
     bool
     FootstepNavigation::setGoal(float x, float y, float theta)
     {
-    	return ivPlanner.setGoal(x,y,theta);
+    	return ivPlanner.setGoal(x, y, theta);
     }
 
 
@@ -433,7 +434,7 @@ namespace footstep_planner
         right.leg = RIGHT;
         right.theta = tf::getYaw(foot_right.getRotation());
 
-        return ivPlanner.setStart(right, left);
+        return ivPlanner.setStart(left, right);
     }
 
 

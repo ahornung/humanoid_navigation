@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FOOTSTEPPLANNERNODE_H_
-#define FOOTSTEPPLANNERNODE_H_
+#ifndef FOOTSTEP_PLANNER_FOOTSTEPPLANNERNODE_H_
+#define FOOTSTEP_PLANNER_FOOTSTEPPLANNERNODE_H_
 
 
 #include <ros/ros.h>
@@ -37,7 +37,6 @@ namespace footstep_planner
 	/**
 	 * @brief Wrapper class for FootstepPlanner, providing callbacks for
 	 * the node functionality.
-	 *
 	 */
 	class FootstepPlannerNode
 	{
@@ -48,8 +47,12 @@ namespace footstep_planner
     protected:
         FootstepPlanner ivFootstepPlanner;
 
-        ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivStartPoseSub, ivRobotPoseSub;
+        ros::Subscriber ivGoalPoseSub;
+        ros::Subscriber ivGridMapSub;
+        ros::Subscriber ivStartPoseSub;
+        ros::Subscriber ivRobotPoseSub;
+
         ros::ServiceServer ivFootstepPlanService;
 	};
 }
-#endif /* FOOTSTEPPLANNERNODE_H_ */
+#endif  // FOOTSTEP_PLANNER_FOOTSTEPPLANNERNODE_H_

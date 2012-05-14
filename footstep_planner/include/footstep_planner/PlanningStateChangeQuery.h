@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HUMANOID_SBPL_PLANNINGSTATECHANGEQUERY_H_
-#define HUMANOID_SBPL_PLANNINGSTATECHANGEQUERY_H_
+#ifndef FOOTSTEP_PLANNER_PLANNINGSTATECHANGEQUERY_H_
+#define FOOTSTEP_PLANNER_PLANNINGSTATECHANGEQUERY_H_
 
 
 #include <vector>
@@ -46,4 +46,4 @@ namespace footstep_planner
 	};
 }
 
-#endif /* HUMANOID_SBPL_PLANNINGSTATECHANGEQUERY_H_ */
+#endif  // FOOTSTEP_PLANNER_PLANNINGSTATECHANGEQUERY_H_

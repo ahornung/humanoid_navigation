@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HUMANOID_SBPL_HEURISTIC_H
-#define HUMANOID_SBPL_HEURISTIC_H
+#ifndef FOOTSTEP_PLANNER_HEURISTIC_H_
+#define FOOTSTEP_PLANNER_HEURISTIC_H_
 
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PlanningState.h>
@@ -32,7 +32,7 @@ namespace footstep_planner
 {
 	/**
 	 * @brief An abstract super class providing methods necessary to be used as
-	 * heuristic function within Dstar.
+	 * heuristic function within the FootstepPlanner.
 	 */
 	class Heuristic
 	{
@@ -45,9 +45,10 @@ namespace footstep_planner
 		/**
 		 * @return The heuristically determined path costs to get from
 		 * state 'from' to state 'to' where 'to' is supposed to be the goal of
-		 * the planning task. Costs are in meter.
+		 * the planning task. (Costs are in meter.)
 		 */
-		virtual double getHValue(const PlanningState& from, const PlanningState& to) const = 0;
+		virtual double getHValue(const PlanningState& from,
+		                         const PlanningState& to) const = 0;
 
 		HeuristicType getHeuristicType() const { return ivHeuristicType; };
 
@@ -69,7 +70,8 @@ namespace footstep_planner
 		EuclideanHeuristic(double cell_size, int num_angle_bins);
 		virtual ~EuclideanHeuristic();
 
-		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
+		virtual double getHValue(const PlanningState& from,
+		                         const PlanningState& to) const;
 	};
 
 
@@ -87,7 +89,8 @@ namespace footstep_planner
                               double max_step_width);
 		virtual ~EuclStepCostHeuristic();
 
-		virtual double getHValue(const PlanningState& from, const PlanningState& to) const;
+		virtual double getHValue(const PlanningState& from,
+		                         const PlanningState& to) const;
 
 	private:
 		const double ivStepCost;
@@ -95,4 +98,4 @@ namespace footstep_planner
 		const double ivMaxStepWidth; /// longest step width
 	};
 }
-#endif /* HUMANOID_SBPL_HEURISTIC_H */
+#endif  // FOOTSTEP_PLANNER_HEURISTIC_H_

@@ -266,8 +266,6 @@ namespace footstep_planner
         MDPConfig mdp_config;
         std::vector<int> solution_state_ids;
 
-        // NOTE: just for the sake of completeness since this method is
-        // currently doing nothing
         ivPlannerEnvironmentPtr->InitializeEnv(NULL);
         ivPlannerEnvironmentPtr->InitializeMDPCfg(&mdp_config);
 
@@ -373,8 +371,11 @@ namespace footstep_planner
 
         // reset the planner
         ivPlannerEnvironmentPtr->reset();
-        setupPlanner();
         //ivPlannerPtr->force_planning_from_scratch();
+        setupPlanner();
+        // commit start/goal poses to the environment
+        ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
+        ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft, ivGoalFootRight);
 
         // start the planning and return success
         return run();
@@ -472,12 +473,15 @@ namespace footstep_planner
     		const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
         bool success = setGoal(goal_pose);
+        // update the goal states in the environment
         if (success)
         {
-            // NOTE: updates to the goal pose are handled in the run method
+			// commit new goal pose to the environment
+			ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft,
+												ivGoalFootRight);
             if (ivStartPoseSetUp)
             {
-            	assert(ivMapPtr);
+				// run the planner
             	run();
             }
         }
@@ -493,10 +497,12 @@ namespace footstep_planner
                                 tf::getYaw(start_pose->pose.pose.orientation));
         if (success)
         {
-            // NOTE: updates to the start pose are handled in the run method
+			// commit new start pose to the environment
+			ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft,
+												 ivStartFootRight);
             if (ivGoalPoseSetUp)
             {
-            	assert(ivMapPtr);
+                // run the planner
                 run();
             }
         }
@@ -548,9 +554,6 @@ namespace footstep_planner
         ivGoalFootLeft = left_foot;
         ivGoalFootRight = right_foot;
 
-        // update the goal states in the environment
-        ivPlannerEnvironmentPtr->updateGoal(left_foot, right_foot);
-
         ivGoalPoseSetUp = true;
         ROS_INFO("Goal pose set to (%f %f %f)", x, y, theta);
 
@@ -579,9 +582,6 @@ namespace footstep_planner
         ivStartFootLeft = left_foot;
         ivStartFootRight = right_foot;
 
-        // update the start states in the environment
-        ivPlannerEnvironmentPtr->updateStart(left_foot, right_foot);
-
         ivStartPoseSetUp = true;
 
         return true;
@@ -602,10 +602,10 @@ namespace footstep_planner
         start.y = y;
         start.theta = theta;
 
-        State leftFoot = getFootPosition(start, LEFT);
-        State rightFoot = getFootPosition(start, RIGHT);
+        State foot_left = getFootPosition(start, LEFT);
+        State foot_right = getFootPosition(start, RIGHT);
 
-        bool success = setStart(rightFoot, leftFoot);
+        bool success = setStart(foot_left, foot_right);
 
         if (success)
         	ROS_INFO("Start pose set to (%f %f %f)", x, y, theta);

@@ -21,7 +21,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_
 #define FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_
 
@@ -46,30 +45,42 @@
 
 namespace footstep_planner
 {
-
+	/**
+	 * @brief A class to control the performance of a planned footstep path on
+	 * the NAO robot.
+	 */
     class FootstepNavigation
     {
     public:
-
         FootstepNavigation();
         virtual ~FootstepNavigation();
 
-        /// calls setGoal(x,y,theta)
+        /// @brief Wrapper for FootstepPlanner::setGoal.
         bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
-
-        /**
-         * @brief Sets the goal of the underlying planner
-         * @return success of operation (goal valid)
-         */
+        /// @brief Wrapper for FootstepPlanner::setGoal.
         bool setGoal(float x, float y, float theta);
 
-        void robotPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
+        /**
+         * @brief Callback to retreive the robot's position.
+         *
+         * Subscribed to 'amcl_pose'.
+         */
+        void robotPoseCallback(
+			const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
 
         /**
-         * @brief Set goal of planner and start planning from the current foot configuration
-         * @param goal_pose
+         * @brief Callback to set a simulated robot at a certain pose.
+		 *
+		 * Subscribed to 'goal'.
          */
-        void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose);
+        void goalPoseCallback(
+        		const geometry_msgs::PoseStampedConstPtr& goal_pose);
+
+        /**
+         * @brief Callback to set the map.
+         *
+         * Subscribed to 'map'.
+         */
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
@@ -77,32 +88,34 @@ namespace footstep_planner
 		                            const State& from_planned,
 		                            const State& to_planned);
 
-        void run();
-
-        /// @brief Obtains the pose of the robot's foot from tf
-        void getFootTransform(const std::string& footID, const std::string& worldFrameID,
-            		const ros::Time& time, tf::Transform& foot);
         /**
-         * @brief Calculates for a given support foot and the desired foot placement
-         * the most applicable footstep. If the robot (limited by its step size)
-         * could not perform the necessary step, choose the step that gets closest
-         * to the placement.
-         *
-         * @param supportFoot the robot's current support foot (global coordinates)
-         * @param footPlacement where to put the other foot (global coordinates)
-         * @param footstep the most applicable relative footstep to be used (within bounds)
-         *
-         * @return false if the calculated footstep does not reach footPlacement (out of limits)
+         * @brief Obtains the pose of the robot's foot from tf.
          */
-        bool getFootstep(const State& supportFoot,
-                         const State& footPlacement,
+        void getFootTransform(const std::string& foot_id,
+		                      const std::string& world_frame_id,
+		                      const ros::Time& time,
+		                      tf::Transform& foot);
+
+        /**
+         * @brief Calculates the footstep necessary to reach 'to' from within
+         * 'from'.
+         *
+         * @return True if an performable footstep has been found.
+         */
+        bool getFootstep(const State& from, const State& to,
                          humanoid_nav_msgs::StepTarget& footstep);
 
+        /// @brief Updates the robot's current pose.
         bool updateStart();
 
-        /// Main execution loop, will be called from a boost::thread
+        /// @brief Executes footsteps as boost::thread.
         void executeFootsteps();
-        void executeFootsteps2();
+
+        /**
+         * @brief Alternative (and more fluid) execution of footsteps using
+         * ROS's actionlib. (NOTE: not fully implemented so far!)
+         */
+        void executeFootsteps_alt();
 
         void activeCallback();
         void doneCallback(
@@ -111,34 +124,43 @@ namespace footstep_planner
         void feedbackCallback(
         		const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
 
+        /**
+         * @return True if the footstep can be performed (i.e. it is a valid
+         * step and does not collide with obstacles).
+         */
         bool performable(const humanoid_nav_msgs::ClipFootstep& step);
-
 
         FootstepPlanner ivPlanner;
 
         ros::Subscriber ivGridMapSub, ivRobotPoseSub, ivGoalPoseSub;
+
         ros::Publisher  ivPathVisPub;
+
         ros::ServiceClient ivFootstepSrv;
         ros::ServiceClient ivClipFootstepSrv;
+
         tf::TransformListener ivTransformListener;
+
         boost::mutex ivRobotPoseUpdateMutex;
 
         ros::Time ivLastRobotTime;
 
-        std::string ivFootIDRight;
-        std::string ivFootIDLeft;
-        std::string ivMapFrameID;
+        std::string ivIdFootRight;
+        std::string ivIdFootLeft;
+        std::string ivIdMapFrame;
 
-        double ivAccuracyX, ivAccuracyY, ivAccuracyTheta;
+        double ivAccuracyX;
+        double ivAccuracyY;
+        double ivAccuracyTheta;
         double ivCellSize;
         int    ivNumAngleBins;
         bool   ivExecutingFootsteps;
-
         double ivFeedbackRate;
 
+        /// @brief Simple action client to control a footstep execution.
     	actionlib::SimpleActionClient<
 				humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
     };
 }
 
-#endif  // HUMANOID_SBPL_HUMANOID_SBPL_
+#endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

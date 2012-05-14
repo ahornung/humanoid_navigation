@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FOOTSTEP_PLANNER_PLANNING_STATE_H_
-#define FOOTSTEP_PLANNER_PLANNING_STATE_H_
+#ifndef FOOTSTEP_PLANNER_PLANNINGSTATE_H_
+#define FOOTSTEP_PLANNER_PLANNINGSTATE_H_
 
 #include <footstep_planner/helper.h>
 

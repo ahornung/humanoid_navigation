@@ -28,8 +28,8 @@ namespace footstep_planner
 {
 	FootstepNavigation::FootstepNavigation()
         : ivLastRobotTime(0),
-          ivFootIDRight("/r_sole"), ivFootIDLeft("/l_sole"),
-          ivMapFrameID("map"),
+          ivIdFootRight("/r_sole"), ivIdFootLeft("/l_sole"),
+          ivIdMapFrame("map"),
           ivExecutingFootsteps(false),
           ivFootstepsExecution("footsteps_execution", true)
     {
@@ -55,8 +55,8 @@ namespace footstep_planner
         				this);
 
         // read parameters from config file:
-        nh_private.param("rfoot_frame_id", ivFootIDRight, ivFootIDRight);
-        nh_private.param("lfoot_frame_id", ivFootIDLeft, ivFootIDLeft);
+        nh_private.param("rfoot_frame_id", ivIdFootRight, ivIdFootRight);
+        nh_private.param("lfoot_frame_id", ivIdFootLeft, ivIdFootLeft);
 
         nh_private.param("accuracy/footstep/x", ivAccuracyX, 0.005);
         nh_private.param("accuracy/footstep/y", ivAccuracyY, 0.005);
@@ -103,18 +103,18 @@ namespace footstep_planner
     	{
     		if (to_planned->leg == LEFT)
     		{
-    			support_foot_id = ivFootIDRight;
+    			support_foot_id = ivIdFootRight;
     			from.leg = RIGHT;
     		}
     		else // support_foot = LLEG
     		{
-    			support_foot_id = ivFootIDLeft;
+    			support_foot_id = ivIdFootLeft;
     			from.leg = LEFT;
     		}
     		{
     			boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
     			// get real placement of the support foot
-    			getFootTransform(support_foot_id, ivMapFrameID,
+    			getFootTransform(support_foot_id, ivIdMapFrame,
     			                 ros::Time::now(), from_transform);
     		}
 			from.x = from_transform.getOrigin().x();
@@ -159,7 +159,7 @@ namespace footstep_planner
 
 
     void
-    FootstepNavigation::executeFootsteps2()
+    FootstepNavigation::executeFootsteps_alt()
     {
     	if (ivPlanner.getPathSize() <= 1)
     		return;
@@ -417,9 +417,9 @@ namespace footstep_planner
         {
             boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
             // get real placement of the feet
-            getFootTransform(ivFootIDLeft, ivMapFrameID, ivLastRobotTime,
+            getFootTransform(ivIdFootLeft, ivIdMapFrame, ivLastRobotTime,
                              foot_left);
-            getFootTransform(ivFootIDRight, ivMapFrameID, ivLastRobotTime,
+            getFootTransform(ivIdFootRight, ivIdMapFrame, ivLastRobotTime,
                              foot_right);
         }
         State left, right;
@@ -442,7 +442,7 @@ namespace footstep_planner
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
         boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
-        ivMapFrameID = gridMap->getFrameID();
+        ivIdMapFrame = gridMap->getFrameID();
         ivPlanner.setMap(gridMap);
     }
 

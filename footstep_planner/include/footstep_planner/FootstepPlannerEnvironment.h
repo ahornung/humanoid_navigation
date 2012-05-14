@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FOOTSTEP_PLANNER_ENVIRONMENT_H_
-#define FOOTSTEP_PLANNER_ENVIRONMENT_H_
+#ifndef FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
+#define FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
 
 
 #include <vector>
@@ -402,4 +402,4 @@ namespace footstep_planner
     };
 }
 
-#endif  // FOOTSTEP_PLANNER_ENVIRONMENT_H_
+#endif  // FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_

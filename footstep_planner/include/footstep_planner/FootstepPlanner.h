@@ -22,8 +22,8 @@
  */
 
 
-#ifndef FOOTSTEP_PLANNER_H_
-#define FOOTSTEP_PLANNER_H_
+#ifndef FOOTSTEP_PLANNER_FOOTSTEPPLANNER_H_
+#define FOOTSTEP_PLANNER_FOOTSTEPPLANNER_H_
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -52,13 +52,12 @@ namespace footstep_planner
 	typedef std::vector<State>::const_iterator state_iter_t;
 
 	/**
-	 * @brief Main interface to control the interaction between ROS and the
-	 * footstep planner.
+	 * @brief A class to control the interaction between ROS and the footstep
+	 * planner.
 	 */
     class FootstepPlanner
     {
     public:
-
         FootstepPlanner();
         virtual ~FootstepPlanner();
 
@@ -137,22 +136,33 @@ namespace footstep_planner
         };
 
 		/**
-		 * @brief Sets the goal pose as a robot pose centered between two feet.
-		 * If the start pose has been set previously the planning is started.
+		 * @brief Callback to set the goal pose as a robot pose centered between
+		 * two feet. If the start pose has been set previously the planning is
+		 * started.
+		 *
+		 * Subscribed to 'goal'.
 		 *
 		 * @return True if the two foot poses have been set successfully.
 		 */
         void goalPoseCallback(
         		const geometry_msgs::PoseStampedConstPtr& goal_pose);
 		/**
-		 * @brief Sets the start pose as a robot pose centered between two feet.
-		 * If the goal pose has been set previously the planning is started.
+		 * @brief Callback to set the start pose as a robot pose centered
+		 * between two feet. If the goal pose has been set previously the
+		 * planning is started.
+		 *
+		 * Subscribed to 'initialpose'.
 		 *
 		 * @return True if the two foot poses have been set successfully.
 		 */
         void startPoseCallback(
 			const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose);
 
+        /**
+         * @brief Callback to set the map.
+         *
+         * Subscribed to 'map'.
+         */
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
         /**
@@ -259,4 +269,4 @@ namespace footstep_planner
     };
 }
 
-#endif  // FOOTSTEP_PLANNER_H_
+#endif  // FOOTSTEP_PLANNER_FOOTSTEPPLANNER_H_

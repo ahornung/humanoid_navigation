@@ -21,8 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HUMANOID_SBPL_HELPER_H_
-#define HUMANOID_SBPL_HELPER_H_
+#ifndef FOOTSTEP_PLANNER_HELPER_H_
+#define FOOTSTEP_PLANNER_HELPER_H_
 
 #define DEBUG_HASH 0
 #define DEBUG_TIME 0
@@ -219,4 +219,4 @@ namespace footstep_planner
 	               int num_angle_bins, State* s);
 }
 
-#endif  /* HUMANOID_SBPL_HELPER_H_ */
+#endif  /* FOOTSTEP_PLANNER_HELPER_H_ */

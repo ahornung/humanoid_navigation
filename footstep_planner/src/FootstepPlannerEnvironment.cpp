@@ -50,7 +50,7 @@ namespace footstep_planner
           ivIdStartFootRight(-1),
           ivIdGoalFootLeft(-1),
           ivIdGoalFootRight(-1),
-          ivpStateHash2State(NULL),
+          ivpStateHash2State(new std::vector<const PlanningState*>[hash_table_size]),
           ivFootstepSet(footstep_set),
           ivHeuristicConstPtr(heuristic),
           ivFootsizeX(footsize_x),
@@ -88,55 +88,20 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::setUp(const State& start_foot_left,
-                                      const State& start_foot_right,
-                                      const State& goal_foot_left,
-                                      const State& goal_foot_right)
-    {
-        if (ivpStateHash2State == NULL)
-        {
-            ivpStateHash2State =
-            		new std::vector<const PlanningState*>[ivHashTableSize];
-        }
-
-        int start_foot_id_left = ivIdStartFootLeft;
-        int start_foot_id_right = ivIdStartFootRight;
-        int goal_foot_id_left = ivIdGoalFootLeft;
-        int goal_foot_id_right = ivIdGoalFootRight;
-
-        updateStart(start_foot_left, start_foot_right);
-        updateGoal(goal_foot_left, goal_foot_right);
-
-        if (ivForwardSearch)
-        {
-			if (goal_foot_id_left != ivIdGoalFootLeft &&
-				goal_foot_id_right != ivIdGoalFootRight)
-			{
-				updateHeuristicValues();
-			}
-        }
-        else
-        {
-			if (start_foot_id_left != ivIdStartFootLeft &&
-				start_foot_id_right != ivIdStartFootRight)
-			{
-				updateHeuristicValues();
-			}
-        }
-    }
-
-
-    void
     FootstepPlannerEnvironment::updateGoal(const State& foot_left,
                                            const State& foot_right)
     {
-        const PlanningState* p_foot_left = getHashEntry(foot_left);
+    	// keep the old IDs
+        int goal_foot_id_left = ivIdGoalFootLeft;
+        int goal_foot_id_right = ivIdGoalFootRight;
+
+        // update the states for both feet (if necessary)
+		const PlanningState* p_foot_left = getHashEntry(foot_left);
         if (p_foot_left == NULL)
         {
             p_foot_left = createNewHashEntry(foot_left);
             ivIdGoalFootLeft = p_foot_left->getId();
         }
-
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
@@ -144,8 +109,21 @@ namespace footstep_planner
             ivIdGoalFootRight = p_foot_right->getId();
         }
 
+        // check if everything has been set correctly
         assert(ivIdGoalFootLeft != -1);
         assert(ivIdGoalFootRight != -1);
+
+        // if using the forward search a change of the goal states involves an
+        // update of the heuristic
+        if (ivForwardSearch)
+		{
+        	// check if the goal states have been changed
+			if (goal_foot_id_left != ivIdGoalFootLeft &&
+				goal_foot_id_right != ivIdGoalFootRight)
+			{
+				updateHeuristicValues();
+			}
+		}
     }
 
 
@@ -153,13 +131,17 @@ namespace footstep_planner
     FootstepPlannerEnvironment::updateStart(const State& foot_left,
                                             const State& foot_right)
     {
+    	// keep the old IDs
+        int start_foot_id_left = ivIdStartFootLeft;
+        int start_foot_id_right = ivIdStartFootRight;
+
+        // update the states for both feet (if necessary)
         const PlanningState* p_foot_left = getHashEntry(foot_left);
         if (p_foot_left == NULL)
         {
             p_foot_left = createNewHashEntry(foot_left);
             ivIdStartFootLeft = p_foot_left->getId();
         }
-
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
@@ -167,8 +149,23 @@ namespace footstep_planner
             ivIdStartFootRight = p_foot_right->getId();
         }
 
+        // check if everything has been set correctly
         assert(ivIdStartFootLeft != -1);
         assert(ivIdStartFootRight != -1);
+
+        // if using the backward search a change of the start states involves an
+        // update of the heuristic
+        if (!ivForwardSearch)
+        {
+        	// check if the start states have been changed
+			if (start_foot_id_left != ivIdStartFootLeft &&
+				start_foot_id_right != ivIdStartFootRight)
+			{
+				updateHeuristicValues();
+			}
+        }
+
+
     }
 
 
@@ -857,9 +854,8 @@ namespace footstep_planner
     bool
     FootstepPlannerEnvironment::InitializeEnv(const char *sEnvFile)
     {
-        // TODO: planner instance can be initialized here (so far not necessary)
-        ROS_ERROR("FootstepPlanerEnvironment::InitializeEnv: Hit "
-		          "unimplemented function. Check this!");
+//        ROS_ERROR("FootstepPlanerEnvironment::InitializeEnv: Hit "
+//		          "unimplemented function. Check this!");
         return true;
     }
 

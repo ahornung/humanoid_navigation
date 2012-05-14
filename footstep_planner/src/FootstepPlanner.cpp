@@ -207,7 +207,7 @@ namespace footstep_planner
 
         // set up planner
         if (ivPlannerType == "ARAPlanner" ||
-		    ivPlannerType == "ADPlanner" ||
+		    ivPlannerType == "ADPlanner"  ||
 		    ivPlannerType == "RSTARPlanner" )
         {
             ROS_INFO_STREAM("Planning with " << ivPlannerType);
@@ -262,11 +262,6 @@ namespace footstep_planner
     bool
     FootstepPlanner::run()
     {
-        ROS_DEBUG("Setting up environment");
-		ivPlannerEnvironmentPtr->setUp(ivStartFootLeft, ivStartFootRight,
-									   ivGoalFootLeft, ivGoalFootRight);
-		ROS_DEBUG("Setting up environment done");
-
         int ret = 0;
         MDPConfig mdp_config;
         std::vector<int> solution_state_ids;
@@ -276,7 +271,7 @@ namespace footstep_planner
         ivPlannerEnvironmentPtr->InitializeEnv(NULL);
         ivPlannerEnvironmentPtr->InitializeMDPCfg(&mdp_config);
 
-        // set up planner
+        // set up SBPL
         if (ivPlannerPtr->set_start(mdp_config.startstateid) == 0)
         {
             ROS_ERROR("Failed to set start state.");
@@ -366,12 +361,13 @@ namespace footstep_planner
     {
     	if (!ivMapPtr)
     	{
-    		ROS_ERROR("FootstepPlanner has no map yet for planning");
+    		ROS_ERROR("FootstepPlanner has no map for planning yet.");
     		return false;
     	}
         if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
         {
-            ROS_ERROR("FootstepPlanner has no start or goal pose set");
+            ROS_ERROR("FootstepPlanner has not set the start and/or goal pose "
+                      "yet.");
             return false;
         }
 
@@ -413,14 +409,15 @@ namespace footstep_planner
     bool
     FootstepPlanner::replan()
     {
-       if (!ivMapPtr)
-       {
-           ROS_ERROR("FootstepPlanner has no map yet for planning");
-           return false;
-       }
+    	if (!ivMapPtr)
+		{
+			ROS_ERROR("FootstepPlanner has no map for re-planning yet.");
+			return false;
+		}
         if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
         {
-            ROS_ERROR("FootstepPlanner has no start or goal pose set");
+            ROS_ERROR("FootstepPlanner has not set start and/or goal pose "
+                      "yet.");
             return false;
         }
 
@@ -464,12 +461,15 @@ namespace footstep_planner
     	}
     	resp.result = result;
 
-    	return result;
+    	// return true since service call was successful (independent from the
+    	// success of the planning call)
+    	return true;
     }
 
 
     void
-    FootstepPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_pose)
+    FootstepPlanner::goalPoseCallback(
+    		const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
         bool success = setGoal(goal_pose);
         if (success)
@@ -485,7 +485,8 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::startPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose)
+    FootstepPlanner::startPoseCallback(
+    		const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose)
     {
         bool success = setStart(start_pose->pose.pose.position.x,
                                 start_pose->pose.pose.position.y,
@@ -503,7 +504,8 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map)
+    FootstepPlanner::mapCallback(
+    		const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
         boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
         setMap(gridMap);
@@ -511,7 +513,8 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlanner::setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose)
+    FootstepPlanner::setGoal(
+    		const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
         return setGoal(goal_pose->pose.position.x,
                        goal_pose->pose.position.y,
@@ -533,17 +536,20 @@ namespace footstep_planner
         goal.y = y;
         goal.theta = theta;
 
-        State leftFoot = getFootPosition(goal, LEFT);
-        State rightFoot = getFootPosition(goal, RIGHT);
+        State left_foot = getFootPosition(goal, LEFT);
+        State right_foot = getFootPosition(goal, RIGHT);
 
-        if (ivPlannerEnvironmentPtr->occupied(leftFoot) ||
-            ivPlannerEnvironmentPtr->occupied(rightFoot))
+        if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
+            ivPlannerEnvironmentPtr->occupied(right_foot))
         {
             ROS_ERROR("Goal pose at (%f %f %f) not accessible.", x, y, theta);
             return false;
         }
-        ivGoalFootLeft = leftFoot;
-        ivGoalFootRight = rightFoot;
+        ivGoalFootLeft = left_foot;
+        ivGoalFootRight = right_foot;
+
+        // update the goal states in the environment
+        ivPlannerEnvironmentPtr->updateGoal(left_foot, right_foot);
 
         ivGoalPoseSetUp = true;
         ROS_INFO("Goal pose set to (%f %f %f)", x, y, theta);
@@ -563,7 +569,7 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlanner::setStart(const State& right_foot, const State& left_foot)
+    FootstepPlanner::setStart(const State& left_foot, const State& right_foot)
     {
         if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
             ivPlannerEnvironmentPtr->occupied(right_foot))
@@ -572,6 +578,9 @@ namespace footstep_planner
         }
         ivStartFootLeft = left_foot;
         ivStartFootRight = right_foot;
+
+        // update the start states in the environment
+        ivPlannerEnvironmentPtr->updateStart(left_foot, right_foot);
 
         ivStartPoseSetUp = true;
 
@@ -800,8 +809,7 @@ namespace footstep_planner
 
     // TODO: remove later
     void
-    FootstepPlanner::broadcastChangedStatesVis(
-            const std::vector<State>& changed_states)
+    FootstepPlanner::broadcastChangedStatesVis(const std::vector<State>& states)
     {
         if (ivChangedStatesVisPub.getNumSubscribers() > 0)
         {
@@ -810,8 +818,8 @@ namespace footstep_planner
             std::vector<geometry_msgs::Point32> points;
 
             std::vector<State>::const_iterator states_iter;
-            for(states_iter = changed_states.begin();
-                states_iter != changed_states.end();
+            for(states_iter = states.begin();
+                states_iter != states.end();
                 states_iter++)
             {
                 point.x = states_iter->x;
@@ -958,45 +966,6 @@ namespace footstep_planner
 
 			ivRandomStatesVisPub.publish(cloud_msg);
     	}
-    }
-
-    // TODO: remove after debug
-    void
-    FootstepPlanner::broadcastStepDebug(const State& cur, const State& next)
-    {
-        visualization_msgs::Marker marker;
-        visualization_msgs::MarkerArray broadcast_msg;
-        std::vector<visualization_msgs::Marker> markers;
-
-        int markers_counter = 0;
-
-        marker.header.stamp = ros::Time::now();
-        marker.header.frame_id = ivMapPtr->getFrameID();
-
-        footstepToMarker(cur, &marker);
-		marker.id = markers_counter++;
-		markers.push_back(marker);
-
-        footstepToMarker(next, &marker);
-		marker.id = markers_counter++;
-		markers.push_back(marker);
-
-        if (markers_counter < ivLastMarkerMsgSize)
-        {
-            for(int j = markers_counter; j < ivLastMarkerMsgSize; j++)
-            {
-                marker.ns = ivMarkerNamespace;
-                marker.id = j;
-                marker.action = visualization_msgs::Marker::DELETE;
-
-                markers.push_back(marker);
-            }
-        }
-
-        broadcast_msg.markers = markers;
-        ivLastMarkerMsgSize = markers.size();
-
-        ivFootstepPathVisPub.publish(broadcast_msg);
     }
 
 

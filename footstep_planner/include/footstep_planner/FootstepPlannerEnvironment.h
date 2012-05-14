@@ -108,14 +108,13 @@ namespace footstep_planner
 
         virtual ~FootstepPlannerEnvironment();
 
-        void setMap(GridMap2DPtr map);
+        /// @brief Update the goal pose for both feet.
+        void updateGoal(const State& foot_left, const State& foot_right);
 
-        /**
-         * @brief Used to set up the start (for both feet) and goal (for both
-         * feet) position for a planning task.
-         */
-        void setUp(const State& start_left, const State& start_right,
-                   const State& goal_left, const State& goal_right);
+        /// @brief Update the start pose for both feet.
+        void updateStart(const State& foot_left, const State& right_right);
+
+        void setMap(GridMap2DPtr map);
 
         /**
          * @return True iff the foot in State s is colliding with an
@@ -124,7 +123,7 @@ namespace footstep_planner
         bool occupied(const State& s);
 
         /**
-         * @brief Try to resolve a state with a certain ID.
+         * @brief Try to receive a state with a certain ID.
          *
          * @return True iff there is a state with such an ID.
          */
@@ -136,7 +135,7 @@ namespace footstep_planner
          */
         void reset();
 
-        /// @return The number of exanded states during the search.
+        /// @return The number of expanded states during the search.
         int getNumExpandedStates() { return ivExpandedStates.size(); };
 
         exp_states_iter_t getExpandedStatesStart()
@@ -291,11 +290,6 @@ namespace footstep_planner
          * (Used for backward planning.)
          */
         bool closeToStart(const PlanningState& from);
-
-        /// @brief Update the goal pose for both feet.
-        void updateGoal(const State& foot_left, const State& foot_right);
-        /// @brief Update the start pose for both feet.
-        void updateStart(const State& foot_left, const State& right_right);
 
         /// @brief Update the heuristic values (e.g. after the map has changed).
         void updateHeuristicValues();

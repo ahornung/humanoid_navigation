@@ -380,12 +380,12 @@ namespace footstep_planner
     			// calculate plan
     	        if (ivPlanner.plan())
     	        {
-    	            // execution thread
-    	            boost::thread footstepExecutionThread(
-    	                    &FootstepNavigation::executeFootsteps, this);
+//    	            // execution thread
+//    	            boost::thread footstepExecutionThread(
+//    	                    &FootstepNavigation::executeFootsteps, this);
 
-//    	        	// ALTERNATIVE:
-//    	        	executeFootsteps2();
+    	        	// ALTERNATIVE:
+    	        	executeFootsteps_alt();
     	        }
     		}
     		else

@@ -313,6 +313,10 @@ namespace footstep_planner
     void
     FootstepPlannerEnvironment::updateHeuristicValues()
     {
+        if (ivIdGoalFootLeft == -1 && ivIdGoalFootRight == -1)
+            return;
+        if (ivIdStartFootLeft == -1 && ivIdStartFootRight == -1)
+            return;
         if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
         {
             boost::shared_ptr<PathCostHeuristic> h =

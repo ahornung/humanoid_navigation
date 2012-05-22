@@ -52,8 +52,6 @@ namespace footstep_planner
 
         unsigned char** ivpGrid;
 
-        const PlanningState* ivGoal;
-
         double ivStepCost;
         double ivDiffAngleCost;
         double ivMaxStepWidth;

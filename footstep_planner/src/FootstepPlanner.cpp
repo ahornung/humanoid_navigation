@@ -284,6 +284,8 @@ namespace footstep_planner
         ivPlannerPtr->set_initialsolution_eps(ivInitialEpsilon);
         ivPlannerPtr->set_search_mode(ivSearchUntilFirstSolution);
 
+        ivPlannerEnvironmentPtr->updateHeuristicValues();
+
         ROS_INFO("Start planning (max time: %f, initial eps: %f (%f))\n",
                  ivMaxSearchTime, ivInitialEpsilon, ivPlannerPtr->get_initial_eps());
         int path_cost;

@@ -33,7 +33,6 @@ namespace footstep_planner
 	                                     double max_step_width)
         : Heuristic(cell_size, num_angle_bins, PATH_COST),
           ivpGrid(NULL),
-          ivGoal(NULL),
           ivStepCost(step_cost),
           ivDiffAngleCost(diff_angle_cost),
           ivMaxStepWidth(max_step_width)
@@ -53,7 +52,7 @@ namespace footstep_planner
     const
     {
         if (from == to)
-            return 0;
+            return 0.0;
 
         unsigned int from_x;
         unsigned int from_y;
@@ -62,8 +61,10 @@ namespace footstep_planner
                                           cell_2_state(from.getY(), ivCellSize),
                                           from_x, from_y);
         assert(valid);
+
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(
-                from_x, from_y)) / 1000;
+                from_x, from_y)) / 1000.0;
+
         double expected_steps = dist / ivMaxStepWidth;
         // we could replace this by working on ints (w. all normalization)
         // int disc_diff_angle = abs(from.getTheta() - to.getTheta());
@@ -71,9 +72,9 @@ namespace footstep_planner
         double diff_angle = 0.0;
         if (ivDiffAngleCost > 0.0)
         {
-        	diff_angle = std::abs(angles::shortest_angular_distance(
-        	        angle_cell_2_state(from.getTheta(), ivNumAngleBins),
-        	        angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
+            diff_angle = std::abs(angles::shortest_angular_distance(
+                    angle_cell_2_state(from.getTheta(), ivNumAngleBins),
+                    angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
         }
 
         return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
@@ -86,13 +87,6 @@ namespace footstep_planner
     {
         assert(ivMapPtr);
 
-        if (ivGoal)
-        {
-            delete ivGoal;
-            ivGoal = NULL;
-        }
-        ivGoal = new PlanningState(goal);
-
         unsigned int start_x;
         unsigned int start_y;
         bool valid = ivMapPtr->worldToMap(
@@ -100,15 +94,17 @@ namespace footstep_planner
                 cell_2_state(start.getY(), ivCellSize),
                 start_x, start_y);
         assert(valid);
+
         unsigned int goal_x;
         unsigned int goal_y;
-        valid = ivMapPtr->worldToMap(cell_2_state(goal.getX(), ivCellSize),
-		                             cell_2_state(goal.getY(), ivCellSize),
-		                             goal_x, goal_y);
+        valid = ivMapPtr->worldToMap(
+                cell_2_state(goal.getX(), ivCellSize),
+		        cell_2_state(goal.getY(), ivCellSize),
+		        goal_x, goal_y);
         assert(valid);
 
-        ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold, goal_x, goal_y,
-                                start_x, start_y,
+        ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
+                                goal_x, goal_y, start_x, start_y,
                                 SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
 
         return true;

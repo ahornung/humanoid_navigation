@@ -25,7 +25,8 @@
 
 namespace footstep_planner
 {
-	Heuristic::Heuristic(double cell_size, int num_angle_bins, HeuristicType type)
+	Heuristic::Heuristic(double cell_size, int num_angle_bins,
+	                     HeuristicType type)
 		: ivCellSize(cell_size),
 		  ivNumAngleBins(num_angle_bins),
 		  ivHeuristicType(type)
@@ -46,7 +47,8 @@ namespace footstep_planner
 
 
 	double
-	EuclideanHeuristic::getHValue(const PlanningState& from, const PlanningState& to)
+	EuclideanHeuristic::getHValue(const PlanningState& from,
+	                              const PlanningState& to)
 	const
 	{
 		if (from == to)
@@ -78,7 +80,8 @@ namespace footstep_planner
 
 
 	double
-	EuclStepCostHeuristic::getHValue(const PlanningState& from, const PlanningState& to)
+	EuclStepCostHeuristic::getHValue(const PlanningState& from,
+	                                 const PlanningState& to)
 	const
 	{
 		if (from == to)
@@ -95,8 +98,12 @@ namespace footstep_planner
 		// double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
 		double diff_angle = 0.0;
 		if (ivDiffAngleCost > 0.0)
-			diff_angle = std::abs(angles::shortest_angular_distance(angle_cell_2_state(from.getTheta(), ivNumAngleBins),angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
+		{
+		    diff_angle = std::abs(angles::shortest_angular_distance(
+		            angle_cell_2_state(from.getTheta(), ivNumAngleBins),
+		            angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
+		}
 
-		return (dist + expected_steps * ivStepCost + diff_angle * ivDiffAngleCost);
+		return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
 	}
 }

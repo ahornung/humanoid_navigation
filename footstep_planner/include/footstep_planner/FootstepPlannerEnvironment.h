@@ -241,6 +241,9 @@ namespace footstep_planner
         void getSuccsOfGridCells(const std::vector<State>& changed_states,
 		                         std::vector<int>* succ_ids);
 
+        /// @brief Update the heuristic values (e.g. after the map has changed).
+        void updateHeuristicValues();
+
         /// Used to scale continuous values in meter to discrete values in mm.
         static const int cvMmScale = 1000;
 
@@ -290,9 +293,6 @@ namespace footstep_planner
          * (Used for backward planning.)
          */
         bool closeToStart(const PlanningState& from);
-
-        /// @brief Update the heuristic values (e.g. after the map has changed).
-        void updateHeuristicValues();
 
         /**
          * @brief Calculates the arbitrary footstep needed to reach 'to' from
@@ -372,26 +372,28 @@ namespace footstep_planner
          * outer circle (1) or exactly the foot's bounding box (2) for
          * collision.
          */
-        const int    ivCollisionCheckAccuracy;
+        const int ivCollisionCheckAccuracy;
 
         /**
          * @brief Size of the hash table storing the planning states expanded
          * during the search. (Also referred to by max_hash_size.)
          */
-        const int    ivHashTableSize;
+        const int ivHashTableSize;
 
         /// The size of each grid cell used to discretize the robot positions.
         const double ivCellSize;
         /// The number of bins used to discretize the robot orientations.
-        const int    ivNumAngleBins;
+        const int ivNumAngleBins;
 
         /// Whether to use forward search (1) or backward search (0).
-        const bool   ivForwardSearch;
+        const bool ivForwardSearch;
 
         /// < number of random neighbors for R*
-        const int 	 ivNumRandomNeighbors;
+        const int ivNumRandomNeighbors;
         /// < distance of random neighbors for R* (discretized in cells)
-        const int    ivRandomNeighborsDist;
+        const int ivRandomNeighborsDist;
+
+        bool ivHeuristicExpired;
 
         /// Pointer to the map.
         boost::shared_ptr<GridMap2D> ivMapPtr;

@@ -72,7 +72,8 @@ namespace footstep_planner
           ivNumAngleBins(num_angle_bins),
           ivForwardSearch(forward_search),
           ivNumRandomNeighbors(20),
-          ivRandomNeighborsDist(1.0 / ivCellSize)
+          ivRandomNeighborsDist(1.0 / ivCellSize),
+          ivHeuristicExpired(true)
     {}
 
 
@@ -121,7 +122,7 @@ namespace footstep_planner
 			if (goal_foot_id_left != ivIdGoalFootLeft &&
 				goal_foot_id_right != ivIdGoalFootRight)
 			{
-				updateHeuristicValues();
+				ivHeuristicExpired = true;
 			}
 		}
     }
@@ -161,7 +162,7 @@ namespace footstep_planner
 			if (start_foot_id_left != ivIdStartFootLeft &&
 				start_foot_id_right != ivIdStartFootRight)
 			{
-				updateHeuristicValues();
+				ivHeuristicExpired = true;
 			}
         }
     }
@@ -313,10 +314,13 @@ namespace footstep_planner
     void
     FootstepPlannerEnvironment::updateHeuristicValues()
     {
-        if (ivIdGoalFootLeft == -1 && ivIdGoalFootRight == -1)
+        // check if start and goal have been set
+        assert(ivIdGoalFootLeft != -1 && ivIdGoalFootRight != -1);
+        assert(ivIdStartFootLeft != -1 && ivIdStartFootRight != -1);
+
+        if (!ivHeuristicExpired)
             return;
-        if (ivIdStartFootLeft == -1 && ivIdStartFootRight == -1)
-            return;
+
         if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
         {
             boost::shared_ptr<PathCostHeuristic> h =
@@ -340,6 +344,8 @@ namespace footstep_planner
             }
             ROS_INFO("Finished calculating path cost heuristic.");
         }
+
+        ivHeuristicExpired = false;
     }
 
 

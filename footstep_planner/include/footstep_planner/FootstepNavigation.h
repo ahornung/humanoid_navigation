@@ -88,6 +88,9 @@ namespace footstep_planner
 		                            const State& from_planned,
 		                            const State& to_planned);
 
+        /// @brief Starts the planning task via FootstepPlanner::plan().
+        void run();
+
         /**
          * @brief Obtains the pose of the robot's foot from tf.
          */
@@ -154,7 +157,9 @@ namespace footstep_planner
         double ivAccuracyTheta;
         double ivCellSize;
         int    ivNumAngleBins;
+        /// Used to lock the calculation and execution of footsteps.
         bool   ivExecutingFootsteps;
+        /// The rate the action server sends its feedback.
         double ivFeedbackRate;
 
         /// @brief Simple action client to control a footstep execution.

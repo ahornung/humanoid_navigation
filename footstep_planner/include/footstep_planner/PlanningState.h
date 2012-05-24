@@ -104,6 +104,9 @@ namespace footstep_planner
 		 */
 		int getId() const { return ivId; };
 
+		/// @brief Computes the continuous State the PlanningState represents.
+		State getState(double cell_size, int num_angle_bins);
+
 	private:
 		/// Value of the grid cell the position's x value is fitted into.
 		int ivX;

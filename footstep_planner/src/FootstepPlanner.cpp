@@ -539,11 +539,7 @@ namespace footstep_planner
             return false;
         }
 
-        State goal;
-        goal.x = x;
-        goal.y = y;
-        goal.theta = theta;
-
+        State goal(x, y, theta, NOLEG);
         State left_foot = getFootPosition(goal, LEFT);
         State right_foot = getFootPosition(goal, RIGHT);
 
@@ -599,11 +595,7 @@ namespace footstep_planner
             return false;
         }
 
-        State start;
-        start.x = x;
-        start.y = y;
-        start.theta = theta;
-
+        State start(x, y, theta, NOLEG);
         State foot_left = getFootPosition(start, LEFT);
         State foot_right = getFootPosition(start, RIGHT);
 
@@ -762,24 +754,21 @@ namespace footstep_planner
         }
     }
 
-    State
-    FootstepPlanner::getFootPosition(const State& robot, Leg side)
-    {
 
+    State
+    FootstepPlanner::getFootPosition(const State& robot, Leg leg)
+    {
         double shift_x = -sin(robot.theta) * ivFootSeparation / 2.0;
         double shift_y =  cos(robot.theta) * ivFootSeparation / 2.0;
 
         double sign = -1.0;
-        if (side == LEFT)
+        if (leg == LEFT)
         	sign = 1.0;
 
-        State foot;
-        foot.x = robot.x + sign * shift_x;
-        foot.y = robot.y + sign * shift_y;
-        foot.theta = robot.theta;
-        foot.leg = side;
-
-        return foot;
+        return State(robot.x + sign * shift_x,
+		             robot.y + sign * shift_y,
+		             robot.theta,
+		             leg);
     }
 
 

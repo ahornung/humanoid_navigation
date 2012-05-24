@@ -172,14 +172,19 @@ namespace footstep_planner
 	}
 
 
-	void
-	get_state(int x, int y, int theta, Leg leg, double cell_size,
-	          int num_angle_bins, State* s)
+	bool
+	State::operator ==(const State& s2)
 	{
-		s->x = cell_2_state(x, cell_size);
-		s->y = cell_2_state(y, cell_size);
-		s->theta = angles::normalize_angle(
-				angle_cell_2_state(theta, num_angle_bins));
-		s->leg = leg;
+		return (fabs(x - s2.x) <= FLOAT_CMP_THR &&
+		        fabs(y - s2.y) <= FLOAT_CMP_THR &&
+		        fabs(theta - s2.theta) <= FLOAT_CMP_THR &&
+		        leg == s2.leg);
+	}
+
+
+	bool
+	State::operator !=(const State& s2)
+	{
+		return not (*this == s2);
 	}
 }

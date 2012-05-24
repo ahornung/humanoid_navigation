@@ -102,4 +102,15 @@ namespace footstep_planner
 	{
 		return !(*this == s2);
 	}
+
+
+	State
+	PlanningState::getState(double cell_size, int num_angle_bins)
+	{
+		return State(cell_2_state(ivX, cell_size),
+		             cell_2_state(ivY, cell_size),
+		             angles::normalize_angle(
+		            		 angle_cell_2_state(ivTheta, num_angle_bins)),
+					 ivLeg);
+	}
 } // end of namespace

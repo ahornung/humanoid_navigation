@@ -201,7 +201,7 @@ namespace footstep_planner
         void footstepToMarker(const State& footstep,
                               visualization_msgs::Marker* marker);
 
-        /// @brief Wrapper for the SBPL planning call.
+        /// @brief Starts the planning task in the underlying SBPL.
         bool run();
 
         /// @brief Returns the foot pose of a leg for a given robot pose.

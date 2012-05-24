@@ -39,19 +39,31 @@ namespace footstep_planner
 {
 	static const double TWO_PI = 2 * M_PI;
 
+	static const double FLOAT_CMP_THR = 0.0055;
+
     enum Leg { RIGHT=0, LEFT=1, NOLEG=2 };
 
 
     /// @brief A struct representing a continuous, global robot state.
+    // TODO: implement as class instead of struct
     struct State
     {
+    	State()
+    		: x(0.0), y(0.0), theta(0.0), leg(RIGHT)
+    	{};
+
+    	State(double x_, double y_, double theta_, Leg leg_)
+    		: x(x_), y(y_), theta(theta_), leg(leg_)
+    	{};
+
+    	/// Comparison operator.
+        bool operator ==(const State& s2);
+        bool operator !=(const State& s2);
+
         double x;
         double y;
         double theta;
         Leg leg;
-
-        /// Comparison operator.
-        bool operator ()(const State& a, const State& b);
     };
 
 
@@ -210,13 +222,6 @@ namespace footstep_planner
 	bool collision_check(double x, double y, double theta,
                          double height, double width, int accuracy,
 						 const GridMap2D& distance_map);
-
-	/**
-	 * @brief Used to generate a (continuous) State from a (discrete)
-	 * PlanningState.
-	 */
-	void get_state(int x, int y, int theta, Leg leg, double cell_size,
-	               int num_angle_bins, State* s);
 }
 
 #endif  /* FOOTSTEP_PLANNER_HELPER_H_ */

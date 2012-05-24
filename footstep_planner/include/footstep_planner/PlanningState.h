@@ -37,6 +37,8 @@ namespace footstep_planner
 	 * Since the underlying SBPL is working on discretized states the planning
 	 * states are also discretized positions and orientations. This is done by
 	 * fitting the positions into a grid and the orientations into bins.
+	 * (NOTE: the resolution of the planning cells is likely to differ from the
+	 * resolution of the grid map.)
 	 *
 	 * The SBPL can access each planning state via an unique ID. Furthermore
 	 * each planning state can be identified by an (ununique) hash tag generated

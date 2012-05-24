@@ -77,8 +77,10 @@ namespace footstep_planner
 
 	/**
 	 * @brief Determining the heuristic value by the euclidean distance between
-	 * two states and the costs of the expected step costs to get from one of the
-	 * states to the other.
+	 * two states, the expected step costs to get from one state to the other
+	 * and the difference between the orientation of the two states multiplied
+	 * by some cost factor. (NOTE: choosing this angular difference cost might
+	 * overestimate the heuristic value.)
 	 */
 	class EuclStepCostHeuristic : public Heuristic
 	{
@@ -95,7 +97,9 @@ namespace footstep_planner
 	private:
 		const double ivStepCost;
 		const double ivDiffAngleCost;
-		const double ivMaxStepWidth; /// longest step width
+
+		/// longest step width
+		const double ivMaxStepWidth;
 	};
 }
 #endif  // FOOTSTEP_PLANNER_HEURISTIC_H_

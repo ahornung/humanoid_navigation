@@ -31,6 +31,20 @@
 
 namespace footstep_planner
 {
+    /**
+     * @brief Determining the heuristic value by calculating a 2D path from each
+     * grid cell of the map to the goal and using the path length as expected
+     * distance.
+     *
+     * The heuristic value consists of the following factors:
+     *
+     *  + The expected distance retreived from the 2D path.
+     *
+     *  + The expected path costs.
+     *
+     *  + The difference between the orientation of the two states multiplied
+     *    by some cost factor.
+     */
     class PathCostHeuristic : public Heuristic
     {
     public:
@@ -42,6 +56,10 @@ namespace footstep_planner
         virtual double getHValue(const PlanningState& from,
 		                         const PlanningState& to) const;
 
+        /**
+         * @brief Calculates for each grid cell of the map a 2D path to the
+         * goal. (The start state is not really needed here.)
+         */
         bool calculateDistances(const PlanningState& start,
                                 const PlanningState& goal);
 

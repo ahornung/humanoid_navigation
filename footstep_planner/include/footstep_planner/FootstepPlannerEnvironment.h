@@ -241,7 +241,11 @@ namespace footstep_planner
         void getSuccsOfGridCells(const std::vector<State>& changed_states,
 		                         std::vector<int>* succ_ids);
 
-        /// @brief Update the heuristic values (e.g. after the map has changed).
+        /**
+         * @brief Update the heuristic values (e.g. after the map has changed).
+         * The environment takes care that the update is only done when it is
+         * necessary.
+         */
         void updateHeuristicValues();
 
         /// Used to scale continuous values in meter to discrete values in mm.

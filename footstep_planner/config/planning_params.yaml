@@ -28,3 +28,4 @@ forward_search: False
 # new planning task
 changed_cells_limit: 20000
 
+feedback_frequence: 0.1

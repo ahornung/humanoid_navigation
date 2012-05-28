@@ -189,6 +189,9 @@ namespace footstep_planner
 		/// @return Size of the planned path.
 		int getPathSize() { return ivPath.size(); };
 
+		State getStartFootLeft() { return ivStartFootLeft; };
+		State getStartFootRight() { return ivStartFootRight; };
+
     protected:
 		// TODO: remove after debug
 		void broadcastChangedStatesVis(const std::vector<State>& states);

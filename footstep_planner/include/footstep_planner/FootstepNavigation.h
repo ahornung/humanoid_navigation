@@ -108,6 +108,10 @@ namespace footstep_planner
         bool getFootstep(const State& from, const State& to,
                          humanoid_nav_msgs::StepTarget& footstep);
 
+        bool getFootstepsFromPath(
+        		const State& current_support_leg, int starting_step_num,
+        		std::vector<humanoid_nav_msgs::StepTarget>& footsteps);
+
         /// @brief Updates the robot's current pose.
         bool updateStart();
 
@@ -132,6 +136,8 @@ namespace footstep_planner
          * step and does not collide with obstacles).
          */
         bool performable(const humanoid_nav_msgs::ClipFootstep& step);
+
+        bool performanceValid(const State& planned, const State& executed);
 
         FootstepPlanner ivPlanner;
 
@@ -160,7 +166,7 @@ namespace footstep_planner
         /// Used to lock the calculation and execution of footsteps.
         bool   ivExecutingFootsteps;
         /// The rate the action server sends its feedback.
-        double ivFeedbackRate;
+        double ivFeedbackFrequence;
 
         /// @brief Simple action client to control a footstep execution.
     	actionlib::SimpleActionClient<

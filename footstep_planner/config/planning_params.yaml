@@ -6,7 +6,7 @@ max_hash_size: 65536
 
 # the heuristic that should be used to estimate the step costs of a planning state
 # possible choices: EuclideanHeuristic, EuclStepCostHeuristic, PathCostHeuristic
-heuristic_type: EuclideanHeuristic
+heuristic_type: PathCostHeuristic
 
 
 ### planner settings ###########################################################

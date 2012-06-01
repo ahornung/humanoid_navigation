@@ -180,8 +180,8 @@ namespace footstep_planner
 			return ivPlannerPtr->get_n_expands();
 		};
 
-		/// @return Number of planned footsteps.
-		size_t getNumFootsteps() const { return ivPath.size(); };
+		/// @return Number of planned foot poses.
+		size_t getNumFootPoses() const { return ivPath.size(); };
 
 		state_iter_t getPathBegin() const { return ivPath.begin(); };
 		state_iter_t getPathEnd() const { return ivPath.end(); };
@@ -200,18 +200,25 @@ namespace footstep_planner
         void broadcastFootstepPathVis();
         void broadcastHeuristicPathVis();
         void broadcastPathVis();
-        bool extractSolution(const std::vector<int>& state_ids);
-        void footstepToMarker(const State& footstep,
+
+        /**
+         * @brief Extracts the path (list of foot poses) from a list of state
+         * IDs calculated by the SBPL.
+         */
+        bool extractPath(const std::vector<int>& state_ids);
+
+        /// @brief Generates a visualization msgs for a foot pose.
+        void footPoseToMarker(const State& footstep,
                               visualization_msgs::Marker* marker);
 
         /// @brief Starts the planning task in the underlying SBPL.
         bool run();
 
         /// @brief Returns the foot pose of a leg for a given robot pose.
-        State getFootPosition(const State& robot, Leg side);
+        State getFootPose(const State& robot, Leg side);
 
         /// @brief Sets the planning algorithm used by SBPL.
-        void setupPlanner();
+        void setPlanner();
 
         /// @brief Updates the environment in case of a changed map.
         void updateEnvironment(GridMap2DPtr old_map);
@@ -262,7 +269,7 @@ namespace footstep_planner
         int    ivNumAngleBins;
 
         /**
-         * @brief Of limit of changed cells is reached the planner starts a new
+         * @brief If limit of changed cells is reached the planner starts a new
          * task from the scratch.
          */
         unsigned int ivChangedCellsLimit;

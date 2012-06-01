@@ -103,10 +103,18 @@ namespace footstep_planner
             p_foot_left = createNewHashEntry(foot_left);
             ivIdGoalFootLeft = p_foot_left->getId();
         }
+        else
+        {
+            ivIdGoalFootLeft = p_foot_left->getId();
+        }
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
             p_foot_right = createNewHashEntry(foot_right);
+            ivIdGoalFootRight = p_foot_right->getId();
+        }
+        else
+        {
             ivIdGoalFootRight = p_foot_right->getId();
         }
 
@@ -143,10 +151,18 @@ namespace footstep_planner
             p_foot_left = createNewHashEntry(foot_left);
             ivIdStartFootLeft = p_foot_left->getId();
         }
+        else
+        {
+            ivIdStartFootLeft = p_foot_left->getId();
+        }
         const PlanningState* p_foot_right = getHashEntry(foot_right);
         if (p_foot_right == NULL)
         {
             p_foot_right = createNewHashEntry(foot_right);
+            ivIdStartFootRight = p_foot_right->getId();
+        }
+        else
+        {
             ivIdStartFootRight = p_foot_right->getId();
         }
 
@@ -216,8 +232,9 @@ namespace footstep_planner
     {
         unsigned int state_hash = s.getHashTag();
         std::vector<const PlanningState*>::const_iterator state_iter;
-        state_iter = ivpStateHash2State[state_hash].begin();
-        for (; state_iter != ivpStateHash2State[state_hash].end(); state_iter++)
+        for (state_iter = ivpStateHash2State[state_hash].begin();
+             state_iter != ivpStateHash2State[state_hash].end();
+             state_iter++)
         {
             if (*(*state_iter) == s)
             {
@@ -321,6 +338,8 @@ namespace footstep_planner
         if (!ivHeuristicExpired)
             return;
 
+        ROS_INFO("Updating the heuristic values.");
+
         if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
         {
             boost::shared_ptr<PathCostHeuristic> h =
@@ -342,9 +361,9 @@ namespace footstep_planner
                 ROS_ERROR("Failed to calculate path cost heuristic.");
                 exit(1);
             }
-            ROS_INFO("Finished calculating path cost heuristic.");
         }
 
+        ROS_INFO("Finished updating the heuristic values.");
         ivHeuristicExpired = false;
     }
 
@@ -512,14 +531,11 @@ namespace footstep_planner
 				PlanningState successor =
 						footstep_set_iter->performMeOnThisState(s);
 				// check if successor exists
+				// TODO: check if a non-existing planning state has to be made "existing"
 				const PlanningState* successor_hash_entry =
 						getHashEntry(successor);
-				if (successor_hash_entry == NULL)
-					continue;
-				// check if successor is occupied
-//				if (occupied(successor))
-//					continue;
-				succ_ids->push_back(successor_hash_entry->getId());
+				if (successor_hash_entry != NULL)
+				    succ_ids->push_back(successor_hash_entry->getId());
 			}
 		}
     }

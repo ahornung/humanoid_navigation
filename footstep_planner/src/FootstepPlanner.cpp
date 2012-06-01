@@ -226,7 +226,7 @@ namespace footstep_planner
         {
         	ROS_INFO_STREAM("Search direction: backward planning");
         }
-        setupPlanner();
+        setPlanner();
     }
 
 
@@ -235,7 +235,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::setupPlanner()
+    FootstepPlanner::setPlanner()
     {
         if (ivPlannerType == "ARAPlanner")
         {
@@ -262,6 +262,11 @@ namespace footstep_planner
     bool
     FootstepPlanner::run()
     {
+        // commit start/goal poses to the environment
+        ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
+        ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft, ivGoalFootRight);
+        ivPlannerEnvironmentPtr->updateHeuristicValues();
+
         int ret = 0;
         MDPConfig mdp_config;
         std::vector<int> solution_state_ids;
@@ -284,8 +289,6 @@ namespace footstep_planner
         ivPlannerPtr->set_initialsolution_eps(ivInitialEpsilon);
         ivPlannerPtr->set_search_mode(ivSearchUntilFirstSolution);
 
-        ivPlannerEnvironmentPtr->updateHeuristicValues();
-
         ROS_INFO("Start planning (max time: %f, initial eps: %f (%f))\n",
                  ivMaxSearchTime, ivInitialEpsilon, ivPlannerPtr->get_initial_eps());
         int path_cost;
@@ -300,7 +303,7 @@ namespace footstep_planner
                      solution_state_ids.size(),
             		 (ros::WallTime::now()-startTime).toSec());
 
-            ivPlanExists = extractSolution(solution_state_ids);
+            ivPlanExists = extractPath(solution_state_ids);
             broadcastExpandedNodesVis();
             broadcastRandomNodesVis();
 
@@ -330,7 +333,7 @@ namespace footstep_planner
 
 
     bool
-    FootstepPlanner::extractSolution(const std::vector<int>& state_ids)
+    FootstepPlanner::extractPath(const std::vector<int>& state_ids)
     {
         ivPath.clear();
 
@@ -374,10 +377,7 @@ namespace footstep_planner
         // reset the planner
         ivPlannerEnvironmentPtr->reset();
         //ivPlannerPtr->force_planning_from_scratch();
-        setupPlanner();
-        // commit start/goal poses to the environment
-        ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
-        ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft, ivGoalFootRight);
+        setPlanner();
 
         // start the planning and return success
         return run();
@@ -478,14 +478,8 @@ namespace footstep_planner
         // update the goal states in the environment
         if (success)
         {
-			// commit new goal pose to the environment
-			ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft,
-												ivGoalFootRight);
             if (ivStartPoseSetUp)
-            {
-				// run the planner
             	run();
-            }
         }
     }
 
@@ -499,14 +493,8 @@ namespace footstep_planner
                                 tf::getYaw(start_pose->pose.pose.orientation));
         if (success)
         {
-			// commit new start pose to the environment
-			ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft,
-												 ivStartFootRight);
             if (ivGoalPoseSetUp)
-            {
-                // run the planner
                 run();
-            }
         }
     }
 
@@ -540,8 +528,8 @@ namespace footstep_planner
         }
 
         State goal(x, y, theta, NOLEG);
-        State left_foot = getFootPosition(goal, LEFT);
-        State right_foot = getFootPosition(goal, RIGHT);
+        State left_foot = getFootPose(goal, LEFT);
+        State right_foot = getFootPose(goal, RIGHT);
 
         if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
             ivPlannerEnvironmentPtr->occupied(right_foot))
@@ -596,8 +584,8 @@ namespace footstep_planner
         }
 
         State start(x, y, theta, NOLEG);
-        State foot_left = getFootPosition(start, LEFT);
-        State foot_right = getFootPosition(start, RIGHT);
+        State foot_left = getFootPose(start, LEFT);
+        State foot_right = getFootPose(start, RIGHT);
 
         bool success = setStart(foot_left, foot_right);
 
@@ -623,8 +611,6 @@ namespace footstep_planner
     void
     FootstepPlanner::setMap(GridMap2DPtr grid_map)
     {
-        // TODO: do we need to handle size changes (reinit everything)?
-
         bool map_exists = ivMapPtr;
 
         // store old map locally
@@ -635,10 +621,10 @@ namespace footstep_planner
         // update map of planning environment
         ivPlannerEnvironmentPtr->setMap(grid_map);
 
+        // initialize a replanning with updated map information
         if (map_exists && ivPlanExists)
         {
             updateEnvironment(old_map);
-            // TODO: uncomment later
             run(); // plan new path
         }
     }
@@ -647,6 +633,8 @@ namespace footstep_planner
     void
     FootstepPlanner::updateEnvironment(GridMap2DPtr old_map)
     {
+        // TODO: handle size changes of the map; currently the planning
+        // information is reseted
 
         if (ivPlannerType == "ADPlanner" &&
             ivMapPtr->getResolution() == old_map->getResolution() &&
@@ -706,11 +694,13 @@ namespace footstep_planner
                     }
                 }
             }
+
             if (num_changed_cells == 0)
             {
                 ROS_INFO("old map equals new map; no replanning necessary");
                 return;
             }
+
             ROS_INFO("%d changed map cells found", num_changed_cells);
 
             // TODO: remove later
@@ -731,7 +721,7 @@ namespace footstep_planner
 
                 boost::shared_ptr<ADPlanner> h =
                         boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
-                h->costs_changed(PlanningStateChangeQuery(&changed_states_ids));
+                h->costs_changed(PlanningStateChangeQuery(changed_states_ids));
             }
             else
             {
@@ -739,7 +729,7 @@ namespace footstep_planner
                 ROS_INFO("Reset old information in new planning task");
 
                 ivPlannerEnvironmentPtr->reset();
-                setupPlanner();
+                setPlanner();
                 //ivPlannerPtr->force_planning_from_scratch();
             }
         }
@@ -749,14 +739,14 @@ namespace footstep_planner
             ROS_INFO("Reset old information in new planning task");
 
             ivPlannerEnvironmentPtr->reset();
-            setupPlanner();
+            setPlanner();
             //ivPlannerPtr->force_planning_from_scratch();
         }
     }
 
 
     State
-    FootstepPlanner::getFootPosition(const State& robot, Leg leg)
+    FootstepPlanner::getFootPose(const State& robot, Leg leg)
     {
         double shift_x = -sin(robot.theta) * ivFootSeparation / 2.0;
         double shift_y =  cos(robot.theta) * ivFootSeparation / 2.0;
@@ -879,9 +869,9 @@ namespace footstep_planner
 
 		// add the missing start foot to the publish vector for visualization:
         if (ivPath.front().leg == LEFT)
-        	footstepToMarker(ivStartFootRight, &marker);
+        	footPoseToMarker(ivStartFootRight, &marker);
         else
-        	footstepToMarker(ivStartFootLeft, &marker);
+        	footPoseToMarker(ivStartFootLeft, &marker);
 		marker.id = markers_counter++;
 		markers.push_back(marker);
 
@@ -889,7 +879,7 @@ namespace footstep_planner
         state_iter_t path_iter = getPathBegin();
         for(; path_iter != getPathEnd(); path_iter++)
         {
-			footstepToMarker(*path_iter, &marker);
+			footPoseToMarker(*path_iter, &marker);
 			marker.id = markers_counter++;
 			markers.push_back(marker);
         }
@@ -907,9 +897,9 @@ namespace footstep_planner
 
         // add the missing goal foot to the publish vector for visualization:
         if (ivPath.back().leg == LEFT)
-        	footstepToMarker(ivGoalFootRight, &marker);
+        	footPoseToMarker(ivGoalFootRight, &marker);
         else
-        	footstepToMarker(ivGoalFootLeft, &marker);
+        	footPoseToMarker(ivGoalFootLeft, &marker);
         marker.id = markers_counter++;
         markers.push_back(marker);
 
@@ -989,7 +979,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::footstepToMarker(const State& footstep,
+    FootstepPlanner::footPoseToMarker(const State& footstep,
                                       visualization_msgs::Marker* marker)
     {
         marker->header.stamp = ros::Time::now();

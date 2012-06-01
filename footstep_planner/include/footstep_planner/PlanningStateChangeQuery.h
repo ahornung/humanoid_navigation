@@ -35,14 +35,14 @@ namespace footstep_planner
 	class PlanningStateChangeQuery : public StateChangeQuery
 	{
 	public:
-		PlanningStateChangeQuery(const std::vector<int>* neighbors);
+		PlanningStateChangeQuery(const std::vector<int>& neighbors);
 		virtual ~PlanningStateChangeQuery();
 
 		const std::vector<int>* getPredecessors() const;
 		const std::vector<int>* getSuccessors() const;
 
 	private:
-		const std::vector<int>* ivpNeighbors;
+		const std::vector<int>& ivNeighbors;
 	};
 }
 

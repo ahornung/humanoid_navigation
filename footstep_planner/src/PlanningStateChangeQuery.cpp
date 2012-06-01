@@ -7,8 +7,8 @@
 namespace footstep_planner
 {
 	PlanningStateChangeQuery::PlanningStateChangeQuery(
-			const std::vector<int>* neighbors)
-		: ivpNeighbors(neighbors)
+			const std::vector<int>& neighbors)
+		: ivNeighbors(neighbors)
 	{}
 
 
@@ -19,13 +19,13 @@ namespace footstep_planner
 	const std::vector<int>*
 	PlanningStateChangeQuery::getPredecessors() const
 	{
-		return ivpNeighbors;
+		return &ivNeighbors;
 	}
 
 
 	const std::vector<int>*
 	PlanningStateChangeQuery::getSuccessors() const
 	{
-		return ivpNeighbors;
+		return &ivNeighbors;
 	}
 }

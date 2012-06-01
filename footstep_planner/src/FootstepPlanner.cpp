@@ -920,8 +920,6 @@ namespace footstep_planner
 			visualization_msgs::MarkerArray broadcast_msg;
 			std::vector<visualization_msgs::Marker> markers;
 
-			int markers_counter = 0;
-
 			marker.header.stamp = ros::Time::now();
 			marker.header.frame_id = ivMapPtr->getFrameID();
 

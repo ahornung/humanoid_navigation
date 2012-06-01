@@ -71,7 +71,7 @@ namespace footstep_planner
           ivCellSize(cell_size),
           ivNumAngleBins(num_angle_bins),
           ivForwardSearch(forward_search),
-          ivNumRandomNeighbors(20),
+          ivNumRandomNeighbors(10),
           ivRandomNeighborsDist(1.0 / ivCellSize),
           ivHeuristicExpired(true)
     {}
@@ -714,13 +714,57 @@ namespace footstep_planner
     	NeighIDV->clear();
     	CLowV->clear();
 
-    	// TODO for testing:
-    	//return;
 
     	//get X, Y for the states
     	int X = currentState->getX();
     	int Y = currentState->getY();
     	int theta = currentState->getTheta();
+
+    	//see if the goal/start belongs to the inside area and if yes then add it to Neighs as well
+    	// NOTE: "goal check" for backward planning
+    	const PlanningState* goal_left = NULL;
+    	const PlanningState* goal_right = NULL;
+    	if (bSuccs){
+    		goal_left = ivStateId2State[ivIdGoalFootLeft];
+    		goal_right = ivStateId2State[ivIdGoalFootLeft];
+    	} else {
+    		goal_left = ivStateId2State[ivIdStartFootLeft];
+    		goal_right = ivStateId2State[ivIdStartFootLeft];
+    	}
+
+
+    	//add left if within the distance
+    	if(std::abs(goal_left->getX() - X) <= nDist_c && std::abs(goal_left->getY() - Y) <= nDist_c)
+    	{
+    		//compute clow
+    		int clow;
+    		int desstateID = goal_left->getId();
+    		if(bSuccs)
+    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
+    		else
+    			clow = GetFromToHeuristic(desstateID, currentState->getId());
+
+    		NeighIDV->push_back(desstateID);
+    		CLowV->push_back(clow);
+    	}
+
+    	//add right if within the distance
+    	if(std::abs(goal_right->getX() - X) <= nDist_c && std::abs(goal_right->getY() - Y) <= nDist_c)
+    	{
+    		//compute clow
+    		int clow;
+    		int desstateID = goal_right->getId();
+    		if(bSuccs)
+    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
+    		else
+    			clow = GetFromToHeuristic(desstateID, currentState->getId());
+
+    		NeighIDV->push_back(desstateID);
+    		CLowV->push_back(clow);
+    	}
+
+    	// TODO for testing, skip random neighs
+    	//return;
 
     	//iterate through random actions
     	int nAttempts = 0;
@@ -804,57 +848,14 @@ namespace footstep_planner
     		else
     			clow = GetFromToHeuristic(random_hash_entry->getId(), currentState->getId());
 
-    		//std::cout << " clow: " << clow << std::endl;
+    		std::cout << " clow: " << clow << std::endl;
     		//insert it into the list
     		NeighIDV->push_back(random_hash_entry->getId());
     		CLowV->push_back(clow);
 
     	}
 
-    	//see if the goal/start belongs to the inside area and if yes then add it to Neighs as well
-    	// NOTE: "goal check" for backward planning
-    	const PlanningState* goal_left = NULL;
-    	const PlanningState* goal_right = NULL;
-    	if (bSuccs){
-    		goal_left = ivStateId2State[ivIdGoalFootLeft];
-    		goal_right = ivStateId2State[ivIdGoalFootLeft];
-    	} else {
-    		goal_left = ivStateId2State[ivIdStartFootLeft];
-    		goal_right = ivStateId2State[ivIdStartFootLeft];
-    	}
-
-
-    	//add left if within the distance
-    	if(std::abs(goal_left->getX() - X) <= nDist_c && std::abs(goal_left->getY() - Y) <= nDist_c)
-    	{
-    		//compute clow
-    		int clow;
-    		int desstateID = goal_left->getId();
-    		if(bSuccs)
-    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
-    		else
-    			clow = GetFromToHeuristic(desstateID, currentState->getId());
-
-    		NeighIDV->push_back(desstateID);
-    		CLowV->push_back(clow);
-    	}
-
-    	//add right if within the distance
-    	if(std::abs(goal_right->getX() - X) <= nDist_c && std::abs(goal_right->getY() - Y) <= nDist_c)
-    	{
-    		//compute clow
-    		int clow;
-    		int desstateID = goal_right->getId();
-    		if(bSuccs)
-    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
-    		else
-    			clow = GetFromToHeuristic(desstateID, currentState->getId());
-
-    		NeighIDV->push_back(desstateID);
-    		CLowV->push_back(clow);
-    	}
-
-    	ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d "
+    	ROS_INFO("Created %zu random neighbors (%d attempts) from id %d "
     	          "(%d %d)", NeighIDV->size(), nAttempts, currentState->getId(),
     	          X, Y);
     }
@@ -862,15 +863,17 @@ namespace footstep_planner
 	bool
 	FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
 	{
-		if (StateID1 != StateID2 &&
-		    *(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]))
-		{
-			ROS_WARN("State ids %d != %d, but states equivalent",
-			         StateID1, StateID2);
-		}
-
-		return (*(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]));
+		// Just for debugging:
+//		if (StateID1 != StateID2 &&
+//		    *(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]))
+//		{
+//			ROS_WARN("State ids %d != %d, but states equivalent",
+//			         StateID1, StateID2);
+//		}
 		//return (StateID1 == StateID2);
+
+		// compare the actual values
+		return ivStateId2State[StateID1]->isEquivalent(*(ivStateId2State[StateID2]));
 	}
 
 

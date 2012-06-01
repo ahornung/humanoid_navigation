@@ -89,10 +89,7 @@ namespace footstep_planner
 	    if (ivHashTag != s2.getHashTag())
             return false;
 
-	    return (ivX == s2.getX() &&
-                ivY == s2.getY() &&
-                ivTheta == s2.getTheta() &&
-                ivLeg == s2.getLeg());
+	    return isEquivalent(s2);
 	}
 
 
@@ -102,7 +99,6 @@ namespace footstep_planner
 	{
 		return !(*this == s2);
 	}
-
 
 	State
 	PlanningState::getState(double cell_size, int num_angle_bins)

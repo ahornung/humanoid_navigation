@@ -1,0 +1,12 @@
+<launch>
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find footstep_planner)/maps/sample.yaml" />
+  <include file="$(find footstep_planner)/launch/rviz_footstep_planning.launch" />  
+  <include file="$(find footstep_planner)/launch/footstep_planner.launch" />
+  
+  <param name="footstep_planner/heuristic_type" value="EuclideanHeuristic"/>
+  <param name="footstep_planner/planner_type" value="RSTARPlanner"/>
+  <param name="footstep_planner/forward_search" value="True"/>
+  <param name="footstep_planner/allocated_time" value="20"/>
+
+</launch>

@@ -810,6 +810,7 @@ namespace footstep_planner
 //    		Leg newLeg = Leg(rand() % 2);
 //    		PlanningState random_state(newX, newY, newTheta, newLeg, ivCellSize, ivNumAngleBins, ivHashTableSize);
 
+    		// better?
     		// randomly concat. actions until distance reached:
     		int nDist_sq = nDist_c*nDist_c;
     		PlanningState randomState(*currentState);
@@ -848,14 +849,14 @@ namespace footstep_planner
     		else
     			clow = GetFromToHeuristic(random_hash_entry->getId(), currentState->getId());
 
-    		std::cout << " clow: " << clow << std::endl;
+    		//std::cout << " clow: " << clow << std::endl;
     		//insert it into the list
     		NeighIDV->push_back(random_hash_entry->getId());
     		CLowV->push_back(clow);
 
     	}
 
-    	ROS_INFO("Created %zu random neighbors (%d attempts) from id %d "
+    	ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d "
     	          "(%d %d)", NeighIDV->size(), nAttempts, currentState->getId(),
     	          X, Y);
     }

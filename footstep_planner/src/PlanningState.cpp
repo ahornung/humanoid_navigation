@@ -26,14 +26,9 @@
 
 #include <footstep_planner/PlanningState.h>
 
+
 namespace footstep_planner
 {
-	/*
-	 * #########################################################################
-	 * ### class State
-	 * #########################################################################
-	 */
-
     PlanningState::PlanningState(double x, double y, double theta, Leg leg,
                                  double cell_size, int num_angle_bins,
                                  int max_hash_size)
@@ -44,6 +39,7 @@ namespace footstep_planner
           ivId(-1),
           ivHashTag(calc_hash_tag(ivX, ivY, ivTheta, ivLeg, max_hash_size))
     {}
+
 
     PlanningState::PlanningState(int x, int y, int theta, Leg leg,
                                  double cell_size, int num_angle_bins,
@@ -97,8 +93,9 @@ namespace footstep_planner
 	PlanningState::operator !=(const PlanningState &s2)
 	const
 	{
-		return !(*this == s2);
+		return ivHashTag != s2.getHashTag();
 	}
+
 
 	State
 	PlanningState::getState(double cell_size, int num_angle_bins)

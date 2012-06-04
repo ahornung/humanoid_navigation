@@ -50,7 +50,8 @@ namespace footstep_planner
           ivIdStartFootRight(-1),
           ivIdGoalFootLeft(-1),
           ivIdGoalFootRight(-1),
-          ivpStateHash2State(new std::vector<const PlanningState*>[hash_table_size]),
+          ivpStateHash2State(
+                new std::vector<const PlanningState*>[hash_table_size]),
           ivFootstepSet(footstep_set),
           ivHeuristicConstPtr(heuristic),
           ivFootsizeX(footsize_x),
@@ -59,12 +60,12 @@ namespace footstep_planner
           ivOriginFootShiftY(origin_foot_shift_y),
           ivMaxFootstepX(discretize(max_footstep_x, cell_size)),
           ivMaxFootstepY(discretize(max_footstep_y, cell_size)),
-          ivMaxFootstepTheta(angle_state_2_cell(max_footstep_theta,
-		                                        num_angle_bins)),
+          ivMaxFootstepTheta(
+                angle_state_2_cell(max_footstep_theta, num_angle_bins)),
           ivMaxInvFootstepX(discretize(max_inverse_footstep_x, cell_size)),
           ivMaxInvFootstepY(discretize(max_inverse_footstep_y, cell_size)),
-          ivMaxInvFootstepTheta(angle_state_2_cell(max_inverse_footstep_theta,
-		                                           num_angle_bins)),
+          ivMaxInvFootstepTheta(
+                angle_state_2_cell(max_inverse_footstep_theta, num_angle_bins)),
           ivStepCost(cvMmScale * step_cost),
           ivCollisionCheckAccuracy(collision_check_accuracy),
           ivHashTableSize(hash_table_size),
@@ -424,7 +425,7 @@ namespace footstep_planner
     bool
     FootstepPlannerEnvironment::closeToGoal(const PlanningState& from)
     {
-        // NOTE: goal check for forward planning
+        // NOTE: "goal check" for forward planning
         const PlanningState* goal;
         if (from.getLeg() == RIGHT)
             goal = ivStateId2State[ivIdGoalFootLeft];
@@ -449,8 +450,46 @@ namespace footstep_planner
         double to_y = cell_2_state(to.getY(), ivCellSize);
         double to_theta = angle_cell_2_state(to.getTheta(), ivNumAngleBins);
 
-        get_footstep(from_x, from_y, from_theta, from.getLeg(), to_x, to_y,
-                     to_theta, footstep_x, footstep_y, footstep_theta);
+        get_footstep_cont(from_x, from_y, from_theta, from.getLeg(), to_x, to_y,
+                          to_theta, footstep_x, footstep_y, footstep_theta);
+
+        int footstep_x_disc = discretize(footstep_x, ivCellSize);
+        int footstep_y_disc = discretize(footstep_y, ivCellSize);
+        int footstep_theta_disc = angle_state_2_cell(footstep_theta,
+                                                     ivNumAngleBins);
+
+//        int fs_x = to.getX() - from.getX();
+//        int fs_y = to.getY() - from.getY();
+//        double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
+//        double orient_cos = cos(orient);
+//        double orient_sin = sin(orient);
+//        double x = fs_x * orient_cos - fs_y * orient_sin;
+//        double y = fs_x * orient_sin + fs_y * orient_cos;
+//        fs_x = round(x);
+//        fs_y = round(y);
+//        int fs_theta = to.getTheta() - from.getTheta();
+//        if (from.getLeg() == LEFT)
+//        {
+//            fs_y = -fs_y;
+//            fs_theta = -fs_theta;
+//        }
+//        fs_theta = ((fs_theta % ivNumAngleBins) + ivNumAngleBins) % ivNumAngleBins;
+//
+//        if (footstep_x_disc != fs_x || footstep_y_disc != fs_y ||
+//            footstep_theta_disc != fs_theta)
+//        {
+//            ROS_INFO("from (%i, %i, %i, %i) (%f, %f, %f, %i)",
+//                     from.getX(), from.getY(), from.getTheta(), from.getLeg(),
+//                     from_x, from_y, from_theta, from.getLeg());
+//            ROS_INFO("to (%i, %i, %i, %i) (%f, %f, %f, %i)",
+//                     to.getX(), to.getY(), to.getTheta(), to.getLeg(),
+//                     to_x, to_y, to_theta, to.getLeg());
+//            ROS_INFO("continuous calculation: (%i, %i, %i) (%f, %f, %f)",
+//                     footstep_x_disc, footstep_y_disc, footstep_theta_disc,
+//                     footstep_x, footstep_y, footstep_theta);
+//            ROS_INFO("new calculation: (%i, %i, %i)", fs_x, fs_y, fs_theta);
+//            exit(1);
+//        }
     }
 
 
@@ -483,8 +522,10 @@ namespace footstep_planner
     {
     	pred_ids->clear();
 
-		std::vector<State>::const_iterator state_iter = changed_states.begin();
-		for (; state_iter != changed_states.end(); state_iter++)
+		std::vector<State>::const_iterator state_iter;
+		for (state_iter = changed_states.begin();
+		     state_iter != changed_states.end();
+		     state_iter++)
 		{
 			PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
 			                ivHashTableSize);
@@ -494,17 +535,12 @@ namespace footstep_planner
                 footstep_set_iter != ivFootstepSet.end();
                 footstep_set_iter++)
 			{
-				PlanningState successor =
-						footstep_set_iter->reverseMeOnThisState(s);
+				PlanningState pred = footstep_set_iter->reverseMeOnThisState(s);
 				// check if predecessor exists
-				const PlanningState* successor_hash_entry =
-						getHashEntry(successor);
-				if (successor_hash_entry == NULL)
+				const PlanningState* pred_hash_entry = getHashEntry(pred);
+				if (pred_hash_entry == NULL)
 					continue;
-			    // check if predecessor is occupied
-//				if (occupied(successor))
-//					continue;
-				pred_ids->push_back(successor_hash_entry->getId());
+				pred_ids->push_back(pred_hash_entry->getId());
 			}
 		}
     }
@@ -517,8 +553,10 @@ namespace footstep_planner
     {
     	succ_ids->clear();
 
-		std::vector<State>::const_iterator state_iter = changed_states.begin();
-		for (; state_iter != changed_states.end(); state_iter++)
+		std::vector<State>::const_iterator state_iter;
+		for (state_iter = changed_states.begin();
+		     state_iter != changed_states.end();
+		     state_iter++)
 		{
 			PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
 			                ivHashTableSize);
@@ -528,14 +566,12 @@ namespace footstep_planner
 			    footstep_set_iter != ivFootstepSet.end();
 			    footstep_set_iter++)
 			{
-				PlanningState successor =
-						footstep_set_iter->performMeOnThisState(s);
+				PlanningState succ = footstep_set_iter->performMeOnThisState(s);
 				// check if successor exists
-				// TODO: check if a non-existing planning state has to be made "existing"
-				const PlanningState* successor_hash_entry =
-						getHashEntry(successor);
-				if (successor_hash_entry != NULL)
-				    succ_ids->push_back(successor_hash_entry->getId());
+				const PlanningState* succ_hash_entry = getHashEntry(succ);
+				if (succ_hash_entry == NULL)
+                    continue;
+                succ_ids->push_back(succ_hash_entry->getId());
 			}
 		}
     }
@@ -590,8 +626,9 @@ namespace footstep_planner
         PredIDV->reserve(ivFootstepSet.size());
         CostV->reserve(ivFootstepSet.size());
         std::vector<Footstep>::const_iterator footstep_set_iter;
-        footstep_set_iter = ivFootstepSet.begin();
-        for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
+        for(footstep_set_iter = ivFootstepSet.begin();
+            footstep_set_iter != ivFootstepSet.end();
+            footstep_set_iter++)
         {
             const PlanningState predecessor =
             		footstep_set_iter->reverseMeOnThisState(*current);
@@ -647,8 +684,9 @@ namespace footstep_planner
         SuccIDV->reserve(ivFootstepSet.size());
         CostV->reserve(ivFootstepSet.size());
         std::vector<Footstep>::const_iterator footstep_set_iter;
-        footstep_set_iter = ivFootstepSet.begin();
-        for(; footstep_set_iter != ivFootstepSet.end(); footstep_set_iter++)
+        for(footstep_set_iter = ivFootstepSet.begin();
+            footstep_set_iter != ivFootstepSet.end();
+            footstep_set_iter++)
         {
             PlanningState successor =
             		footstep_set_iter->performMeOnThisState(*current);

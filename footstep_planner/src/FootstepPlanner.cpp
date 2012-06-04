@@ -30,7 +30,7 @@ namespace footstep_planner
     FootstepPlanner::FootstepPlanner()
         : ivStartPoseSetUp(false),
           ivGoalPoseSetUp(false),
-          ivPlanExists(false),
+          ivPathExists(false),
           ivLastMarkerMsgSize(0),
           ivPathCost(0),
           ivMarkerNamespace("")
@@ -51,10 +51,6 @@ namespace footstep_planner
         ivPathVisPub = nh_private.advertise<nav_msgs::Path>("path", 1);
         ivStartPoseVisPub = nh_private.advertise<
                 geometry_msgs::PoseStamped>("start", 1);
-
-        // TODO: remove later
-        ivChangedStatesVisPub = nh_private.advertise<
-                sensor_msgs::PointCloud>("changed_states", 1);
 
         int max_hash_size;
         int changed_cells_limit;
@@ -81,8 +77,7 @@ namespace footstep_planner
         nh_private.param("allocated_time", ivMaxSearchTime, 7.0);
         nh_private.param("forward_search", ivForwardSearch, false);
         nh_private.param("initial_epsilon", ivInitialEpsilon, 3.0);
-        nh_private.param("changed_cells_limit", changed_cells_limit, 5000);
-		ivChangedCellsLimit = (unsigned int) changed_cells_limit;
+        nh_private.param("changed_cells_limit", ivChangedCellsLimit, 20000);
 
         // - footstep settings
 		// TODO: update the footstep settings
@@ -290,7 +285,8 @@ namespace footstep_planner
         ivPlannerPtr->set_search_mode(ivSearchUntilFirstSolution);
 
         ROS_INFO("Start planning (max time: %f, initial eps: %f (%f))\n",
-                 ivMaxSearchTime, ivInitialEpsilon, ivPlannerPtr->get_initial_eps());
+                 ivMaxSearchTime, ivInitialEpsilon,
+                 ivPlannerPtr->get_initial_eps());
         int path_cost;
         ros::WallTime startTime = ros::WallTime::now();
         ret = ivPlannerPtr->replan(ivMaxSearchTime, &solution_state_ids,
@@ -303,15 +299,17 @@ namespace footstep_planner
                      solution_state_ids.size(),
             		 (ros::WallTime::now()-startTime).toSec());
 
-            ivPlanExists = extractPath(solution_state_ids);
+            ivPathExists = extractPath(solution_state_ids);
             broadcastExpandedNodesVis();
             broadcastRandomNodesVis();
 
-            if (!ivPlanExists)
+            if (!ivPathExists)
             {
                 ROS_ERROR("extracting path failed\n\n");
                 return false;
             }
+
+            ivPlanningStatesIds = solution_state_ids;
 
             ROS_INFO("Expanded states: %i total / %i new",
                      ivPlannerEnvironmentPtr->getNumExpandedStates(),
@@ -446,13 +444,9 @@ namespace footstep_planner
     		foot.pose.y = path_iter->y;
     		foot.pose.theta = path_iter->theta;
     		if (path_iter->leg == LEFT)
-    		{
     		    foot.leg = humanoid_nav_msgs::StepTarget::left;
-    		}
     		else if (path_iter->leg == RIGHT)
-    		{
     		    foot.leg = humanoid_nav_msgs::StepTarget::right;
-    		}
     		else
     		{
     			ROS_ERROR("Footstep pose at (%f, %f, %f) is set to NOLEG!",
@@ -503,8 +497,8 @@ namespace footstep_planner
     FootstepPlanner::mapCallback(
     		const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
-        boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
-        setMap(gridMap);
+        GridMap2DPtr map(new GridMap2D(occupancy_map));
+        updateMap(map);
     }
 
 
@@ -609,23 +603,22 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::setMap(GridMap2DPtr grid_map)
+    FootstepPlanner::updateMap(GridMap2DPtr map)
     {
         bool map_exists = ivMapPtr;
-
         // store old map locally
         GridMap2DPtr old_map = ivMapPtr;
         // store new map
         ivMapPtr.reset();
-        ivMapPtr = grid_map;
+        ivMapPtr = map;
         // update map of planning environment
-        ivPlannerEnvironmentPtr->setMap(grid_map);
+        ivPlannerEnvironmentPtr->setMap(map);
 
         // initialize a replanning with updated map information
-        if (map_exists && ivPlanExists)
+        if (map_exists && ivPathExists)
         {
             updateEnvironment(old_map);
-            run(); // plan new path
+            replan(); // plan new path
         }
     }
 
@@ -661,8 +654,8 @@ namespace footstep_planner
             cv::distanceTransform(changed_cells, changedDistMap,
                                   CV_DIST_L2, CV_DIST_MASK_PRECISE);
             double max_foot_radius = sqrt(
-                    pow(std::abs(ivOriginFootShiftX)+ivFootsizeX/2.0, 2.0) +
-                    pow(std::abs(ivOriginFootShiftY)+ivFootsizeY/2.0, 2.0))
+                    pow(std::abs(ivOriginFootShiftX) + ivFootsizeX / 2.0, 2.0) +
+                    pow(std::abs(ivOriginFootShiftY) + ivFootsizeY / 2.0, 2.0))
                     / ivMapPtr->getResolution();
             changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
 
@@ -681,16 +674,13 @@ namespace footstep_planner
                         s.x = wx;
                         s.y = wy;
                         // on each grid cell ivNumAngleBins-many planning states
-                        // can be placed
+                        // can be placed (if the resolution of the grid cells is
+                        // the same as of the planning state grid)
                         for (int theta = 0; theta < ivNumAngleBins; ++theta)
                         {
                             s.theta = angle_cell_2_state(theta, ivNumAngleBins);
                             changed_states.push_back(s);
                         }
-
-                        // TODO: state calculation in cases where the grid map
-                        // resolution and the planning state resolution don't
-                        // match
                     }
                 }
             }
@@ -702,32 +692,27 @@ namespace footstep_planner
             }
 
             ROS_INFO("%d changed map cells found", num_changed_cells);
-
-            // TODO: remove later
-            broadcastChangedStatesVis(changed_states);
-
             if (num_changed_cells <= ivChangedCellsLimit)
             {
                 // update planer
                 ROS_INFO("Use old information in new planning taks");
 
-                std::vector<int> changed_states_ids;
+                std::vector<int> neighbour_ids;
                 if (ivForwardSearch)
-                    ivPlannerEnvironmentPtr->getSuccsOfGridCells(changed_states,
-                            &changed_states_ids);
+                    ivPlannerEnvironmentPtr->getSuccsOfGridCells(
+                            changed_states, &neighbour_ids);
                 else
-                    ivPlannerEnvironmentPtr->getPredsOfGridCells(changed_states,
-                            &changed_states_ids);
+                    ivPlannerEnvironmentPtr->getPredsOfGridCells(
+                            changed_states, &neighbour_ids);
 
                 boost::shared_ptr<ADPlanner> h =
                         boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
-                h->costs_changed(PlanningStateChangeQuery(changed_states_ids));
+                h->costs_changed(PlanningStateChangeQuery(neighbour_ids));
             }
             else
             {
-                // reset planner
                 ROS_INFO("Reset old information in new planning task");
-
+                // reset planner
                 ivPlannerEnvironmentPtr->reset();
                 setPlanner();
                 //ivPlannerPtr->force_planning_from_scratch();
@@ -735,9 +720,8 @@ namespace footstep_planner
         }
         else
         {
-            // reset planner
             ROS_INFO("Reset old information in new planning task");
-
+            // reset planner
             ivPlannerEnvironmentPtr->reset();
             setPlanner();
             //ivPlannerPtr->force_planning_from_scratch();
@@ -788,36 +772,6 @@ namespace footstep_planner
     }
 
 
-    // TODO: remove later
-    void
-    FootstepPlanner::broadcastChangedStatesVis(const std::vector<State>& states)
-    {
-        if (ivChangedStatesVisPub.getNumSubscribers() > 0)
-        {
-            sensor_msgs::PointCloud cloud_msg;
-            geometry_msgs::Point32 point;
-            std::vector<geometry_msgs::Point32> points;
-
-            std::vector<State>::const_iterator states_iter;
-            for(states_iter = states.begin();
-                states_iter != states.end();
-                states_iter++)
-            {
-                point.x = states_iter->x;
-                point.y = states_iter->y;
-                point.z = 0.01;
-                points.push_back(point);
-            }
-            cloud_msg.header.stamp = ros::Time::now();
-            cloud_msg.header.frame_id = ivMapPtr->getFrameID();
-
-            cloud_msg.points = points;
-
-            ivChangedStatesVisPub.publish(cloud_msg);
-        }
-    }
-
-
     void
     FootstepPlanner::broadcastExpandedNodesVis()
     {
@@ -828,12 +782,12 @@ namespace footstep_planner
             std::vector<geometry_msgs::Point32> points;
 
             State s;
-            FootstepPlannerEnvironment::exp_states_iter_t state_id_iter;
-            for(state_id_iter = ivPlannerEnvironmentPtr->getExpandedStatesStart();
-                state_id_iter != ivPlannerEnvironmentPtr->getExpandedStatesEnd();
-                state_id_iter++)
+            FootstepPlannerEnvironment::exp_states_iter_t state_id_it;
+            for(state_id_it = ivPlannerEnvironmentPtr->getExpandedStatesStart();
+                state_id_it != ivPlannerEnvironmentPtr->getExpandedStatesEnd();
+                state_id_it++)
             {
-                ivPlannerEnvironmentPtr->getState(*state_id_iter, &s);
+                ivPlannerEnvironmentPtr->getState(*state_id_it, &s);
                 point.x = s.x;
                 point.y = s.y;
                 point.z = 0.01;
@@ -857,6 +811,8 @@ namespace footstep_planner
             ROS_INFO("no path has been extracted yet");
             return;
         }
+
+        clearFootstepPathVis(0);
 
         visualization_msgs::Marker marker;
         visualization_msgs::MarkerArray broadcast_msg;
@@ -883,17 +839,6 @@ namespace footstep_planner
 			marker.id = markers_counter++;
 			markers.push_back(marker);
         }
-        if (markers_counter < ivLastMarkerMsgSize)
-        {
-            for(int j = markers_counter; j < ivLastMarkerMsgSize; j++)
-            {
-                marker.ns = ivMarkerNamespace;
-                marker.id = j;
-                marker.action = visualization_msgs::Marker::DELETE;
-
-                markers.push_back(marker);
-            }
-        }
 
         // add the missing goal foot to the publish vector for visualization:
         if (ivPath.back().leg == LEFT)
@@ -908,6 +853,7 @@ namespace footstep_planner
 
         ivFootstepPathVisPub.publish(broadcast_msg);
     }
+
 
     void
     FootstepPlanner::broadcastRandomNodesVis()
@@ -926,12 +872,15 @@ namespace footstep_planner
             State s;
 			FootstepPlannerEnvironment::exp_states_iter_t state_id_iter;
 			for(state_id_iter = ivPlannerEnvironmentPtr->getRandomStatesStart();
-					state_id_iter != ivPlannerEnvironmentPtr->getRandomStatesEnd();
-					state_id_iter++)
+			    state_id_iter != ivPlannerEnvironmentPtr->getRandomStatesEnd();
+			    state_id_iter++)
 			{
-				if (!ivPlannerEnvironmentPtr->getState(*state_id_iter, &s)){
+				if (!ivPlannerEnvironmentPtr->getState(*state_id_iter, &s))
+				{
 					ROS_WARN("Could not get random state %d", *state_id_iter);
-				} else {
+				}
+				else
+				{
 					point.x = s.x;
 					point.y = s.y;
 					point.z = 0.01;
@@ -977,7 +926,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::footPoseToMarker(const State& footstep,
+    FootstepPlanner::footPoseToMarker(const State& foot_pose,
                                       visualization_msgs::Marker* marker)
     {
         marker->header.stamp = ros::Time::now();
@@ -986,18 +935,21 @@ namespace footstep_planner
         marker->type = visualization_msgs::Marker::CUBE;
         marker->action = visualization_msgs::Marker::ADD;
 
-        float cos_theta = cos(footstep.theta);
-        float sin_theta = sin(footstep.theta);
-        float x_shift = cos_theta*ivOriginFootShiftX - sin_theta*ivOriginFootShiftY;
+        float cos_theta = cos(foot_pose.theta);
+        float sin_theta = sin(foot_pose.theta);
+        float x_shift = cos_theta * ivOriginFootShiftX -
+                        sin_theta * ivOriginFootShiftY;
         float y_shift;
-        if (footstep.leg == LEFT)
-            y_shift = sin_theta*ivOriginFootShiftX + cos_theta*ivOriginFootShiftY;
+        if (foot_pose.leg == LEFT)
+            y_shift = sin_theta * ivOriginFootShiftX +
+                      cos_theta * ivOriginFootShiftY;
         else // leg == RLEG
-            y_shift = sin_theta*ivOriginFootShiftX - cos_theta*ivOriginFootShiftY;
-        marker->pose.position.x = footstep.x + x_shift;
-        marker->pose.position.y = footstep.y + y_shift;
+            y_shift = sin_theta * ivOriginFootShiftX -
+                      cos_theta * ivOriginFootShiftY;
+        marker->pose.position.x = foot_pose.x + x_shift;
+        marker->pose.position.y = foot_pose.y + y_shift;
         marker->pose.position.z = ivFootsizeZ / 2.0;
-        tf::quaternionTFToMsg(tf::createQuaternionFromYaw(footstep.theta),
+        tf::quaternionTFToMsg(tf::createQuaternionFromYaw(foot_pose.theta),
                               marker->pose.orientation);
 
         marker->scale.x = ivFootsizeX; // - 0.01;
@@ -1005,7 +957,7 @@ namespace footstep_planner
         marker->scale.z = ivFootsizeZ;
 
         // TODO: make color configurable?
-        if (footstep.leg == RIGHT)
+        if (foot_pose.leg == RIGHT)
         {
             marker->color.r = 0.0f;
             marker->color.g = 1.0f;

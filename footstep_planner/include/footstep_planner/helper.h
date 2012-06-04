@@ -183,15 +183,22 @@ namespace footstep_planner
 	}
 
 
+	/// @brief Rounding half towards zero.
+	inline int round(double r)
+	{
+	    return (r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5);
+	}
+
+
     /**
      * @brief Calculates the arbitrary footstep needed to reach 'to'
      * (represented by to_x, to_y, to_theta) from within 'from' (represented by
      * from_x, from_y, from_theta).
      */
-    void get_footstep(double from_x, double from_y, double from_theta,
-    		          Leg from_leg, double to_x, double to_y, double to_theta,
-                      double& footstep_x, double& footstep_y,
-                      double& footstep_theta);
+    void get_footstep_cont(
+            double from_x, double from_y, double from_theta, Leg from_leg,
+            double to_x, double to_y, double to_theta,
+            double& footstep_x, double& footstep_y, double& footstep_theta);
 
     /// @return True iff the footstep can be performed by the robot.
     bool performable(int footstep_x, int footstep_y, int footstep_theta,

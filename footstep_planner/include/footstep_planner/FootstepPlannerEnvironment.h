@@ -313,20 +313,20 @@ namespace footstep_planner
                              const PlanningState* b) const;
         };
 
-        /// ID of left foot's start pose.
+        /// ID of the start pose of the left foot.
 		int ivIdStartFootLeft;
-		/// ID of left foot's start pose.
+		/// ID of the start pose of the right foot.
 		int ivIdStartFootRight;
-        /// ID of left foot's goal pose.
+        /// ID of the goal pose of the left foot.
 		int ivIdGoalFootLeft;
-        /// ID of right foot's goal pose.
+        /// ID of the goal pose of the right foot.
         int ivIdGoalFootRight;
 
         /**
          * @brief Maps from an ID to the corresponding PlanningState. (Used in
          * the SBPL to access a certain PlanningState.)
          */
-        std::vector<const PlanningState*>  ivStateId2State;
+        std::vector<const PlanningState*> ivStateId2State;
 
         /**
          * @brief Maps from a hash tag to a list of corresponding planning

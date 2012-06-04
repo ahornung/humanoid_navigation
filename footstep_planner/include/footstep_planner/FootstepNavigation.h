@@ -84,10 +84,6 @@ namespace footstep_planner
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
-        void debugFootstepExecution(const tf::Transform& from,
-		                            const State& from_planned,
-		                            const State& to_planned);
-
         /// @brief Starts the planning task via FootstepPlanner::plan().
         void run();
 

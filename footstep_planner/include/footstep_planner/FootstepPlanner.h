@@ -122,7 +122,7 @@ namespace footstep_planner
          */
         bool setStart(const State& left_foot, const State& right_foot);
 
-        void setMap(GridMap2DPtr gridMap);
+        void updateMap(GridMap2DPtr map);
 
         void setMarkerNamespace(const std::string& ns)
         {
@@ -193,8 +193,6 @@ namespace footstep_planner
 		State getStartFootRight() { return ivStartFootRight; };
 
     protected:
-		// TODO: remove after debug
-		void broadcastChangedStatesVis(const std::vector<State>& states);
         void broadcastExpandedNodesVis();
         void broadcastRandomNodesVis();
         void broadcastFootstepPathVis();
@@ -223,11 +221,11 @@ namespace footstep_planner
         /// @brief Updates the environment in case of a changed map.
         void updateEnvironment(GridMap2DPtr old_map);
 
-        boost::shared_ptr<Heuristic> ivHeuristicPtr;
         boost::shared_ptr<FootstepPlannerEnvironment> ivPlannerEnvironmentPtr;
         boost::shared_ptr<GridMap2D> ivMapPtr;
         boost::shared_ptr<SBPLPlanner> ivPlannerPtr;
-        boost::shared_ptr<PathCostHeuristic> ivPathCostHeuristicPtr;
+
+        boost::shared_ptr<const PathCostHeuristic> ivPathCostHeuristicPtr;
 
         std::vector<Footstep> ivFootstepSet;
 		std::vector<State> ivPath;
@@ -236,9 +234,6 @@ namespace footstep_planner
         State ivStartFootRight;
         State ivGoalFootLeft;
         State ivGoalFootRight;
-
-        // TODO: remove later
-        ros::Publisher ivChangedStatesVisPub;
 
         ros::Publisher  ivExpandedStatesVisPub;
         ros::Publisher  ivFootstepPathVisPub;
@@ -258,7 +253,7 @@ namespace footstep_planner
         int    ivCollisionCheckAccuracy;
 
         bool   ivStartPoseSetUp, ivGoalPoseSetUp;
-        bool   ivPlanExists;
+        bool   ivPathExists;
         int    ivLastMarkerMsgSize;
         double ivPathCost;
         double ivCellSize;
@@ -272,10 +267,12 @@ namespace footstep_planner
          * @brief If limit of changed cells is reached the planner starts a new
          * task from the scratch.
          */
-        unsigned int ivChangedCellsLimit;
+        int ivChangedCellsLimit;
 
         std::string ivPlannerType;
         std::string ivMarkerNamespace;
+
+        std::vector<int> ivPlanningStatesIds;
     };
 }
 

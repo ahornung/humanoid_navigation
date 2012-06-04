@@ -372,9 +372,9 @@ namespace footstep_planner
     FootstepNavigation::mapCallback(
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
-        boost::shared_ptr<GridMap2D> gridMap(new GridMap2D(occupancy_map));
-        ivIdMapFrame = gridMap->getFrameID();
-        ivPlanner.setMap(gridMap);
+        GridMap2DPtr map(new GridMap2D(occupancy_map));
+        ivIdMapFrame = map->getFrameID();
+        ivPlanner.updateMap(map);
     }
 
 
@@ -422,8 +422,9 @@ namespace footstep_planner
     {
         // calculate the necessary footstep to reach the foot placement
         double footstep_x, footstep_y, footstep_theta;
-        get_footstep(from.x, from.y, from.theta, from.leg, to.x, to.y, to.theta,
-                     footstep_x, footstep_y, footstep_theta);
+        get_footstep_cont(from.x, from.y, from.theta, from.leg,
+                          to.x, to.y, to.theta,
+                          footstep_x, footstep_y, footstep_theta);
 
         footstep.pose.x = footstep_x;
         if (from.leg == RIGHT)
@@ -534,64 +535,5 @@ namespace footstep_planner
     			fabs(planned.y - executed.y) <= ivAccuracyY &&
     			fabs(planned.theta - executed.theta) <= ivAccuracyTheta &&
     			planned.leg == executed.leg);
-    }
-
-
-    // TODO: remove after debug
-    void
-    FootstepNavigation::debugFootstepExecution(const tf::Transform& from,
-	                                           const State& from_planned,
-	                                           const State& to_planned)
-    {
-    	ROS_INFO("--- compare calculated state and actual footstep placement");
-		ROS_INFO("calculated state (%f, %f, %f, %i)", from_planned.x,
-                 from_planned.y, from_planned.theta, from_planned.leg);
-		ROS_INFO("actual state (%f, %f, %f, %i)", from.getOrigin().x(),
-                 from.getOrigin().y(), tf::getYaw(from.getRotation()),
-                 from_planned.leg);
-
-		ROS_INFO("--- actual footstep placement and next (planned) footstep "
-				 "placement");
-		ROS_INFO("current (%f, %f, %f, %i)", from.getOrigin().x(),
-				 from.getOrigin().y(), tf::getYaw(from.getRotation()),
-				 from_planned.leg);
-		ROS_INFO("next (%f, %f, %f, %i)", to_planned.x, to_planned.y,
-		                                  to_planned.theta, to_planned.leg);
-
-		ROS_INFO("--- relative footstep and practicability");
-		double fs_x, fs_y, fs_theta;
-		get_footstep(from.getOrigin().x(), from.getOrigin().y(),
-		             tf::getYaw(from.getRotation()), from_planned.leg,
-		             to_planned.x, to_planned.y, to_planned.theta,
-		             fs_x, fs_y, fs_theta);
-		ROS_INFO("footstep 'fs' (%f, %f, %f)", fs_x, fs_y, fs_theta);
-
-		ROS_INFO("--- footstep clipping");
-		humanoid_nav_msgs::ClipFootstep step_srv;
-        step_srv.request.step.pose.x = fs_x;
-        if (from_planned.leg == LEFT)
-        {
-            step_srv.request.step.pose.y = -fs_y;
-            step_srv.request.step.pose.theta = -fs_theta;
-            step_srv.request.step.leg = humanoid_nav_msgs::StepTarget::right;
-        }
-        else
-        {
-            step_srv.request.step.pose.y = fs_y;
-            step_srv.request.step.pose.theta = fs_theta;
-            step_srv.request.step.leg = humanoid_nav_msgs::StepTarget::left;
-        }
-        ivClipFootstepSrv.call(step_srv);
-        bool performable_b = performable(step_srv);
-        ROS_INFO("original footstep 'fs' (%f, %f, %f)",
-                 step_srv.request.step.pose.x,
-                 step_srv.request.step.pose.y,
-                 step_srv.request.step.pose.theta);
-        ROS_INFO("clipped footstep 'fs' (%f, %f, %f)",
-                 step_srv.response.step.pose.x,
-                 step_srv.response.step.pose.y,
-                 step_srv.response.step.pose.theta);
-        ROS_INFO("performable? %i", performable_b);
-		ROS_INFO("---------------------------------------------------------\n");
     }
 }

@@ -25,10 +25,10 @@
 
 namespace footstep_planner
 {
-    void get_footstep(double from_x, double from_y, double from_theta,
-    		          Leg from_leg, double to_x, double to_y, double to_theta,
-                      double& footstep_x, double& footstep_y,
-                      double& footstep_theta)
+    void get_footstep_cont(
+            double from_x, double from_y, double from_theta, Leg from_leg,
+            double to_x, double to_y, double to_theta,
+            double& footstep_x, double& footstep_y, double& footstep_theta)
     {
         footstep_theta = angles::shortest_angular_distance(from_theta,
                                                            to_theta);
@@ -78,38 +78,6 @@ namespace footstep_planner
 		{
 			in_range_theta = true;
 		}
-
-        return in_range_x && in_range_y && in_range_theta;
-    }
-
-
-    bool
-    performable_cont(double footstep_x, double footstep_y,
-                     double footstep_theta, double max_footstep_x,
-                     double max_footstep_y, double max_footstep_theta,
-                     double max_inv_footstep_x, double max_inv_footstep_y,
-                     double max_inv_footstep_theta, double accuracy_x,
-                     double accuracy_y, double accuracy_theta)
-    {
-        bool in_range_x = false;
-        bool in_range_y = false;
-        bool in_range_theta = false;
-
-        if (footstep_x < max_footstep_x + accuracy_x &&
-            footstep_x > max_inv_footstep_x - accuracy_x)
-        {
-            in_range_x = true;
-        }
-        if (footstep_y < max_footstep_y + accuracy_y &&
-            footstep_y > max_inv_footstep_y - accuracy_y)
-        {
-            in_range_y = true;
-        }
-        if (footstep_theta < max_footstep_theta + accuracy_theta &&
-            footstep_theta > max_inv_footstep_theta - accuracy_theta)
-        {
-            in_range_theta = true;
-        }
 
         return in_range_x && in_range_y && in_range_theta;
     }

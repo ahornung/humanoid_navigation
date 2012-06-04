@@ -112,7 +112,7 @@ namespace footstep_planner
 
 
     void
-    PathCostHeuristic::setMap(const boost::shared_ptr<GridMap2D> map)
+    PathCostHeuristic::setMap(GridMap2DPtr map)
     {
         ivMapPtr.reset();
         ivMapPtr = map;

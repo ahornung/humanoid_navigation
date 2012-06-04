@@ -79,8 +79,10 @@ namespace footstep_planner
 
 		bool operator ==(const PlanningState& s2) const;
 		bool operator !=(const PlanningState& s2) const;
-		inline bool isEquivalent(const PlanningState& s2) const{
-			return  (ivX == s2.getX() &&
+
+		inline bool isEquivalent(const PlanningState& s2) const
+		{
+			return (ivX == s2.getX() &&
 	                ivY == s2.getY() &&
 	                ivTheta == s2.getTheta() &&
 	                ivLeg == s2.getLeg());

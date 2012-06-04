@@ -84,7 +84,7 @@ namespace footstep_planner
 	const
 	{
 		if (from == to)
-			return 0;
+			return 0.0;
 
 		// distance in meter
         double dist = cont_val(euclidean_distance(

@@ -57,10 +57,9 @@ namespace footstep_planner
         unsigned int from_x;
         unsigned int from_y;
         // could be removed after more testing (then use ...noBounds... again)
-        bool valid = ivMapPtr->worldToMap(cell_2_state(from.getX(), ivCellSize),
-                                          cell_2_state(from.getY(), ivCellSize),
-                                          from_x, from_y);
-        assert(valid);
+        ivMapPtr->worldToMapNoBounds(cell_2_state(from.getX(), ivCellSize),
+                                     cell_2_state(from.getY(), ivCellSize),
+                                     from_x, from_y);
 
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(
                 from_x, from_y)) / 1000.0;
@@ -72,12 +71,15 @@ namespace footstep_planner
         double diff_angle = 0.0;
         if (ivDiffAngleCost > 0.0)
         {
-            diff_angle = std::abs(angles::shortest_angular_distance(
-                    angle_cell_2_state(from.getTheta(), ivNumAngleBins),
-                    angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
+            int diff_angle_disc = (
+                    ((to.getTheta() - from.getTheta()) % ivNumAngleBins) +
+                    ivNumAngleBins) % ivNumAngleBins;
+            diff_angle = std::abs(angles::normalize_angle(
+                    angle_cell_2_state(diff_angle_disc, ivNumAngleBins)));
         }
 
-        return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
+        return (dist + expected_steps * ivStepCost +
+                diff_angle * ivDiffAngleCost);
     }
 
 
@@ -89,19 +91,15 @@ namespace footstep_planner
 
         unsigned int start_x;
         unsigned int start_y;
-        bool valid = ivMapPtr->worldToMap(
-                cell_2_state(start.getX(), ivCellSize),
-                cell_2_state(start.getY(), ivCellSize),
-                start_x, start_y);
-        assert(valid);
+        ivMapPtr->worldToMapNoBounds(cell_2_state(start.getX(), ivCellSize),
+                                     cell_2_state(start.getY(), ivCellSize),
+                                     start_x, start_y);
 
         unsigned int goal_x;
         unsigned int goal_y;
-        valid = ivMapPtr->worldToMap(
-                cell_2_state(goal.getX(), ivCellSize),
-		        cell_2_state(goal.getY(), ivCellSize),
-		        goal_x, goal_y);
-        assert(valid);
+        ivMapPtr->worldToMapNoBounds(cell_2_state(goal.getX(), ivCellSize),
+                                     cell_2_state(goal.getY(), ivCellSize),
+                                     goal_x, goal_y);
 
         ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
                                 goal_x, goal_y, start_x, start_y,
@@ -123,14 +121,12 @@ namespace footstep_planner
             ivGridSearchPtr->destroy();
         ivGridSearchPtr.reset(new SBPL2DGridSearch(size.width, size.height,
                                                    ivMapPtr->getResolution()));
-
         if (ivpGrid)
             resetGrid();
         ivpGrid = new unsigned char* [size.width];
+
         for (int x = 0; x < size.width; ++x)
-        {
             ivpGrid[x] = new unsigned char [size.height];
-        }
         for (int y = 0; y < size.height; ++y)
         {
             for (int x = 0; x < size.width; ++x)

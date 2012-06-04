@@ -52,14 +52,13 @@ namespace footstep_planner
 	const
 	{
 		if (from == to)
-			return 0;
+			return 0.0;
 
-		// in meter
-		return euclidean_distance(cell_2_state(from.getX(), ivCellSize),
-		                          cell_2_state(from.getY(), ivCellSize),
-		                          cell_2_state(to.getX(), ivCellSize),
-		                          cell_2_state(to.getY(), ivCellSize));
-
+		// distance in cell size
+		double dist = euclidean_distance(from.getX(), from.getY(),
+		                                 to.getX(), to.getY());
+		// return distance in meter
+        return cont_val(dist, ivCellSize);
 	}
 
 
@@ -87,11 +86,9 @@ namespace footstep_planner
 		if (from == to)
 			return 0;
 
-		// in meter
-        double dist = euclidean_distance(cell_2_state(from.getX(), ivCellSize),
-                                         cell_2_state(from.getY(), ivCellSize),
-                                         cell_2_state(to.getX(), ivCellSize),
-                                         cell_2_state(to.getY(), ivCellSize));
+		// distance in meter
+        double dist = cont_val(euclidean_distance(
+                from.getX(), from.getY(), to.getX(), to.getY()), ivCellSize);
 		double expected_steps = dist / ivMaxStepWidth;
 		// we could replace this by working on ints (w. all normalization)
 		// int disc_diff_angle = abs(from.getTheta() - to.getTheta());
@@ -99,11 +96,14 @@ namespace footstep_planner
 		double diff_angle = 0.0;
 		if (ivDiffAngleCost > 0.0)
 		{
-		    diff_angle = std::abs(angles::shortest_angular_distance(
-		            angle_cell_2_state(from.getTheta(), ivNumAngleBins),
-		            angle_cell_2_state(to.getTheta(), ivNumAngleBins)));
+		    int diff_angle_disc = (
+		            ((to.getTheta() - from.getTheta()) % ivNumAngleBins) +
+		            ivNumAngleBins) % ivNumAngleBins;
+            diff_angle = std::abs(angles::normalize_angle(
+                    angle_cell_2_state(diff_angle_disc, ivNumAngleBins)));
 		}
 
-		return (dist + expected_steps*ivStepCost + diff_angle*ivDiffAngleCost);
+		return (dist + expected_steps * ivStepCost +
+		        diff_angle * ivDiffAngleCost);
 	}
 }

@@ -58,12 +58,12 @@ namespace footstep_planner
           ivFootsizeY(footsize_y),
           ivOriginFootShiftX(origin_foot_shift_x),
           ivOriginFootShiftY(origin_foot_shift_y),
-          ivMaxFootstepX(discretize(max_footstep_x, cell_size)),
-          ivMaxFootstepY(discretize(max_footstep_y, cell_size)),
+          ivMaxFootstepX(disc_val(max_footstep_x, cell_size)),
+          ivMaxFootstepY(disc_val(max_footstep_y, cell_size)),
           ivMaxFootstepTheta(
                 angle_state_2_cell(max_footstep_theta, num_angle_bins)),
-          ivMaxInvFootstepX(discretize(max_inverse_footstep_x, cell_size)),
-          ivMaxInvFootstepY(discretize(max_inverse_footstep_y, cell_size)),
+          ivMaxInvFootstepX(disc_val(max_inverse_footstep_x, cell_size)),
+          ivMaxInvFootstepY(disc_val(max_inverse_footstep_y, cell_size)),
           ivMaxInvFootstepTheta(
                 angle_state_2_cell(max_inverse_footstep_theta, num_angle_bins)),
           ivStepCost(cvMmScale * step_cost),
@@ -453,8 +453,8 @@ namespace footstep_planner
         get_footstep_cont(from_x, from_y, from_theta, from.getLeg(), to_x, to_y,
                           to_theta, footstep_x, footstep_y, footstep_theta);
 
-        int footstep_x_disc = discretize(footstep_x, ivCellSize);
-        int footstep_y_disc = discretize(footstep_y, ivCellSize);
+        int footstep_x_disc = disc_val(footstep_x, ivCellSize);
+        int footstep_y_disc = disc_val(footstep_y, ivCellSize);
         int footstep_theta_disc = angle_state_2_cell(footstep_theta,
                                                      ivNumAngleBins);
 
@@ -503,8 +503,8 @@ namespace footstep_planner
         getFootstep(from, to, cont_footstep_x, cont_footstep_y,
 		            cont_footstep_theta);
 
-        int footstep_x = discretize(cont_footstep_x, ivCellSize);
-        int footstep_y = discretize(cont_footstep_y, ivCellSize);
+        int footstep_x = disc_val(cont_footstep_x, ivCellSize);
+        int footstep_y = disc_val(cont_footstep_y, ivCellSize);
         int footstep_theta = angle_state_2_cell(cont_footstep_theta,
                                                 ivNumAngleBins);
         return performable(footstep_x, footstep_y, footstep_theta,

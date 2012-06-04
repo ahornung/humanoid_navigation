@@ -148,11 +148,21 @@ namespace footstep_planner
 	}
 
 
-	/// @brief Discretize a (continuous) value into cell size.
-	inline int discretize(double length, double factor)
-	{
-		return int(floor((length / factor) + 0.5));
-	}
+    /// @brief Discretize a (continuous) value into cell size.
+    inline int disc_val(double length, double cell_size)
+    {
+        return int(floor((length / cell_size) + 0.5));
+    }
+
+
+    /**
+     * @brief Calculates the continuous value for a length discretized in cell
+     * size.
+     */
+    inline double cont_val(int length, double cell_size)
+    {
+        return double(length * cell_size);
+    }
 
 
 	/// @return The hash value of the key.

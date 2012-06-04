@@ -172,8 +172,8 @@ namespace footstep_planner
 
             global_theta -= ivTheta;
         }
-        *footstep_x = discretize(cont_footstep_x, ivCellSize);
-        *footstep_y = discretize(cont_footstep_y, ivCellSize);
+        *footstep_x = disc_val(cont_footstep_x, ivCellSize);
+        *footstep_y = disc_val(cont_footstep_y, ivCellSize);
 
         // theta has to be in [0..ivNumAngleBins)
         if (global_theta < 0)

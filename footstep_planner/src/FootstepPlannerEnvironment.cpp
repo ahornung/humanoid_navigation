@@ -254,10 +254,11 @@ namespace footstep_planner
         if (a == b)
             return 0;
 
-		double dist = euclidean_distance(cell_2_state(a.getX(), ivCellSize),
-                                         cell_2_state(a.getY(), ivCellSize),
-                                         cell_2_state(b.getX(), ivCellSize),
-                                         cell_2_state(b.getY(), ivCellSize));
+		// NOTE: instead of using cont_val() the calculation is done directly
+		// here because cont_val() truncates the input length to int
+		double dist = euclidean_distance(
+		        a.getX(), a.getY(), b.getX(), b.getY()) * ivCellSize;
+
 		return int(cvMmScale * dist) + ivStepCost;
     }
 

@@ -77,16 +77,12 @@ namespace footstep_planner
 
 		~PlanningState();
 
+		/**
+		 * Compare two states on equality of x,y,theta, leg.
+		 * Uses the non-unique hashtag first for ruling out different states.
+		 */
 		bool operator ==(const PlanningState& s2) const;
 		bool operator !=(const PlanningState& s2) const;
-
-		inline bool isEquivalent(const PlanningState& s2) const
-		{
-			return (ivX == s2.getX() &&
-	                ivY == s2.getY() &&
-	                ivTheta == s2.getTheta() &&
-	                ivLeg == s2.getLeg());
-		}
 
 		/**
 		 * @brief Used to attach such an unique ID to the planning state. (This
@@ -128,7 +124,10 @@ namespace footstep_planner
 		/// The (unique) ID of the planning state.
 	    int ivId;
 
-	    /// The (ununique) hash tag of the planning state.
+	    /**
+	     * The (non-unique) hash tag of the planning state.
+	     * However, different hashtags imply that the states differ in x,y,theta,leg
+	     */
 		unsigned int ivHashTag;
 	};
 }

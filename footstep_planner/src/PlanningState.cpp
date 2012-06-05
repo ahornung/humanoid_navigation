@@ -82,10 +82,12 @@ namespace footstep_planner
 	PlanningState::operator ==(const PlanningState &s2)
 	const
 	{
+		// First test the hash tag. If they differ, the states are definitely different.
 	    if (ivHashTag != s2.getHashTag())
             return false;
 
-	    return isEquivalent(s2);
+	    return (ivX == s2.getX() && ivY == s2.getY() &&
+                ivTheta == s2.getTheta() && ivLeg == s2.getLeg());
 	}
 
 

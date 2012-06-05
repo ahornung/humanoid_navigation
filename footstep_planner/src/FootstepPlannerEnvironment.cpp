@@ -873,7 +873,7 @@ namespace footstep_planner
 		//return (StateID1 == StateID2);
 
 		// compare the actual values
-		return ivStateId2State[StateID1]->isEquivalent(*(ivStateId2State[StateID2]));
+		return (*ivStateId2State[StateID1] == *(ivStateId2State[StateID2]));
 	}
 
 

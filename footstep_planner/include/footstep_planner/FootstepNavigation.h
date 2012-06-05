@@ -167,6 +167,11 @@ namespace footstep_planner
         /// @brief Simple action client to control a footstep execution.
     	actionlib::SimpleActionClient<
 				humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
+
+    	int ivEqualStepsThreshold;
+    	int ivEqualStepsNum;
+    	int ivExecutionShift;
+    	int ivLastStepNum;
     };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

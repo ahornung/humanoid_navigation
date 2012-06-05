@@ -32,7 +32,11 @@ namespace footstep_planner
           ivIdFootLeft("/l_sole"),
           ivIdMapFrame("map"),
           ivExecutingFootsteps(false),
-          ivFootstepsExecution("footsteps_execution", true)
+          ivFootstepsExecution("footsteps_execution", true),
+          ivEqualStepsThreshold(-1),
+          ivEqualStepsNum(-1),
+          ivExecutionShift(2),
+          ivLastStepNum(-1)
     {
         // private NodeHandle for parameters and private messages (debug / info)
         ros::NodeHandle nh_private("~");
@@ -68,13 +72,35 @@ namespace footstep_planner
 
         nh_private.param("feedback_frequence", ivFeedbackFrequence, 5.0);
 
+        ivEqualStepsThreshold = (int) ((0.5 / ivFeedbackFrequence) * 0.7);
+
         ROS_INFO("accuracy (%f, %f, %f)",
 		         ivAccuracyX, ivAccuracyY, ivAccuracyTheta);
+        ROS_INFO("equal steps thr: %i", ivEqualStepsThreshold);
     }
 
 
 	FootstepNavigation::~FootstepNavigation()
     {}
+
+
+	void
+	FootstepNavigation::run()
+	{
+		// lock the planning and execution process
+		ivExecutingFootsteps = true;
+		// calculate path
+        if (ivPlanner.plan())
+			// execution thread
+			boost::thread footstepExecutionThread(
+					&FootstepNavigation::executeFootsteps, this);
+
+//        	// ALTERNATIVE:
+//        	executeFootsteps_alt();
+        else
+        	// free the lock if the planning failed
+        	ivExecutingFootsteps = false;
+	}
 
 
     void
@@ -183,9 +209,10 @@ namespace footstep_planner
     	if (getFootstepsFromPath(support_leg, 1, goal.footsteps))
     	{
 			goal.feedback_frequence = ivFeedbackFrequence;
+			ivEqualStepsNum = 0;
+			ivLastStepNum = 0;
 
 			ROS_INFO("Start walking towards the goal.");
-
 			// start the execution via action
 			// NOTE: _1, _2 are place holders for function arguments (see boost doc)
 			ivFootstepsExecution.sendGoal(
@@ -217,6 +244,7 @@ namespace footstep_planner
     		ROS_INFO("Succeeded walking to the goal.");
     	else if (state == actionlib::SimpleClientGoalState::PREEMPTED)
     		ROS_INFO("Preempted walking to the goal.");
+    	// TODO: distinct between further states
     	else
     		ROS_INFO("Failed walking to the goal.");
 
@@ -229,88 +257,36 @@ namespace footstep_planner
     FootstepNavigation::feedbackCallback(
     		const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb)
     {
-    	int support_foot_index = fb->executed_footsteps.size() - 2;
-    	if (support_foot_index < 0)
-    		return;
+    	int executed_steps_idx = fb->executed_footsteps.size() - ivExecutionShift;
+    	if (executed_steps_idx < 0)
+    	    return;
+    	else if (executed_steps_idx == ivLastStepNum)
+    	    ivEqualStepsNum++;
 
-    	const State& from_planned = *(ivPlanner.getPathBegin() +
-		                              support_foot_index);
+    	if (ivEqualStepsNum != ivEqualStepsThreshold)
+    	    return;
 
-    	tf::Transform from_transform;
+    	ROS_INFO("%i / %i (%i)", executed_steps_idx, ivLastStepNum, ivEqualStepsNum);
+
+    	ivLastStepNum++;
+        ivEqualStepsNum = 0;
+
+    	const State& planned = *(ivPlanner.getPathBegin() + executed_steps_idx);
+
+    	tf::Transform executed_tf;
     	std::string foot_id;
-    	if (from_planned.leg == LEFT)
-    		foot_id = ivIdFootLeft;
-    	else // leg == RIGHT
-    		foot_id = ivIdFootRight;
-    	{
-			boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
-			getFootTransform(foot_id, ivIdMapFrame, ros::Time::now(),
-			                 from_transform);
-    	}
-    	State from(from_transform.getOrigin().x(),
-		           from_transform.getOrigin().y(),
-		           tf::getYaw(from_transform.getRotation()),
-		           from_planned.leg);
+    	if (planned.leg == RIGHT)
+    	    foot_id = ivIdFootRight;
+    	else
+    	    foot_id = ivIdFootLeft;
+    	getFootTransform(foot_id, ivIdMapFrame, ros::Time::now(), executed_tf);
+    	State executed(executed_tf.getOrigin().x(), executed_tf.getOrigin().y(),
+    	               tf::getYaw(executed_tf.getRotation()), planned.leg);
 
-    	const humanoid_nav_msgs::StepTarget& last_step = fb->executed_footsteps[
-					support_foot_index];
-    	ROS_INFO("Current step num %i", support_foot_index + 1);
-    	ROS_INFO("step (%f, %f, %f, %i)", last_step.pose.x, last_step.pose.y,
-    	         last_step.pose.theta, last_step.leg);
-    	ROS_INFO("(%f, %f, %f, %i) - (%f, %f, %f, %i)",
-		         from_planned.x, from_planned.y, from_planned.theta,
-		         from_planned.leg,
-		         from.x, from.y, from.theta, from.leg);
-    	ROS_INFO("diff: (%f, %f, %f)\n",
-		         fabs(from_planned.x - from.x),
-		         fabs(from_planned.y - from.y),
-		         fabs(from_planned.theta - from.theta));
-
-    	return;
-
-    	// check if the robot is accurately executing the footsteps
-    	if (!performanceValid(from_planned, from))
-    	{
-			ivFootstepsExecution.cancelGoal();
-			ROS_INFO("Invalid step. Return.");
-			return;
-
-			const State& to_planned = *(ivPlanner.getPathBegin() +
-			                            support_foot_index + 1);
-    		// calculate relative step
-	    	humanoid_nav_msgs::StepTarget corrected_step;
-    		bool performable = getFootstep(from, to_planned, corrected_step);
-    		if (performable)
-    		{
-    			ROS_INFO("Rearrange..");
-
-    	    	humanoid_nav_msgs::ExecFootstepsGoal goal;
-    	    	goal.footsteps.push_back(corrected_step);
-    	    	if (getFootstepsFromPath(from, support_foot_index + 1,
-				                         goal.footsteps))
-    	    	{
-					goal.feedback_frequence = ivFeedbackFrequence;
-					// start the execution via action
-					// NOTE: _1, _2 are place holders for function arguments
-					// (see boost doc)
-					ivFootstepsExecution.sendGoal(
-					    goal,
-						boost::bind(
-							&FootstepNavigation::doneCallback, this, _1, _2),
-						boost::bind(&FootstepNavigation::activeCallback, this),
-						boost::bind(
-							&FootstepNavigation::feedbackCallback, this, _1));
-    			}
-    	    	else
-    	    	{
-    	    		// replanning
-    	    	}
-    		}
-    		else
-    		{
-    			// replanning
-    		}
-    	}
+    	ROS_INFO("planned (%f, %f, %f, %i) vs. executed (%f, %f, %f, %i)",
+    	         planned.x, planned.y, planned.theta, planned.leg,
+    	         executed.x, executed.y, executed.theta, executed.leg);
+    	ROS_INFO("valid? %i\n", performanceValid(planned, executed));
     }
 
 
@@ -343,29 +319,6 @@ namespace footstep_planner
     	boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
     	ivLastRobotTime = robot_pose->header.stamp;
     }
-
-
-	void
-	FootstepNavigation::run()
-	{
-		// lock the planning and execution process
-		ivExecutingFootsteps = true;
-		// calculate path
-        if (ivPlanner.plan())
-        {
-			// execution thread
-			boost::thread footstepExecutionThread(
-					&FootstepNavigation::executeFootsteps, this);
-
-//        	// ALTERNATIVE:
-//        	executeFootsteps_alt();
-        }
-        else
-        {
-        	// free the lock if the planning failed
-        	ivExecutingFootsteps = false;
-        }
-	}
 
 
 	void

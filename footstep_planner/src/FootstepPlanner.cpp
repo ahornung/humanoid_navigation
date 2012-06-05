@@ -134,9 +134,9 @@ namespace footstep_planner
         double max_step_width = 0;
         for(int i=0; i < size; i++)
         {
-            double x = (double)footsteps_x[i];
-            double y = (double)footsteps_y[i];
-            double theta = (double)footsteps_theta[i];
+            double x = (double) footsteps_x[i];
+            double y = (double) footsteps_y[i];
+            double theta = (double) footsteps_theta[i];
 
             Footstep f(x, y, theta, ivCellSize, ivNumAngleBins, max_hash_size);
             ivFootstepSet.push_back(f);

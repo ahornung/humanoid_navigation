@@ -436,77 +436,37 @@ namespace footstep_planner
     }
 
 
-    void
-    FootstepPlannerEnvironment::getFootstep(const PlanningState& from,
-                                            const PlanningState& to,
-                                            double& footstep_x,
-                                            double& footstep_y,
-                                            double& footstep_theta) const
-    {
-        double from_x = cell_2_state(from.getX(), ivCellSize);
-        double from_y = cell_2_state(from.getY(), ivCellSize);
-        double from_theta = angle_cell_2_state(from.getTheta(), ivNumAngleBins);
-        double to_x = cell_2_state(to.getX(), ivCellSize);
-        double to_y = cell_2_state(to.getY(), ivCellSize);
-        double to_theta = angle_cell_2_state(to.getTheta(), ivNumAngleBins);
-
-        get_footstep_cont(from_x, from_y, from_theta, from.getLeg(), to_x, to_y,
-                          to_theta, footstep_x, footstep_y, footstep_theta);
-
-        int footstep_x_disc = disc_val(footstep_x, ivCellSize);
-        int footstep_y_disc = disc_val(footstep_y, ivCellSize);
-        int footstep_theta_disc = angle_state_2_cell(footstep_theta,
-                                                     ivNumAngleBins);
-
-//        int fs_x = to.getX() - from.getX();
-//        int fs_y = to.getY() - from.getY();
-//        double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
-//        double orient_cos = cos(orient);
-//        double orient_sin = sin(orient);
-//        double x = fs_x * orient_cos - fs_y * orient_sin;
-//        double y = fs_x * orient_sin + fs_y * orient_cos;
-//        fs_x = round(x);
-//        fs_y = round(y);
-//        int fs_theta = to.getTheta() - from.getTheta();
-//        if (from.getLeg() == LEFT)
-//        {
-//            fs_y = -fs_y;
-//            fs_theta = -fs_theta;
-//        }
-//        fs_theta = ((fs_theta % ivNumAngleBins) + ivNumAngleBins) % ivNumAngleBins;
-//
-//        if (footstep_x_disc != fs_x || footstep_y_disc != fs_y ||
-//            footstep_theta_disc != fs_theta)
-//        {
-//            ROS_INFO("from (%i, %i, %i, %i) (%f, %f, %f, %i)",
-//                     from.getX(), from.getY(), from.getTheta(), from.getLeg(),
-//                     from_x, from_y, from_theta, from.getLeg());
-//            ROS_INFO("to (%i, %i, %i, %i) (%f, %f, %f, %i)",
-//                     to.getX(), to.getY(), to.getTheta(), to.getLeg(),
-//                     to_x, to_y, to_theta, to.getLeg());
-//            ROS_INFO("continuous calculation: (%i, %i, %i) (%f, %f, %f)",
-//                     footstep_x_disc, footstep_y_disc, footstep_theta_disc,
-//                     footstep_x, footstep_y, footstep_theta);
-//            ROS_INFO("new calculation: (%i, %i, %i)", fs_x, fs_y, fs_theta);
-//            exit(1);
-//        }
-    }
-
-
     bool
     FootstepPlannerEnvironment::reachable(const PlanningState& from,
 	                                      const PlanningState& to)
     {
-        double cont_footstep_x;
-        double cont_footstep_y;
-        double cont_footstep_theta;
-        getFootstep(from, to, cont_footstep_x, cont_footstep_y,
-		            cont_footstep_theta);
+        // get the (continuous) orientation of state 'from'
+        double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
+        double orient_cos = cos(orient);
+        double orient_sin = sin(orient);
 
-        int footstep_x = disc_val(cont_footstep_x, ivCellSize);
-        int footstep_y = disc_val(cont_footstep_y, ivCellSize);
-        int footstep_theta = angle_state_2_cell(cont_footstep_theta,
-                                                ivNumAngleBins);
+        // calculate the footstep shift and rotate it into the 'from'-view
+        int footstep_x = to.getX() - from.getX();
+        int footstep_y = to.getY() - from.getY();
+        double shift_x = footstep_x * orient_cos - footstep_y * orient_sin;
+        double shift_y = footstep_x * orient_sin + footstep_y * orient_cos;
+        footstep_x = round(shift_x);
+        footstep_y = round(shift_y);
+
+        // calculate the footstep rotation
+        int footstep_theta = to.getTheta() - from.getTheta();
+
+        // adjust for the left foot
+        if (from.getLeg() == LEFT)
+        {
+            footstep_y = -footstep_y;
+            footstep_theta = -footstep_theta;
+        }
+
+        // transform the rotation into [0..ivNumAngleBins)
+        footstep_theta = ((footstep_theta % ivNumAngleBins) + ivNumAngleBins) %
+                         ivNumAngleBins;
+
         return performable(footstep_x, footstep_y, footstep_theta,
                            ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
                            ivMaxInvFootstepX, ivMaxInvFootstepY,

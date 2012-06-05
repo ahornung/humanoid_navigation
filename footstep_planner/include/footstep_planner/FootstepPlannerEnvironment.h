@@ -298,14 +298,6 @@ namespace footstep_planner
          */
         bool closeToStart(const PlanningState& from);
 
-        /**
-         * @brief Calculates the arbitrary footstep needed to reach 'to' from
-         * within 'from'
-         */
-        void getFootstep(const PlanningState& from, const PlanningState& to,
-		                 double& footstep_x, double& footstep_y,
-		                 double& footstep_theta) const;
-
         /// < operator for planning states.
         struct less
         {

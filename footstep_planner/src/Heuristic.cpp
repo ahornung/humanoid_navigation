@@ -90,15 +90,14 @@ namespace footstep_planner
         double dist = cont_val(euclidean_distance(
                 from.getX(), from.getY(), to.getX(), to.getY()), ivCellSize);
 		double expected_steps = dist / ivMaxStepWidth;
-		// we could replace this by working on ints (w. all normalization)
-		// int disc_diff_angle = abs(from.getTheta() - to.getTheta());
-		// double diff_angle = angle_disc_2_cont(disc_diff_angle, ivNumAngleBins);
 		double diff_angle = 0.0;
 		if (ivDiffAngleCost > 0.0)
 		{
+            // get the number of bins between from.theta and to.theta
 		    int diff_angle_disc = (
 		            ((to.getTheta() - from.getTheta()) % ivNumAngleBins) +
 		            ivNumAngleBins) % ivNumAngleBins;
+            // get the rotation independent from the rotation direction
             diff_angle = std::abs(angles::normalize_angle(
                     angle_cell_2_state(diff_angle_disc, ivNumAngleBins)));
 		}

@@ -72,7 +72,7 @@ namespace footstep_planner
           ivCellSize(cell_size),
           ivNumAngleBins(num_angle_bins),
           ivForwardSearch(forward_search),
-          ivNumRandomNeighbors(10),
+          ivNumRandomNeighbors(20),
           ivRandomNeighborsDist(1.0 / ivCellSize),
           ivHeuristicExpired(true)
     {}
@@ -863,17 +863,16 @@ namespace footstep_planner
 	bool
 	FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
 	{
-		// Just for debugging:
-//		if (StateID1 != StateID2 &&
-//		    *(ivStateId2State[StateID1]) == *(ivStateId2State[StateID2]))
-//		{
-//			ROS_WARN("State ids %d != %d, but states equivalent",
-//			         StateID1, StateID2);
-//		}
-		//return (StateID1 == StateID2);
+		const PlanningState* s1 = ivStateId2State[StateID1];
+		const PlanningState* s2 = ivStateId2State[StateID2];
+
+		// approximately compare, ignore theta:
+		return (std::abs(s1->getX() - s2->getX()) < 1 &&
+			                std::abs(s1->getY() - s2->getY()) < 1 &&
+			                s1->getLeg() == s2->getLeg());
 
 		// compare the actual values
-		return (*ivStateId2State[StateID1] == *(ivStateId2State[StateID2]));
+		//return (*ivStateId2State[StateID1] == *(ivStateId2State[StateID2]));
 	}
 
 

@@ -205,7 +205,7 @@ namespace footstep_planner
      * (represented by to_x, to_y, to_theta) from within 'from' (represented by
      * from_x, from_y, from_theta).
      */
-    void get_footstep_cont(
+    void get_footstep(
             double from_x, double from_y, double from_theta, Leg from_leg,
             double to_x, double to_y, double to_theta,
             double& footstep_x, double& footstep_y, double& footstep_theta);

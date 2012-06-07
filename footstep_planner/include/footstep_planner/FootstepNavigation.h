@@ -128,11 +128,19 @@ namespace footstep_planner
         		const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
 
         /**
-         * @return True if the footstep can be performed (i.e. it is a valid
-         * step and does not collide with obstacles).
+         * @param footstep The response from the clip footstep service (i.e. it
+         * contains the unclipped (calculated) step and the clipped
+         * (performable) step).
+         *
+         * @return True if the footstep can be performed by the robot (i.e. it
+         * is within the robot's max ranges).
          */
-        bool performable(const humanoid_nav_msgs::ClipFootstep& step);
+        bool performable(const humanoid_nav_msgs::ClipFootstep& footstep);
 
+        /**
+         * @return True if the difference between the planned state and its
+         * executed equivalent is within certain ranges.
+         */
         bool performanceValid(const State& planned, const State& executed);
 
         FootstepPlanner ivPlanner;

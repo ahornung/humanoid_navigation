@@ -51,7 +51,6 @@ namespace footstep_planner
         typedef std::vector<int> exp_states_t;
         typedef exp_states_t::const_iterator exp_states_iter_t;
 
-        // TODO: discretize here
         /**
 		 * @param footstep_set The set of footsteps used for the path planning.
 		 * @param heuristic The heuristic used by the planner.
@@ -114,7 +113,7 @@ namespace footstep_planner
         /// @brief Update the start pose for both feet.
         void updateStart(const State& foot_left, const State& right_right);
 
-        void setMap(GridMap2DPtr map);
+        void updateMap(GridMap2DPtr map);
 
         /**
          * @return True iff the foot in State s is colliding with an

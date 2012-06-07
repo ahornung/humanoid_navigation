@@ -109,7 +109,7 @@ namespace footstep_planner
 
 
     void
-    PathCostHeuristic::setMap(GridMap2DPtr map)
+    PathCostHeuristic::updateMap(GridMap2DPtr map)
     {
         ivMapPtr.reset();
         ivMapPtr = map;

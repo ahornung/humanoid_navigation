@@ -63,7 +63,7 @@ namespace footstep_planner
         bool calculateDistances(const PlanningState& start,
                                 const PlanningState& goal);
 
-        void setMap(GridMap2DPtr map);
+        void updateMap(GridMap2DPtr map);
 
     private:
         static const int cvObstacleThreshold = 200;

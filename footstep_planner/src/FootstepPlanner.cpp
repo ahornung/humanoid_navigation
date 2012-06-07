@@ -53,7 +53,6 @@ namespace footstep_planner
                 geometry_msgs::PoseStamped>("start", 1);
 
         int max_hash_size;
-        int changed_cells_limit;
         std::string heuristic_type;
         double step_cost;
         double diff_angle_cost;
@@ -315,7 +314,7 @@ namespace footstep_planner
                      ivPlannerEnvironmentPtr->getNumExpandedStates(),
                      ivPlannerPtr->get_n_expands());
             ROS_INFO("Final eps: %f", ivPlannerPtr->get_final_epsilon());
-            ROS_INFO("Path cost: %f (%i)", ivPathCost, path_cost);
+            ROS_INFO("Path cost: %f (%i)\n", ivPathCost, path_cost);
 
             broadcastFootstepPathVis();
             broadcastPathVis();
@@ -612,7 +611,7 @@ namespace footstep_planner
         ivMapPtr.reset();
         ivMapPtr = map;
         // update map of planning environment
-        ivPlannerEnvironmentPtr->setMap(map);
+        ivPlannerEnvironmentPtr->updateMap(map);
 
         // initialize a replanning with updated map information
         if (map_exists && ivPathExists)
@@ -626,106 +625,113 @@ namespace footstep_planner
     void
     FootstepPlanner::updateEnvironment(GridMap2DPtr old_map)
     {
-        // TODO: handle size changes of the map; currently the planning
-        // information is reseted
+        // Replanning based on old planning info currently disabled
+//        // TODO: handle size changes of the map; currently the planning
+//        // information is reseted
+//
+//        if (ivPlannerType == "ADPlanner" &&
+//            ivMapPtr->getResolution() == old_map->getResolution() &&
+//            ivMapPtr->size().height == old_map->size().height &&
+//            ivMapPtr->size().width == old_map->size().width)
+//        {
+//            ROS_INFO("Received an updated map => change detection");
+//
+//            std::vector<State> changed_states;
+//            cv::Mat changed_cells;
+//
+//            // get new occupied cells only (0: occupied in binary map)
+//            // changedCells(x,y) = old(x,y) AND NOT(new(x,y))
+////          cv::bitwise_not(gridMap->binaryMap(), changedCells);
+////          cv::bitwise_and(ivMapPtr->binaryMap(), changedCells, changedCells);
+//
+//            // to get all changed cells (new free and occupied) use XOR:
+//            cv::bitwise_xor(old_map->binaryMap(), ivMapPtr->binaryMap(),
+//                            changed_cells);
+//
+//            //inflate by outer foot radius:
+//            cv::bitwise_not(changed_cells, changed_cells); // invert for distanceTransform
+//            cv::Mat changedDistMap = cv::Mat(changed_cells.size(), CV_32FC1);
+//            cv::distanceTransform(changed_cells, changedDistMap,
+//                                  CV_DIST_L2, CV_DIST_MASK_PRECISE);
+//            double max_foot_radius = sqrt(
+//                    pow(std::abs(ivOriginFootShiftX) + ivFootsizeX / 2.0, 2.0) +
+//                    pow(std::abs(ivOriginFootShiftY) + ivFootsizeY / 2.0, 2.0))
+//                    / ivMapPtr->getResolution();
+//            changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
+//
+//            // loop over changed cells (now marked with 255 in the mask):
+//            unsigned int num_changed_cells = 0;
+//            double wx, wy;
+//            State s;
+//            for (int y = 0; y < changed_cells.rows; ++y)
+//            {
+//                for (int x = 0; x < changed_cells.cols; ++x)
+//                {
+//                    if (changed_cells.at<uchar>(x,y) == 255)
+//                    {
+//                        num_changed_cells++;
+//                        ivMapPtr->mapToWorld(x, y, wx, wy);
+//                        s.x = wx;
+//                        s.y = wy;
+//                        // on each grid cell ivNumAngleBins-many planning states
+//                        // can be placed (if the resolution of the grid cells is
+//                        // the same as of the planning state grid)
+//                        for (int theta = 0; theta < ivNumAngleBins; ++theta)
+//                        {
+//                            s.theta = angle_cell_2_state(theta, ivNumAngleBins);
+//                            changed_states.push_back(s);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            if (num_changed_cells == 0)
+//            {
+//                ROS_INFO("old map equals new map; no replanning necessary");
+//                return;
+//            }
+//
+//            ROS_INFO("%d changed map cells found", num_changed_cells);
+//            if (num_changed_cells <= ivChangedCellsLimit)
+//            {
+//                // update planer
+//                ROS_INFO("Use old information in new planning taks");
+//
+//                std::vector<int> neighbour_ids;
+//                if (ivForwardSearch)
+//                    ivPlannerEnvironmentPtr->getSuccsOfGridCells(
+//                            changed_states, &neighbour_ids);
+//                else
+//                    ivPlannerEnvironmentPtr->getPredsOfGridCells(
+//                            changed_states, &neighbour_ids);
+//
+//                boost::shared_ptr<ADPlanner> h =
+//                        boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
+//                h->costs_changed(PlanningStateChangeQuery(neighbour_ids));
+//            }
+//            else
+//            {
+//                ROS_INFO("Reset old information in new planning task");
+//                // reset planner
+//                ivPlannerEnvironmentPtr->reset();
+//                setPlanner();
+//                //ivPlannerPtr->force_planning_from_scratch();
+//            }
+//        }
+//        else
+//        {
+//            ROS_INFO("Reset old information in new planning task");
+//            // reset planner
+//            ivPlannerEnvironmentPtr->reset();
+//            setPlanner();
+//            //ivPlannerPtr->force_planning_from_scratch();
+//        }
 
-        if (ivPlannerType == "ADPlanner" &&
-            ivMapPtr->getResolution() == old_map->getResolution() &&
-            ivMapPtr->size().height == old_map->size().height &&
-            ivMapPtr->size().width == old_map->size().width)
-        {
-            ROS_INFO("Received an updated map => change detection");
-
-            std::vector<State> changed_states;
-            cv::Mat changed_cells;
-
-            // get new occupied cells only (0: occupied in binary map)
-            // changedCells(x,y) = old(x,y) AND NOT(new(x,y))
-//          cv::bitwise_not(gridMap->binaryMap(), changedCells);
-//          cv::bitwise_and(ivMapPtr->binaryMap(), changedCells, changedCells);
-
-            // to get all changed cells (new free and occupied) use XOR:
-            cv::bitwise_xor(old_map->binaryMap(), ivMapPtr->binaryMap(),
-                            changed_cells);
-
-            //inflate by outer foot radius:
-            cv::bitwise_not(changed_cells, changed_cells); // invert for distanceTransform
-            cv::Mat changedDistMap = cv::Mat(changed_cells.size(), CV_32FC1);
-            cv::distanceTransform(changed_cells, changedDistMap,
-                                  CV_DIST_L2, CV_DIST_MASK_PRECISE);
-            double max_foot_radius = sqrt(
-                    pow(std::abs(ivOriginFootShiftX) + ivFootsizeX / 2.0, 2.0) +
-                    pow(std::abs(ivOriginFootShiftY) + ivFootsizeY / 2.0, 2.0))
-                    / ivMapPtr->getResolution();
-            changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
-
-            // loop over changed cells (now marked with 255 in the mask):
-            unsigned int num_changed_cells = 0;
-            double wx, wy;
-            State s;
-            for (int y = 0; y < changed_cells.rows; ++y)
-            {
-                for (int x = 0; x < changed_cells.cols; ++x)
-                {
-                    if (changed_cells.at<uchar>(x,y) == 255)
-                    {
-                        num_changed_cells++;
-                        ivMapPtr->mapToWorld(x, y, wx, wy);
-                        s.x = wx;
-                        s.y = wy;
-                        // on each grid cell ivNumAngleBins-many planning states
-                        // can be placed (if the resolution of the grid cells is
-                        // the same as of the planning state grid)
-                        for (int theta = 0; theta < ivNumAngleBins; ++theta)
-                        {
-                            s.theta = angle_cell_2_state(theta, ivNumAngleBins);
-                            changed_states.push_back(s);
-                        }
-                    }
-                }
-            }
-
-            if (num_changed_cells == 0)
-            {
-                ROS_INFO("old map equals new map; no replanning necessary");
-                return;
-            }
-
-            ROS_INFO("%d changed map cells found", num_changed_cells);
-            if (num_changed_cells <= ivChangedCellsLimit)
-            {
-                // update planer
-                ROS_INFO("Use old information in new planning taks");
-
-                std::vector<int> neighbour_ids;
-                if (ivForwardSearch)
-                    ivPlannerEnvironmentPtr->getSuccsOfGridCells(
-                            changed_states, &neighbour_ids);
-                else
-                    ivPlannerEnvironmentPtr->getPredsOfGridCells(
-                            changed_states, &neighbour_ids);
-
-                boost::shared_ptr<ADPlanner> h =
-                        boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
-                h->costs_changed(PlanningStateChangeQuery(neighbour_ids));
-            }
-            else
-            {
-                ROS_INFO("Reset old information in new planning task");
-                // reset planner
-                ivPlannerEnvironmentPtr->reset();
-                setPlanner();
-                //ivPlannerPtr->force_planning_from_scratch();
-            }
-        }
-        else
-        {
-            ROS_INFO("Reset old information in new planning task");
-            // reset planner
-            ivPlannerEnvironmentPtr->reset();
-            setPlanner();
-            //ivPlannerPtr->force_planning_from_scratch();
-        }
+        ROS_INFO("Reset old information in new planning task");
+        // reset planner
+        ivPlannerEnvironmentPtr->reset();
+        setPlanner();
+        //ivPlannerPtr->force_planning_from_scratch();
     }
 
 

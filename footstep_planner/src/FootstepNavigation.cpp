@@ -74,9 +74,9 @@ namespace footstep_planner
 
         ivEqualStepsThreshold = (int) ((0.5 / ivFeedbackFrequence) * 0.7);
 
-        ROS_INFO("accuracy (%f, %f, %f)",
-		         ivAccuracyX, ivAccuracyY, ivAccuracyTheta);
-        ROS_INFO("equal steps thr: %i", ivEqualStepsThreshold);
+//        ROS_INFO("accuracy (%f, %f, %f)",
+//		         ivAccuracyX, ivAccuracyY, ivAccuracyTheta);
+//        ROS_INFO("equal steps thr: %i", ivEqualStepsThreshold);
     }
 
 
@@ -213,8 +213,8 @@ namespace footstep_planner
 			ivLastStepNum = 0;
 
 			ROS_INFO("Start walking towards the goal.");
-			// start the execution via action
-			// NOTE: _1, _2 are place holders for function arguments (see boost doc)
+			// start the execution via action; _1, _2 are place holders for
+			// function arguments (see boost doc)
 			ivFootstepsExecution.sendGoal(
 				goal,
 				boost::bind(&FootstepNavigation::doneCallback, this, _1, _2),
@@ -375,9 +375,9 @@ namespace footstep_planner
     {
         // calculate the necessary footstep to reach the foot placement
         double footstep_x, footstep_y, footstep_theta;
-        get_footstep_cont(from.x, from.y, from.theta, from.leg,
-                          to.x, to.y, to.theta,
-                          footstep_x, footstep_y, footstep_theta);
+        get_footstep(from.x, from.y, from.theta, from.leg,
+                     to.x, to.y, to.theta,
+                     footstep_x, footstep_y, footstep_theta);
 
         footstep.pose.x = footstep_x;
         if (from.leg == RIGHT)

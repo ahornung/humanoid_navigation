@@ -238,9 +238,7 @@ namespace footstep_planner
              state_iter++)
         {
             if (*(*state_iter) == s)
-            {
                 return *state_iter;
-            }
         }
 
         return NULL;
@@ -314,7 +312,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::setMap(GridMap2DPtr map)
+    FootstepPlannerEnvironment::updateMap(GridMap2DPtr map)
     {
         ivMapPtr.reset();
         ivMapPtr = map;
@@ -324,9 +322,8 @@ namespace footstep_planner
             boost::shared_ptr<PathCostHeuristic> h =
             		boost::dynamic_pointer_cast<PathCostHeuristic>(
             				ivHeuristicConstPtr);
-            h->setMap(map);
+            h->updateMap(map);
         }
-
     }
 
 

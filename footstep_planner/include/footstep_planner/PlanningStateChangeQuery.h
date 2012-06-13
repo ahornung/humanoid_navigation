@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include <sbpl/headers.h>
+#include <sbpl/sbpl/headers.h>
 
 
 namespace footstep_planner

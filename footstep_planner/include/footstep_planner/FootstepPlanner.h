@@ -36,7 +36,7 @@
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
-#include <sbpl/headers.h>
+#include <sbpl/sbpl/headers.h>
 #include <sensor_msgs/PointCloud.h>
 #include <tf/tf.h>
 #include <visualization_msgs/Marker.h>

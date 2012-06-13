@@ -14,10 +14,10 @@
   </export>
   
   <depend package="nav_msgs"/>
-  <!-- for electric -->
-  <depend package="opencv2"/>
-  <!-- for Fuerte (creates problems with electric...)
-    <rosdep name="opencv2"/>-->
+  <!-- for electric 
+  <depend package="opencv2"/> -->
+  <!-- for Fuerte (creates problems with electric...) -->
+    <rosdep name="opencv2"/>
 
 </package>
 

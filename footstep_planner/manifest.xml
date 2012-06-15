@@ -27,9 +27,9 @@
   <depend package="visualization_msgs"/>
   
   <!-- for electric: -->
-    <!-- <depend package="sbpl"/> -->
-  <!-- for fuerte -->
-  <rosdep name="sbpl" />
+  <depend package="sbpl"/>
+  <!-- for fuerte, does not seem to work right now?
+    <rosdep name="sbpl" /> -->
 
 </package>
 

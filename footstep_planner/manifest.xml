@@ -22,10 +22,14 @@
   <depend package="map_server"/>
   <depend package="roscpp"/>
   <depend package="rospy"/>
-  <depend package="sbpl"/>
   <depend package="angles"/>
   <depend package="tf"/>
   <depend package="visualization_msgs"/>
+  
+  <!-- for electric: -->
+    <!-- <depend package="sbpl"/> -->
+  <!-- for fuerte -->
+  <rosdep name="sbpl" />
 
 </package>
 

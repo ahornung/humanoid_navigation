@@ -15,10 +15,7 @@ rosbuild_init()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+find_package(sbpl REQUIRED)
 
 set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
 	src/FootstepNavigation.cpp
@@ -33,7 +30,8 @@ set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
 )
 
 rosbuild_add_library(${PROJECT_NAME} ${FOOTSTEP_PLANNER_FILES})
+target_link_libraries(${PROJECT_NAME} ${sbpl_LIBRARIES})
 rosbuild_add_executable(footstep_planner_node src/footstep_planner.cpp)
-target_link_libraries(footstep_planner_node ${PROJECT_NAME})
+target_link_libraries(footstep_planner_node ${PROJECT_NAME} ${sbpl_LIBRARIES})
 rosbuild_add_executable(footstep_navigation_node src/footstep_navigation.cpp)
-target_link_libraries(footstep_navigation_node ${PROJECT_NAME})
+target_link_libraries(footstep_navigation_node ${PROJECT_NAME} ${sbpl_LIBRARIES})

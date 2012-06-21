@@ -65,35 +65,36 @@ namespace footstep_planner
         double theta;
         Leg leg;
     };
-
-
-    /// @return Euclidean distance between two integer coordinates (cells).
-    inline double euclidean_distance(int x1, int y1, int x2, int y2)
-    {
-        return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
-    }
-
+    
     /**
      * @return Squared euclidean distance between two integer coordinates
      * (cells).
      */
     inline double euclidean_distance_sq(int x1, int y1, int x2, int y2)
     {
-        return pow(x1 - x2, 2) + pow(y1 - y2, 2);
+        // note: do *not* use pow() to square!
+        return (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2);
+    }
+
+    /// @return Euclidean distance between two integer coordinates (cells).
+    inline double euclidean_distance(int x1, int y1, int x2, int y2)
+    {
+        return sqrt(double(euclidean_distance_sq(x1,y1,x2,y2)));
     }
 
 
     /// @return Euclidean distance between two coordinates.
     inline double euclidean_distance(double x1, double y1, double x2, double y2)
     {
-        return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
+        return sqrt(euclidean_distance_sq(x1,y1,x2,y2));
     }
 
     /// @return Squared euclidean distance between two coordinates.
     inline double euclidean_distance_sq(double x1, double y1, double x2,
 	                                    double y2)
     {
-        return pow(x1 - x2, 2) + pow(y1 - y2, 2);
+        // note: do *not* use pow() to square!
+        return (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2);
     }
 
 
@@ -103,11 +104,10 @@ namespace footstep_planner
         int x = abs(x1 - x2);
         int y = abs(y1 - y2);
 
-        float cost = 1;
         if (x + y > 1)
-            cost = M_SQRT2;
-
-        return cost * cell_size;
+            return M_SQRT2 * cell_size;
+        else
+            return cell_size;
     }
 
 

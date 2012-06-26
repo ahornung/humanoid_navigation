@@ -75,7 +75,13 @@ namespace footstep_planner
           ivNumRandomNeighbors(20),
           ivRandomNeighborsDist(1.0 / ivCellSize),
           ivHeuristicExpired(true)
-    {}
+    {
+        int num_angle_bins_half = ivNumAngleBins / 2;
+        if (ivMaxFootstepTheta >= num_angle_bins_half)
+            ivMaxFootstepTheta -= ivNumAngleBins;
+        if (ivMaxInvFootstepTheta >= num_angle_bins_half)
+            ivMaxInvFootstepTheta -= ivNumAngleBins;
+    }
 
 
     FootstepPlannerEnvironment::~FootstepPlannerEnvironment()
@@ -436,7 +442,7 @@ namespace footstep_planner
 
     bool
     FootstepPlannerEnvironment::reachable(const PlanningState& from,
-	                                      const PlanningState& to)
+                                          const PlanningState& to)
     {
         // get the (continuous) orientation of state 'from'
         double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
@@ -454,6 +460,13 @@ namespace footstep_planner
         // calculate the footstep rotation
         int footstep_theta = to.getTheta() - from.getTheta();
 
+        // transform the value into [-ivNumAngleBins/2..ivNumAngleBins/2)
+        int num_angle_bins_half = ivNumAngleBins / 2;
+        if (footstep_theta >= num_angle_bins_half)
+            footstep_theta -= ivNumAngleBins;
+        else if (footstep_theta < -num_angle_bins_half)
+            footstep_theta += ivNumAngleBins;
+
         // adjust for the left foot
         if (from.getLeg() == LEFT)
         {
@@ -461,15 +474,13 @@ namespace footstep_planner
             footstep_theta = -footstep_theta;
         }
 
-        // transform the rotation into [0..ivNumAngleBins)
-        footstep_theta = ((footstep_theta % ivNumAngleBins) + ivNumAngleBins) %
-                         ivNumAngleBins;
-
-        return performable(footstep_x, footstep_y, footstep_theta,
-                           ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta,
-                           ivMaxInvFootstepX, ivMaxInvFootstepY,
-                           ivMaxInvFootstepTheta,
-                           ivNumAngleBins);
+        // return if the footstep can be performed or not
+        return ((footstep_x <= ivMaxFootstepX &&
+                 footstep_x >= ivMaxInvFootstepX) &&
+                (footstep_y <= ivMaxFootstepY &&
+                 footstep_y >= ivMaxInvFootstepY) &&
+                (footstep_theta <= ivMaxFootstepTheta &&
+                 footstep_theta >= ivMaxInvFootstepTheta));
     }
 
 

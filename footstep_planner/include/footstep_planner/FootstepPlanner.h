@@ -122,7 +122,7 @@ namespace footstep_planner
          */
         bool setStart(const State& left_foot, const State& right_foot);
 
-        void updateMap(GridMap2DPtr map);
+        void updateMap(const GridMap2DPtr& map);
 
         void setMarkerNamespace(const std::string& ns)
         {
@@ -219,7 +219,7 @@ namespace footstep_planner
         void setPlanner();
 
         /// @brief Updates the environment in case of a changed map.
-        void updateEnvironment(GridMap2DPtr old_map);
+        void updateEnvironment(const GridMap2DPtr& old_map);
 
         boost::shared_ptr<FootstepPlannerEnvironment> ivPlannerEnvironmentPtr;
         boost::shared_ptr<GridMap2D> ivMapPtr;

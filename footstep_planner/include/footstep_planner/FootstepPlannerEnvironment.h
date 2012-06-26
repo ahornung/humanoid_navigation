@@ -347,14 +347,14 @@ namespace footstep_planner
         /// The maximal translation in y direction (discretized in cell size).
 		const int ivMaxFootstepY;
 		/// The maximal rotation (discretized into bins).
-		const int ivMaxFootstepTheta;
+		int ivMaxFootstepTheta;
 
 		/// The minimal translation in x direction (discretized in cell size).
 		const int ivMaxInvFootstepX;
 		/// The minimal translation in y direction (discretized in cell size).
         const int ivMaxInvFootstepY;
         /// The minimal rotation (discretized into bins).
-        const int ivMaxInvFootstepTheta;
+        int ivMaxInvFootstepTheta;
 
         /**
          * @brief The costs for each step (discretized with the helpf of

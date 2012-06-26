@@ -232,24 +232,17 @@ namespace footstep_planner
     FootstepPlanner::setPlanner()
     {
         if (ivPlannerType == "ARAPlanner")
-        {
             ivPlannerPtr.reset(new ARAPlanner(ivPlannerEnvironmentPtr.get(),
                                               ivForwardSearch));
-        }
         else if (ivPlannerType == "ADPlanner")
-        {
             ivPlannerPtr.reset(new ADPlanner(ivPlannerEnvironmentPtr.get(),
                                              ivForwardSearch));
-        }
         else if (ivPlannerType == "RSTARPlanner")
-        {
             ivPlannerPtr.reset(new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
                                                 ivForwardSearch));
-        }
-//        else if (ivPlannerType == "ANAPlanner"){
+//        else if (ivPlannerType == "ANAPlanner")
 //        	ivPlannerPtr.reset(new anaPlanner(ivPlannerEnvironmentPtr.get(),
-//        	                                                ivForwardSearch));
-//        }
+//        	                                  ivForwardSearch));
     }
 
 
@@ -602,7 +595,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::updateMap(GridMap2DPtr map)
+    FootstepPlanner::updateMap(const GridMap2DPtr& map)
     {
         bool map_exists = ivMapPtr;
         // store old map locally
@@ -623,7 +616,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlanner::updateEnvironment(GridMap2DPtr old_map)
+    FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
     {
         // Replanning based on old planning info currently disabled
 //        // TODO: handle size changes of the map; currently the planning
@@ -845,14 +838,6 @@ namespace footstep_planner
 			marker.id = markers_counter++;
 			markers.push_back(marker);
         }
-
-        // add the missing goal foot to the publish vector for visualization:
-        if (ivPath.back().leg == LEFT)
-        	footPoseToMarker(ivGoalFootRight, &marker);
-        else
-        	footPoseToMarker(ivGoalFootLeft, &marker);
-        marker.id = markers_counter++;
-        markers.push_back(marker);
 
         broadcast_msg.markers = markers;
         ivLastMarkerMsgSize = markers.size();

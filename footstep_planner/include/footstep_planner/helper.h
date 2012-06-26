@@ -65,7 +65,7 @@ namespace footstep_planner
         double theta;
         Leg leg;
     };
-    
+
     /**
      * @return Squared euclidean distance between two integer coordinates
      * (cells).
@@ -209,14 +209,6 @@ namespace footstep_planner
             double from_x, double from_y, double from_theta, Leg from_leg,
             double to_x, double to_y, double to_theta,
             double& footstep_x, double& footstep_y, double& footstep_theta);
-
-    /// @return True iff the footstep can be performed by the robot.
-    bool performable(int footstep_x, int footstep_y, int footstep_theta,
-                     int max_footstep_x, int max_footstep_y,
-                     int max_footstep_theta,
-                     int max_inv_footstep_x, int max_inv_footstep_y,
-                     int max_inv_footstep_theta,
-                     int num_angle_bins);
 
 	/**
 	 * @brief Checks if a footstep (represented by its center and orientation)

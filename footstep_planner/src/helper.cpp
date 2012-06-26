@@ -51,38 +51,6 @@ namespace footstep_planner
     }
 
 
-    bool
-    performable(int footstep_x, int footstep_y, int footstep_theta,
-                int max_footstep_x, int max_footstep_y, int max_footstep_theta,
-                int max_inv_footstep_x, int max_inv_footstep_y,
-                int max_inv_footstep_theta,
-                int num_angle_bins)
-    {
-    	// TODO: introduce ellipsoid peformance check like the one from by Nao's
-    	// API
-
-        bool in_range_x = false;
-        bool in_range_y = false;
-        bool in_range_theta = false;
-
-        if (footstep_x <= max_footstep_x && footstep_x >= max_inv_footstep_x)
-        {
-            in_range_x = true;
-        }
-        if (footstep_y <= max_footstep_y && footstep_y >= max_inv_footstep_y)
-        {
-            in_range_y = true;
-        }
-		if (footstep_theta <= max_footstep_theta &&
-		    footstep_theta >= max_inv_footstep_theta)
-		{
-			in_range_theta = true;
-		}
-
-        return in_range_x && in_range_y && in_range_theta;
-    }
-
-
 	bool
 	collision_check(double x, double y, double theta, double height,
                     double width, int accuracy, const GridMap2D& distance_map)

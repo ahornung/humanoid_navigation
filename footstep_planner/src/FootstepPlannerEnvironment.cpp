@@ -72,7 +72,7 @@ namespace footstep_planner
           ivCellSize(cell_size),
           ivNumAngleBins(num_angle_bins),
           ivForwardSearch(forward_search),
-          ivNumRandomNeighbors(20),
+          ivNumRandomNeighbors(10),
           ivRandomNeighborsDist(1.0 / ivCellSize),
           ivHeuristicExpired(true)
     {
@@ -572,8 +572,12 @@ namespace footstep_planner
     {
         PredIDV->clear();
         CostV->clear();
+        assert(TargetStateID >= 0 && (unsigned int) TargetStateID < ivStateId2State.size());
 
-        assert((unsigned int) TargetStateID < ivStateId2State.size());
+        // make goal state absorbing
+        if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootLeft )
+        	return;
+
         ivExpandedStates.push_back(TargetStateID);
 
         const PlanningState* current = ivStateId2State[TargetStateID];
@@ -584,6 +588,7 @@ namespace footstep_planner
                 start_id = ivIdStartFootLeft;
             else
                 start_id = ivIdStartFootRight;
+
             const PlanningState* start = ivStateId2State[start_id];
             int cost = stepCost(*current, *start);
             PredIDV->push_back(start_id);
@@ -631,17 +636,43 @@ namespace footstep_planner
         SuccIDV->clear();
         CostV->clear();
 
-        assert((unsigned int) SourceStateID < ivStateId2State.size());
-        ivExpandedStates.push_back(SourceStateID);
+        assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
 
+        // make goal state absorbing
+        if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootLeft )
+        	return;
+
+        ivExpandedStates.push_back(SourceStateID);
         const PlanningState* current = ivStateId2State[SourceStateID];
+
+        // intermediate goal reachable (R*)?
+//        if (randomGoalID >= 0){
+//        	const PlanningState* randomGoal = ivStateId2State[randomGoalID];
+//
+//        	// TODO fix foot order! => use NO_LEG, choose random?
+//
+////        	if (randomGoal->getLeg() == NOLEG)
+//        	//
+////        	if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
+////       		ROS_INFO("%d", randomGoalID);
+////        		int cost = stepCost(*current, *randomGoal);
+////        		SuccIDV->push_back(randomGoalID);
+////        		CostV->push_back(cost);
+////
+////        		return;
+////        	}
+//        }
+
+
         if (closeToGoal(*current))
         {
             int goal_id;
+            assert(current->getLeg() != NOLEG);
             if (current->getLeg() == RIGHT)
                 goal_id = ivIdGoalFootLeft;
             else
                 goal_id = ivIdGoalFootRight;
+
             const PlanningState* goal = ivStateId2State[goal_id];
             int cost = stepCost(*current, *goal);
             SuccIDV->push_back(goal_id);
@@ -678,17 +709,21 @@ namespace footstep_planner
     		std::vector<int>* SuccIDV, std::vector<int>* CLowV)
     {
 
-    	assert(SourceStateID < ivStateId2State.size());
-    	const PlanningState* currentState = ivStateId2State[SourceStateID];
-
+    	assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
     	//goal state should be absorbing
-    	if (closeToGoal(*currentState))
+    	if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootLeft )
     		return;
 
+
+    	const PlanningState* currentState = ivStateId2State[SourceStateID];
+    	// TODO: closeToGoal?
+//
+//    	if (closeToGoal(*currentState))
+//    		return;
+
     	//get the successors
-    	bool bSuccs = true;
     	GetRandomNeighs(currentState, SuccIDV, CLowV, ivNumRandomNeighbors,
-		                ivRandomNeighborsDist, bSuccs);
+		                ivRandomNeighborsDist, true);
     }
 
     void
@@ -696,17 +731,21 @@ namespace footstep_planner
     		std::vector<int>* PredIDV, std::vector<int>* CLowV)
     {
 
-    	assert(TargetStateID < ivStateId2State.size());
-    	const PlanningState* currentState = ivStateId2State[TargetStateID];
+    	assert(TargetStateID >= 0 && unsigned(TargetStateID) < ivStateId2State.size());
 
     	//start state should be absorbing
-    	if(closeToStart(*currentState))
+    	if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootLeft )
     		return;
 
+    	const PlanningState* currentState = ivStateId2State[TargetStateID];
+
+    	// TODO: ???
+//    	if(closeToStart(*currentState))
+//    		return;
+
     	//get the predecessors
-    	bool bSuccs = false;
     	GetRandomNeighs(currentState, PredIDV, CLowV, ivNumRandomNeighbors,
-		                ivRandomNeighborsDist, bSuccs);
+		                ivRandomNeighborsDist, false);
 
     }
 
@@ -739,9 +778,10 @@ namespace footstep_planner
     		goal_right = ivStateId2State[ivIdStartFootLeft];
     	}
 
+    	int nDist_sq = nDist_c*nDist_c;
 
     	//add left if within the distance
-    	if(std::abs(goal_left->getX() - X) <= nDist_c && std::abs(goal_left->getY() - Y) <= nDist_c)
+    	if (euclidean_distance_sq(X, Y, goal_left->getX(), goal_left->getX()) <= nDist_sq)
     	{
     		//compute clow
     		int clow;
@@ -756,7 +796,7 @@ namespace footstep_planner
     	}
 
     	//add right if within the distance
-    	if(std::abs(goal_right->getX() - X) <= nDist_c && std::abs(goal_right->getY() - Y) <= nDist_c)
+    	if(euclidean_distance_sq(X, Y, goal_right->getX(), goal_right->getX()) <= nDist_sq)
     	{
     		//compute clow
     		int clow;
@@ -809,17 +849,21 @@ namespace footstep_planner
 //    		int newY = Y + dY;
 //    		// TODO: check if both within map first?
 //
-//    		// random theta: // TODO: pick better choice
+//    		// random theta:
 //    		//int newTheta = rand() % ivNumAngleBins;
-//    		//int newTheta = angle_state_2_cell(fDir, ivNumAngleBins);
-//    		int newTheta = theta;
+//
+//    		// direction of random exploration (facing forward):
+//    		int newTheta = angle_state_2_cell(fDir, ivNumAngleBins);
+//
+//    		// old orientation:
+//    		//int newTheta = theta;
+//
 //    		// random left/right
 //    		Leg newLeg = Leg(rand() % 2);
-//    		PlanningState random_state(newX, newY, newTheta, newLeg, ivCellSize, ivNumAngleBins, ivHashTableSize);
+//    		PlanningState randomState(newX, newY, newTheta, newLeg, ivHashTableSize);
 
     		// better?
     		// randomly concat. actions until distance reached:
-    		int nDist_sq = nDist_c*nDist_c;
     		PlanningState randomState(*currentState);
     		while(euclidean_distance_sq(X, Y, randomState.getX(), randomState.getY()) < nDist_sq){
     			int randomIdx = rand() % ivFootstepSet.size();
@@ -838,6 +882,8 @@ namespace footstep_planner
     		}
 
     		//get the state
+    		PlanningState randomStateNoLeg(randomState.getX(), randomState.getY(), randomState.getTheta(),
+    				NOLEG, ivHashTableSize);
             const PlanningState* random_hash_entry = getHashEntry(randomState);
             if (random_hash_entry == NULL){
             	random_hash_entry = createNewHashEntry(randomState);
@@ -875,12 +921,13 @@ namespace footstep_planner
 		const PlanningState* s2 = ivStateId2State[StateID2];
 
 		// approximately compare, ignore theta:
-		return (std::abs(s1->getX() - s2->getX()) < 1 &&
-			                std::abs(s1->getY() - s2->getY()) < 1 &&
-			                s1->getLeg() == s2->getLeg());
+		return (std::abs(s1->getX() - s2->getX()) < 1
+			                && std::abs(s1->getY() - s2->getY()) < 1
+			                && s1->getLeg() == s2->getLeg()
+			                );
 
 		// compare the actual values
-		//return (*ivStateId2State[StateID1] == *(ivStateId2State[StateID2]));
+//		return (*s1 == *s2);
 	}
 
 

@@ -33,7 +33,7 @@
 #include <footstep_planner/Heuristic.h>
 #include <footstep_planner/Footstep.h>
 #include <footstep_planner/PlanningState.h>
-#include <sbpl/sbpl/headers.h>
+#include <sbpl/headers.h>
 
 
 namespace footstep_planner

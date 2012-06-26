@@ -106,8 +106,7 @@ namespace footstep_planner
         else if (theta >= ivNumAngleBins)
             theta -= ivNumAngleBins;
 
-        return PlanningState(x, y, theta, leg, ivCellSize, ivNumAngleBins,
-                             ivMaxHashSize);
+        return PlanningState(x, y, theta, leg, ivMaxHashSize);
 	}
 
 
@@ -143,8 +142,7 @@ namespace footstep_planner
         else if (theta >= ivNumAngleBins)
             theta -= ivNumAngleBins;
 
-        return PlanningState(x, y, theta, leg, ivCellSize, ivNumAngleBins,
-                             ivMaxHashSize);
+        return PlanningState(x, y, theta, leg, ivMaxHashSize);
     }
 
 

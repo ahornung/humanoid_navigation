@@ -26,7 +26,7 @@
 
 #include <footstep_planner/Heuristic.h>
 #include <gridmap_2d/GridMap2D.h>
-#include <sbpl/sbpl/headers.h>
+#include <sbpl/headers.h>
 
 
 namespace footstep_planner

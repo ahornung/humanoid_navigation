@@ -15,7 +15,10 @@ rosbuild_init()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+# ROS fuerte
 find_package(sbpl REQUIRED)
+# hardcoded fix for fuerte?
+include_directories(/opt/ros/fuerte/include/sbpl)
 
 set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
 	src/FootstepNavigation.cpp

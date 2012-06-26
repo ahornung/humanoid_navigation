@@ -42,7 +42,6 @@ namespace footstep_planner
 
 
     PlanningState::PlanningState(int x, int y, int theta, Leg leg,
-                                 double cell_size, int num_angle_bins,
                                  int max_hash_size)
         :  ivX(x),
            ivY(y),

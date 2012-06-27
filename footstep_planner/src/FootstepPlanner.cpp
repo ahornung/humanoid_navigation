@@ -320,6 +320,8 @@ namespace footstep_planner
         }
         else
         {
+            broadcastExpandedNodesVis();
+            broadcastRandomNodesVis();
         	ROS_ERROR("No solution found");
             return false;
         }

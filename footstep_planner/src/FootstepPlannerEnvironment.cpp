@@ -711,7 +711,7 @@ namespace footstep_planner
         ivExpandedStates.push_back(SourceStateID);
         const PlanningState* current = ivStateId2State[SourceStateID];
 
-//        // intermediate goal reachable (R*)?
+        // intermediate goal reachable (R*)?
 //        assert(goalStateId >= 0 && unsigned(goalStateId) < ivStateId2State.size());
 //       	const PlanningState* randomGoal = ivStateId2State[goalStateId];
 //       	if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
@@ -979,13 +979,13 @@ namespace footstep_planner
 		const PlanningState* s2 = ivStateId2State[StateID2];
 
 		// approximately compare, ignore theta:
-		return (std::abs(s1->getX() - s2->getX()) < 1
-			                && std::abs(s1->getY() - s2->getY()) < 1
-			                && s1->getLeg() == s2->getLeg()
-			                );
+//		return (std::abs(s1->getX() - s2->getX()) < 1
+//			                && std::abs(s1->getY() - s2->getY()) < 1
+//			                && s1->getLeg() == s2->getLeg()
+//			                );
 
-		// compare the actual values
-//		return (*s1 == *s2);
+		// compare the actual values (exact comparison)
+		return (*s1 == *s2);
 	}
 
 

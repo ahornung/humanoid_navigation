@@ -30,12 +30,16 @@ namespace footstep_planner
                                          int    num_angle_bins,
 	                                     double step_cost,
                                          double diff_angle_cost,
-	                                     double max_step_width)
+	                                     double max_step_width,
+	                                     double inflation_radius)
         : Heuristic(cell_size, num_angle_bins, PATH_COST),
           ivpGrid(NULL),
           ivStepCost(step_cost),
           ivDiffAngleCost(diff_angle_cost),
-          ivMaxStepWidth(max_step_width)
+          ivMaxStepWidth(max_step_width),
+          ivInflationRadius(inflation_radius),
+          ivGoalX(0),
+          ivGoalY(0)
     {};
 
 
@@ -60,6 +64,19 @@ namespace footstep_planner
         ivMapPtr->worldToMapNoBounds(cell_2_state(from.getX(), ivCellSize),
                                      cell_2_state(from.getY(), ivCellSize),
                                      from_x, from_y);
+
+        unsigned int to_x;
+        unsigned int to_y;
+        // could be removed after more testing (then use ...noBounds... again)
+        ivMapPtr->worldToMapNoBounds(cell_2_state(to.getX(), ivCellSize),
+                                     cell_2_state(to.getY(), ivCellSize),
+                                     to_x, to_y);
+
+        if (ivGoalX != to_x || ivGoalY != to_y){
+        	ROS_ERROR("PathCostHeuristic::getHValue to a different value than precomputed, heuristic values will be wrong. "
+        			   "You need to call calculateDistances() before!");
+
+        }
 
         double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(
                 from_x, from_y)) / 1000.0;
@@ -94,14 +111,12 @@ namespace footstep_planner
                                      cell_2_state(start.getY(), ivCellSize),
                                      start_x, start_y);
 
-        unsigned int goal_x;
-        unsigned int goal_y;
         ivMapPtr->worldToMapNoBounds(cell_2_state(goal.getX(), ivCellSize),
                                      cell_2_state(goal.getY(), ivCellSize),
-                                     goal_x, goal_y);
+                                     ivGoalX, ivGoalY);
 
         ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
-                                goal_x, goal_y, start_x, start_y,
+        						ivGoalX, ivGoalY, start_x, start_y,
                                 SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
 
         return true;
@@ -130,10 +145,14 @@ namespace footstep_planner
         {
             for (int x = 0; x < size.width; ++x)
             {
-                if (ivMapPtr->isOccupiedAtCell(x, y))
-                    ivpGrid[x][y] = 255;
-                else
-                    ivpGrid[x][y] = 0;
+            	float dist = ivMapPtr->distanceMapAtCell(x,y);
+            	if (dist < 0.0f){
+            		ROS_ERROR("Distance map at %d %d out of bounds", x, y);
+            	} else if (dist <= ivInflationRadius){
+            		ivpGrid[x][y] = 255;
+            	} else {
+            		ivpGrid[x][y] = 0;
+            	}
             }
         }
     }

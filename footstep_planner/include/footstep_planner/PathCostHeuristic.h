@@ -50,7 +50,7 @@ namespace footstep_planner
     public:
         PathCostHeuristic(double cell_size, int num_angle_bins,
                           double step_cost, double diff_angle_cost,
-                          double max_step_width);
+                          double max_step_width, double inflation_radius);
         virtual ~PathCostHeuristic();
 
         virtual double getHValue(const PlanningState& from,
@@ -73,6 +73,10 @@ namespace footstep_planner
         double ivStepCost;
         double ivDiffAngleCost;
         double ivMaxStepWidth;
+        double ivInflationRadius;
+
+        unsigned int ivGoalX;
+        unsigned int ivGoalY;
 
         boost::shared_ptr<GridMap2D> ivMapPtr;
         boost::shared_ptr<SBPL2DGridSearch> ivGridSearchPtr;

@@ -94,6 +94,10 @@ namespace footstep_planner
         nh_private.param("foot/max/inverse/step/theta", ivMaxInvFootstepTheta,
                          0.05);
 
+        // for heuristic inflation
+        double foot_incircle = std::min((ivFootsizeX/2.0 -std::abs(ivOriginFootShiftX)), (ivFootsizeY/2.0 -std::abs(ivOriginFootShiftY)));
+        assert (foot_incircle > 0.0);
+
         // - footstep discretization
         XmlRpc::XmlRpcValue footsteps_x;
         XmlRpc::XmlRpcValue footsteps_y;
@@ -164,7 +168,7 @@ namespace footstep_planner
         else if (heuristic_type == "PathCostHeuristic")
         {
             h.reset(new PathCostHeuristic(ivCellSize, ivNumAngleBins, step_cost,
-                                          diff_angle_cost, max_step_width));
+                                          diff_angle_cost, max_step_width, foot_incircle));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");
             // keep a local ptr for visualization

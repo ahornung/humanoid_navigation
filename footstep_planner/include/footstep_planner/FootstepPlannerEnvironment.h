@@ -164,6 +164,12 @@ namespace footstep_planner
         int GetFromToHeuristic(int FromStateID, int ToStateID);
 
         /**
+         * @return The costs (in mm, truncated as int) to reach the
+         * planning state ToStateID from within planning state FromStateID.
+         */
+        int GetFromToHeuristic(const PlanningState& from, const PlanningState& to);
+
+        /**
          * @return The heuristic value to reach the goal from within the
          * planning state stateID (used for forward planning).
          */
@@ -208,6 +214,10 @@ namespace footstep_planner
         virtual void GetRandomPredsatDistance(int TargetStateID,
 		                                      std::vector<int>* PredIDV,
 		                                      std::vector<int>* CLowV);
+
+        /// Testing, for R*
+        void GetSuccsTo(int SourceStateID, int goalStateID,
+        		std::vector<int> *SuccIDV, std::vector<int> *CostV);
 
     	/// @return True if two states meet the same condition. Used for R*.
         bool AreEquivalent(int StateID1, int StateID2);

@@ -72,7 +72,7 @@ namespace footstep_planner
           ivCellSize(cell_size),
           ivNumAngleBins(num_angle_bins),
           ivForwardSearch(forward_search),
-          ivNumRandomNeighbors(10),
+          ivNumRandomNeighbors(20),
           ivRandomNeighborsDist(1.0 / ivCellSize),
           ivHeuristicExpired(true)
     {
@@ -554,7 +554,17 @@ namespace footstep_planner
 
     	const PlanningState* from = ivStateId2State[FromStateID];
     	const PlanningState* to = ivStateId2State[ToStateID];
-    	return cvMmScale * ivHeuristicConstPtr->getHValue(*from, *to);
+//    	if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST){
+//    		boost::shared_ptr<PathCostHeuristic> pathCostHeuristic = boost::dynamic_pointer_cast<PathCostHeuristic>(ivHeuristicConstPtr);
+//    		pathCostHeuristic->calculateDistances(*from, *to);
+//    	}
+    	return GetFromToHeuristic(*from, *to);
+    }
+
+    int
+    FootstepPlannerEnvironment::GetFromToHeuristic(const PlanningState& from, const PlanningState& to)
+    {
+    	return cvMmScale * ivHeuristicConstPtr->getHValue(from, to);
     }
 
 
@@ -645,23 +655,73 @@ namespace footstep_planner
         ivExpandedStates.push_back(SourceStateID);
         const PlanningState* current = ivStateId2State[SourceStateID];
 
-        // intermediate goal reachable (R*)?
-//        if (randomGoalID >= 0){
-//        	const PlanningState* randomGoal = ivStateId2State[randomGoalID];
+        if (closeToGoal(*current))
+        {
+            int goal_id;
+            assert(current->getLeg() != NOLEG);
+            if (current->getLeg() == RIGHT)
+                goal_id = ivIdGoalFootLeft;
+            else
+                goal_id = ivIdGoalFootRight;
+
+            const PlanningState* goal = ivStateId2State[goal_id];
+            int cost = stepCost(*current, *goal);
+            SuccIDV->push_back(goal_id);
+            CostV->push_back(cost);
+
+            return;
+        }
+
+        SuccIDV->reserve(ivFootstepSet.size());
+        CostV->reserve(ivFootstepSet.size());
+        std::vector<Footstep>::const_iterator footstep_set_iter;
+        for(footstep_set_iter = ivFootstepSet.begin();
+            footstep_set_iter != ivFootstepSet.end();
+            footstep_set_iter++)
+        {
+            PlanningState successor =
+            		footstep_set_iter->performMeOnThisState(*current);
+            if (occupied(successor))
+                continue;
+
+            const PlanningState* successor_hash_entry = getHashEntry(successor);
+            if (successor_hash_entry == NULL)
+                successor_hash_entry = createNewHashEntry(successor);
+
+            int cost = stepCost(*current, *successor_hash_entry);
+            SuccIDV->push_back(successor_hash_entry->getId());
+            CostV->push_back(cost);
+        }
+    }
+
+    void
+    FootstepPlannerEnvironment::GetSuccsTo(int SourceStateID, int goalStateId,
+                                         std::vector<int> *SuccIDV,
+                                         std::vector<int> *CostV)
+    {
+        SuccIDV->clear();
+        CostV->clear();
+
+        assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
+
+        // make goal state absorbing
+        if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootLeft )
+        	return;
+
+        ivExpandedStates.push_back(SourceStateID);
+        const PlanningState* current = ivStateId2State[SourceStateID];
+
+//        // intermediate goal reachable (R*)?
+//        assert(goalStateId >= 0 && unsigned(goalStateId) < ivStateId2State.size());
+//       	const PlanningState* randomGoal = ivStateId2State[goalStateId];
+//       	if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
+//       		//ROS_INFO("%d", goalStateId);
+//       		int cost = stepCost(*current, *randomGoal);
+//       		SuccIDV->push_back(goalStateId);
+//       		CostV->push_back(cost);
 //
-//        	// TODO fix foot order! => use NO_LEG, choose random?
-//
-////        	if (randomGoal->getLeg() == NOLEG)
-//        	//
-////        	if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
-////       		ROS_INFO("%d", randomGoalID);
-////        		int cost = stepCost(*current, *randomGoal);
-////        		SuccIDV->push_back(randomGoalID);
-////        		CostV->push_back(cost);
-////
-////        		return;
-////        	}
-//        }
+//       		return;
+//       	}
 
 
         if (closeToGoal(*current))
@@ -785,13 +845,12 @@ namespace footstep_planner
     	{
     		//compute clow
     		int clow;
-    		int desstateID = goal_left->getId();
     		if(bSuccs)
-    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
+    			clow = GetFromToHeuristic(*currentState, *goal_left);
     		else
-    			clow = GetFromToHeuristic(desstateID, currentState->getId());
+    			clow = GetFromToHeuristic(*goal_left, *currentState);
 
-    		NeighIDV->push_back(desstateID);
+    		NeighIDV->push_back(goal_left->getId());
     		CLowV->push_back(clow);
     	}
 
@@ -800,13 +859,12 @@ namespace footstep_planner
     	{
     		//compute clow
     		int clow;
-    		int desstateID = goal_right->getId();
     		if(bSuccs)
-    			clow = GetFromToHeuristic(currentState->getId(), desstateID);
+    			clow = GetFromToHeuristic(*currentState, *goal_right);
     		else
-    			clow = GetFromToHeuristic(desstateID, currentState->getId());
+    			clow = GetFromToHeuristic(*goal_right, *currentState);
 
-    		NeighIDV->push_back(desstateID);
+    		NeighIDV->push_back(goal_right->getId());
     		CLowV->push_back(clow);
     	}
 
@@ -873,7 +931,6 @@ namespace footstep_planner
     				randomState = ivFootstepSet[randomIdx].reverseMeOnThisState(randomState);
     		}
 
-
     		//skip the invalid cells
     		if(occupied(randomState))
     		{
@@ -881,9 +938,8 @@ namespace footstep_planner
     			continue;
     		}
 
-    		//get the state
-    		PlanningState randomStateNoLeg(randomState.getX(), randomState.getY(), randomState.getTheta(),
-    				NOLEG, ivHashTableSize);
+//    		PlanningState randomStateNoLeg(randomState.getX(), randomState.getY(), randomState.getTheta(),
+//    				NOLEG, ivHashTableSize);
             const PlanningState* random_hash_entry = getHashEntry(randomState);
             if (random_hash_entry == NULL){
             	random_hash_entry = createNewHashEntry(randomState);
@@ -897,8 +953,10 @@ namespace footstep_planner
 
     		//compute clow
     		int clow;
-    		if(bSuccs)
+    		if(bSuccs){
     			clow = GetFromToHeuristic(currentState->getId(), random_hash_entry->getId());
+
+    		}
     		else
     			clow = GetFromToHeuristic(random_hash_entry->getId(), currentState->getId());
 

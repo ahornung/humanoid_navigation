@@ -111,13 +111,20 @@ namespace footstep_planner
                                      cell_2_state(start.getY(), ivCellSize),
                                      start_x, start_y);
 
+        unsigned int to_x;
+        unsigned int to_y;
         ivMapPtr->worldToMapNoBounds(cell_2_state(goal.getX(), ivCellSize),
                                      cell_2_state(goal.getY(), ivCellSize),
-                                     ivGoalX, ivGoalY);
+                                     to_x, to_y);
 
-        ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
-        						ivGoalX, ivGoalY, start_x, start_y,
-                                SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
+        if (to_x != ivGoalX || to_y != ivGoalY){
+        	ivGoalX = to_x;
+        	ivGoalY = to_y;
+			ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
+									ivGoalX, ivGoalY, start_x, start_y,
+									SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
+
+        }
 
         return true;
     }

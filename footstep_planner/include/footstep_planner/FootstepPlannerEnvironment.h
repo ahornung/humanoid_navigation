@@ -295,6 +295,8 @@ namespace footstep_planner
          */
         const PlanningState* getHashEntry(const PlanningState& s);
 
+        const PlanningState* createHashEntryIfNotExists(const PlanningState& s);
+
         /**
          * @return True iff 'goal' can be reached by an arbitrary footstep.
          * (Used for forward planning.)

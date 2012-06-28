@@ -250,6 +250,16 @@ namespace footstep_planner
         return NULL;
     }
 
+    const PlanningState*
+    FootstepPlannerEnvironment::createHashEntryIfNotExists(const PlanningState& s){
+    	const PlanningState* hash_entry = getHashEntry(s);
+    	if (hash_entry == NULL)
+    		hash_entry = createNewHashEntry(s);
+
+    	return hash_entry;
+
+    }
+
 
     int
     FootstepPlannerEnvironment::stepCost(const PlanningState& a,
@@ -583,14 +593,21 @@ namespace footstep_planner
         PredIDV->clear();
         CostV->clear();
         assert(TargetStateID >= 0 && (unsigned int) TargetStateID < ivStateId2State.size());
-
-        // make goal state absorbing
-        if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootLeft )
-        	return;
-
         ivExpandedStates.push_back(TargetStateID);
 
+        // make goal state absorbing (only left!)
+        if (TargetStateID == ivIdStartFootLeft)
+        	return;
+
         const PlanningState* current = ivStateId2State[TargetStateID];
+        // add cheap transition from right to left, so right becomes an equivalent goal
+        if (TargetStateID == ivIdStartFootRight && current->getLeg() == RIGHT){
+          PredIDV->push_back(ivIdStartFootLeft);
+          CostV->push_back(ivStepCost);
+          return;
+        }
+
+
         if (closeToStart(*current))
         {
             int start_id;
@@ -619,13 +636,10 @@ namespace footstep_planner
             if (occupied(predecessor))
                 continue;
 
-            const PlanningState* predecessor_hash_entry =
-            		getHashEntry(predecessor);
-            if (predecessor_hash_entry == NULL)
-                predecessor_hash_entry = createNewHashEntry(predecessor);
+            const PlanningState* predecessor_hash = createHashEntryIfNotExists(predecessor);
 
-            int cost = stepCost(*current, *predecessor_hash_entry);
-            PredIDV->push_back(predecessor_hash_entry->getId());
+            int cost = stepCost(*current, *predecessor_hash);
+            PredIDV->push_back(predecessor_hash->getId());
             CostV->push_back(cost);
         }
     }
@@ -647,13 +661,20 @@ namespace footstep_planner
         CostV->clear();
 
         assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
-
-        // make goal state absorbing
-        if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootLeft )
-        	return;
-
         ivExpandedStates.push_back(SourceStateID);
         const PlanningState* current = ivStateId2State[SourceStateID];
+
+        // make goal state absorbing (only left!)
+        if (SourceStateID == ivIdGoalFootLeft){
+        	return;
+        }
+
+        // add cheap transition from right to left, so right becomes an equivalent goal
+        if (SourceStateID == ivIdGoalFootRight && current->getLeg() == RIGHT){
+          SuccIDV->push_back(ivIdGoalFootLeft);
+          CostV->push_back(ivStepCost);
+          return;
+        }
 
         if (closeToGoal(*current))
         {
@@ -684,9 +705,7 @@ namespace footstep_planner
             if (occupied(successor))
                 continue;
 
-            const PlanningState* successor_hash_entry = getHashEntry(successor);
-            if (successor_hash_entry == NULL)
-                successor_hash_entry = createNewHashEntry(successor);
+            const PlanningState* successor_hash_entry = createHashEntryIfNotExists(successor);
 
             int cost = stepCost(*current, *successor_hash_entry);
             SuccIDV->push_back(successor_hash_entry->getId());
@@ -703,42 +722,59 @@ namespace footstep_planner
         CostV->clear();
 
         assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
+        ivExpandedStates.push_back(SourceStateID);
 
         // make goal state absorbing
-        if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootLeft )
+        if (SourceStateID == ivIdGoalFootLeft ){
+        	ROS_INFO("Goal state absorbed: %d", SourceStateID);
         	return;
+        }
 
-        ivExpandedStates.push_back(SourceStateID);
         const PlanningState* current = ivStateId2State[SourceStateID];
+        // add cheap transition from right to left, so right becomes an equivalent goal
+        if (SourceStateID == ivIdGoalFootRight && current->getLeg() == RIGHT){
+          SuccIDV->push_back(ivIdGoalFootLeft);
+          CostV->push_back(ivStepCost);
+          ROS_INFO("Right Goal state absorbed: %d", SourceStateID);
+          return;
+        }
+
+
+//        if (goalStateId == ivIdGoalFootLeft)
+//        	ROS_INFO("GetSuccsTo left goal");
+//
+//        if (goalStateId == ivIdGoalFootRight)
+//        	ROS_INFO("GetSuccsTo right goal");
 
         // intermediate goal reachable (R*)?
-//        assert(goalStateId >= 0 && unsigned(goalStateId) < ivStateId2State.size());
-//       	const PlanningState* randomGoal = ivStateId2State[goalStateId];
-//       	if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
-//       		//ROS_INFO("%d", goalStateId);
-//       		int cost = stepCost(*current, *randomGoal);
-//       		SuccIDV->push_back(goalStateId);
-//       		CostV->push_back(cost);
-//
-//       		return;
-//       	}
+        assert(goalStateId >= 0 && unsigned(goalStateId) < ivStateId2State.size());
+       	const PlanningState* randomGoal = ivStateId2State[goalStateId];
+       	if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
+       		//ROS_INFO("%d", goalStateId);
+       		int cost = stepCost(*current, *randomGoal);
+       		SuccIDV->push_back(goalStateId);
+       		CostV->push_back(cost);
+
+       		return;
+       	}
 
 
         if (closeToGoal(*current))
         {
             int goal_id;
             assert(current->getLeg() != NOLEG);
-            if (current->getLeg() == RIGHT)
+            if (current->getLeg() == RIGHT){
                 goal_id = ivIdGoalFootLeft;
-            else
+            } else {
                 goal_id = ivIdGoalFootRight;
+            }
 
             const PlanningState* goal = ivStateId2State[goal_id];
             int cost = stepCost(*current, *goal);
             SuccIDV->push_back(goal_id);
             CostV->push_back(cost);
 
-            return;
+//            return;
         }
 
         SuccIDV->reserve(ivFootstepSet.size());
@@ -753,12 +789,10 @@ namespace footstep_planner
             if (occupied(successor))
                 continue;
 
-            const PlanningState* successor_hash_entry = getHashEntry(successor);
-            if (successor_hash_entry == NULL)
-                successor_hash_entry = createNewHashEntry(successor);
+            const PlanningState* successor_hash = createHashEntryIfNotExists(successor);
 
-            int cost = stepCost(*current, *successor_hash_entry);
-            SuccIDV->push_back(successor_hash_entry->getId());
+            int cost = stepCost(*current, *successor_hash);
+            SuccIDV->push_back(successor_hash->getId());
             CostV->push_back(cost);
         }
     }
@@ -771,7 +805,7 @@ namespace footstep_planner
 
     	assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
     	//goal state should be absorbing
-    	if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootLeft )
+    	if (SourceStateID == ivIdGoalFootLeft || SourceStateID == ivIdGoalFootRight )
     		return;
 
 
@@ -794,7 +828,7 @@ namespace footstep_planner
     	assert(TargetStateID >= 0 && unsigned(TargetStateID) < ivStateId2State.size());
 
     	//start state should be absorbing
-    	if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootLeft )
+    	if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootRight )
     		return;
 
     	const PlanningState* currentState = ivStateId2State[TargetStateID];
@@ -824,7 +858,7 @@ namespace footstep_planner
     	//get X, Y for the states
     	int X = currentState->getX();
     	int Y = currentState->getY();
-    	int theta = currentState->getTheta();
+    	//int theta = currentState->getTheta();
 
     	//see if the goal/start belongs to the inside area and if yes then add it to Neighs as well
     	// NOTE: "goal check" for backward planning
@@ -832,10 +866,10 @@ namespace footstep_planner
     	const PlanningState* goal_right = NULL;
     	if (bSuccs){
     		goal_left = ivStateId2State[ivIdGoalFootLeft];
-    		goal_right = ivStateId2State[ivIdGoalFootLeft];
+    		goal_right = ivStateId2State[ivIdGoalFootRight];
     	} else {
     		goal_left = ivStateId2State[ivIdStartFootLeft];
-    		goal_right = ivStateId2State[ivIdStartFootLeft];
+    		goal_right = ivStateId2State[ivIdStartFootRight];
     	}
 
     	int nDist_sq = nDist_c*nDist_c;
@@ -852,6 +886,24 @@ namespace footstep_planner
 
     		NeighIDV->push_back(goal_left->getId());
     		CLowV->push_back(clow);
+
+
+    		std::vector<Footstep>::const_iterator footstep_set_iter;
+    		for(footstep_set_iter = ivFootstepSet.begin();
+    				footstep_set_iter != ivFootstepSet.end();
+    				footstep_set_iter++)
+    		{
+    			const PlanningState predecessor =
+    					footstep_set_iter->reverseMeOnThisState(*goal_left);
+    			if (occupied(predecessor))
+    				continue;
+
+    			const PlanningState* predecessor_hash_entry = createHashEntryIfNotExists(predecessor);
+
+    			int cost = GetFromToHeuristic(*predecessor_hash_entry, *currentState);
+    			NeighIDV->push_back(predecessor_hash_entry->getId());
+    			CLowV->push_back(cost);
+    		}
     	}
 
     	//add right if within the distance

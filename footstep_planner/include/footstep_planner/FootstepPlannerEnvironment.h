@@ -103,7 +103,9 @@ namespace footstep_planner
                 int    hash_table_size,
                 double cell_size,
                 int    num_angle_bins,
-                bool   forward_search);
+                bool   forward_search,
+                int num_random_nodes,
+                double random_node_distance);
 
         virtual ~FootstepPlannerEnvironment();
 
@@ -162,12 +164,6 @@ namespace footstep_planner
          * planning state ToStateID from within planning state FromStateID.
          */
         int GetFromToHeuristic(int FromStateID, int ToStateID);
-
-        /**
-         * @return The costs (in mm, truncated as int) to reach the
-         * planning state ToStateID from within planning state FromStateID.
-         */
-        int GetFromToHeuristic(const PlanningState& from, const PlanningState& to);
 
         /**
          * @return The heuristic value to reach the goal from within the
@@ -260,7 +256,13 @@ namespace footstep_planner
         /// Used to scale continuous values in meter to discrete values in mm.
         static const int cvMmScale = 1000;
 
-    private:
+    protected:
+        /**
+         * @return The costs (in mm, truncated as int) to reach the
+         * planning state ToStateID from within planning state FromStateID.
+         */
+        int GetFromToHeuristic(const PlanningState& from, const PlanningState& to);
+
         /// @return The step cost for reaching 'b' from within 'a'.
         int  stepCost(const PlanningState& a, const PlanningState& b);
 
@@ -396,9 +398,9 @@ namespace footstep_planner
         const bool ivForwardSearch;
 
         /// < number of random neighbors for R*
-        const int ivNumRandomNeighbors;
+        const int ivNumRandomNodes;
         /// < distance of random neighbors for R* (discretized in cells)
-        const int ivRandomNeighborsDist;
+        const int ivRandomNodeDist;
 
         bool ivHeuristicExpired;
 

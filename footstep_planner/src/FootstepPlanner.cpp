@@ -56,6 +56,9 @@ namespace footstep_planner
         std::string heuristic_type;
         double step_cost;
         double diff_angle_cost;
+        int num_random_nodes;
+        double random_node_dist;
+
 
         // read parameters from config file:
         // - planner environment settings
@@ -77,6 +80,8 @@ namespace footstep_planner
         nh_private.param("forward_search", ivForwardSearch, false);
         nh_private.param("initial_epsilon", ivInitialEpsilon, 3.0);
         nh_private.param("changed_cells_limit", ivChangedCellsLimit, 20000);
+        nh_private.param("num_random_nodes", num_random_nodes, 20);
+        nh_private.param("random_node_dist", random_node_dist, 1.0);
 
         // - footstep settings
 		// TODO: update the footstep settings
@@ -201,7 +206,9 @@ namespace footstep_planner
                                                max_hash_size,
                                                ivCellSize,
                                                ivNumAngleBins,
-                                               ivForwardSearch));
+                                               ivForwardSearch,
+                                               num_random_nodes,
+                                               random_node_dist));
 
         // set up planner
         if (ivPlannerType == "ARAPlanner" ||
@@ -792,11 +799,14 @@ namespace footstep_planner
                 state_id_it != ivPlannerEnvironmentPtr->getExpandedStatesEnd();
                 state_id_it++)
             {
-                ivPlannerEnvironmentPtr->getState(*state_id_it, &s);
-                point.x = s.x;
-                point.y = s.y;
-                point.z = 0.01;
-                points.push_back(point);
+                if (ivPlannerEnvironmentPtr->getState(*state_id_it, &s)){
+					point.x = s.x;
+					point.y = s.y;
+					point.z = 0.01;
+					points.push_back(point);
+                } else{
+                	ROS_ERROR("Could not extract exp. state %d", *state_id_it);
+                }
             }
             cloud_msg.header.stamp = ros::Time::now();
             cloud_msg.header.frame_id = ivMapPtr->getFrameID();

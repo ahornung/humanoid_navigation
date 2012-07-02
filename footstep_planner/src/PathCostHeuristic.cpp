@@ -136,21 +136,22 @@ namespace footstep_planner
         ivMapPtr.reset();
         ivMapPtr = map;
 
-        CvSize size = map->size();
+        unsigned width = map->getInfo().width;
+        unsigned height = map->getInfo().height;
 
         if (ivGridSearchPtr)
             ivGridSearchPtr->destroy();
-        ivGridSearchPtr.reset(new SBPL2DGridSearch(size.width, size.height,
+        ivGridSearchPtr.reset(new SBPL2DGridSearch(width, height,
                                                    ivMapPtr->getResolution()));
         if (ivpGrid)
             resetGrid();
-        ivpGrid = new unsigned char* [size.width];
+        ivpGrid = new unsigned char* [width];
 
-        for (int x = 0; x < size.width; ++x)
-            ivpGrid[x] = new unsigned char [size.height];
-        for (int y = 0; y < size.height; ++y)
+        for (int x = 0; x < width; ++x)
+            ivpGrid[x] = new unsigned char [height];
+        for (int y = 0; y < height; ++y)
         {
-            for (int x = 0; x < size.width; ++x)
+            for (int x = 0; x < width; ++x)
             {
             	float dist = ivMapPtr->distanceMapAtCell(x,y);
             	if (dist < 0.0f){

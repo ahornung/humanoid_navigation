@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <boost/tr1/unordered_map.hpp>
+#include <boost/tr1/unordered_set.hpp>
 
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
@@ -50,6 +51,8 @@ namespace footstep_planner
     public:
         typedef std::vector<int> exp_states_t;
         typedef exp_states_t::const_iterator exp_states_iter_t;
+        typedef std::tr1::unordered_set<std::pair<int,int> > exp_states_2d_t;
+        typedef exp_states_2d_t::const_iterator exp_states_2d_iter_t;
 
         /**
 		 * @param footstep_set The set of footsteps used for the path planning.
@@ -105,7 +108,8 @@ namespace footstep_planner
                 int    num_angle_bins,
                 bool   forward_search,
                 int num_random_nodes,
-                double random_node_distance);
+                double random_node_distance,
+                double heuristic_scale);
 
         virtual ~FootstepPlannerEnvironment();
 
@@ -137,14 +141,14 @@ namespace footstep_planner
         void reset();
 
         /// @return The number of expanded states during the search.
-        int getNumExpandedStates() { return ivExpandedStates.size(); };
+        int getNumExpandedStates() { return ivNumExpandedStates; };
 
-        exp_states_iter_t getExpandedStatesStart()
+        exp_states_2d_iter_t getExpandedStatesStart()
         {
             return ivExpandedStates.begin();
         };
 
-        exp_states_iter_t getExpandedStatesEnd()
+        exp_states_2d_iter_t getExpandedStatesEnd()
         {
             return ivExpandedStates.end();
         };
@@ -371,7 +375,7 @@ namespace footstep_planner
         int ivMaxInvFootstepTheta;
 
         /**
-         * @brief The costs for each step (discretized with the helpf of
+         * @brief The costs for each step (discretized with the help of
          * cvMmScale).
          */
         const int ivStepCost;
@@ -397,18 +401,22 @@ namespace footstep_planner
         /// Whether to use forward search (1) or backward search (0).
         const bool ivForwardSearch;
 
-        /// < number of random neighbors for R*
+        /// number of random neighbors for R*
         const int ivNumRandomNodes;
-        /// < distance of random neighbors for R* (discretized in cells)
+        /// distance of random neighbors for R* (discretized in cells)
         const int ivRandomNodeDist;
+
+        /// Scaling factor of heuristic, in case it underestimates by a constant factor.
+        double ivHeuristicScale;
 
         bool ivHeuristicExpired;
 
         /// Pointer to the map.
         boost::shared_ptr<GridMap2D> ivMapPtr;
 
-        exp_states_t ivExpandedStates;
+        exp_states_2d_t ivExpandedStates;
         exp_states_t ivRandomStates; ///< random intermediate states for R*
+        size_t ivNumExpandedStates;
 
     };
 }

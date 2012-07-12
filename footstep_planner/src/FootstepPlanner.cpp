@@ -58,12 +58,14 @@ namespace footstep_planner
         double diff_angle_cost;
         int num_random_nodes;
         double random_node_dist;
+        double heuristic_scale;
 
 
         // read parameters from config file:
         // - planner environment settings
         nh_private.param("heuristic_type", heuristic_type,
                          std::string("EuclideanHeuristic"));
+        nh_private.param("heuristic_scale", heuristic_scale, 1.0);
         nh_private.param("max_hash_size", max_hash_size, 65536);
         nh_private.param("accuracy/collision_check", ivCollisionCheckAccuracy,
 		                 2);
@@ -208,7 +210,8 @@ namespace footstep_planner
                                                ivNumAngleBins,
                                                ivForwardSearch,
                                                num_random_nodes,
-                                               random_node_dist));
+                                               random_node_dist,
+                                               heuristic_scale));
 
         // set up planner
         if (ivPlannerType == "ARAPlanner" ||
@@ -440,6 +443,8 @@ namespace footstep_planner
 
     	resp.costs = getPathCosts();
     	resp.footsteps.reserve(getPathSize());
+    	resp.final_eps = ivPlannerPtr->get_final_epsilon();
+    	resp.expanded_states = ivPlannerEnvironmentPtr->getNumExpandedStates();
 
     	humanoid_nav_msgs::StepTarget foot;
     	state_iter_t path_iter;
@@ -794,19 +799,15 @@ namespace footstep_planner
             std::vector<geometry_msgs::Point32> points;
 
             State s;
-            FootstepPlannerEnvironment::exp_states_iter_t state_id_it;
+            FootstepPlannerEnvironment::exp_states_2d_iter_t state_id_it;
             for(state_id_it = ivPlannerEnvironmentPtr->getExpandedStatesStart();
                 state_id_it != ivPlannerEnvironmentPtr->getExpandedStatesEnd();
                 state_id_it++)
             {
-                if (ivPlannerEnvironmentPtr->getState(*state_id_it, &s)){
-					point.x = s.x;
-					point.y = s.y;
+					point.x = cell_2_state(state_id_it->first, ivCellSize);
+					point.y = cell_2_state(state_id_it->second, ivCellSize);
 					point.z = 0.01;
 					points.push_back(point);
-                } else{
-                	ROS_ERROR("Could not extract exp. state %d", *state_id_it);
-                }
             }
             cloud_msg.header.stamp = ros::Time::now();
             cloud_msg.header.frame_id = ivMapPtr->getFrameID();
@@ -975,7 +976,7 @@ namespace footstep_planner
             marker->color.g = 0.0f;
         }
         marker->color.b = 0.0;
-        marker->color.a = 0.4;
+        marker->color.a = 0.6;
 
         marker->lifetime = ros::Duration();
     }

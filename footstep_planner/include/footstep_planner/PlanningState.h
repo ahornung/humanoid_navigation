@@ -25,18 +25,19 @@
 #define FOOTSTEP_PLANNER_PLANNINGSTATE_H_
 
 #include <footstep_planner/helper.h>
+#include <footstep_planner/State.h>
 
 
 namespace footstep_planner
 {
 	/**
 	 * @brief A class representing the robot's pose (i.e. position and
-	 * orientation). More precisely the planning state points to the robot's
-	 * supporting leg.
+	 * orientation) in the underlying SBPL. More precisely a planning state
+	 * is a discrete representation of the robot's supporting leg.
 	 *
-	 * Since the underlying SBPL is working on discretized states the planning
-	 * states are also discretized positions and orientations. This is done by
-	 * fitting the positions into a grid and the orientations into bins.
+	 * Since SBPL is working on discretized states the planning states are also
+	 * discretized positions and orientations. This is done by fitting the
+	 * positions into a grid and the orientations into bins.
 	 * (NOTE: the resolution of the planning cells is likely to differ from the
 	 * resolution of the grid map.)
 	 *
@@ -77,10 +78,15 @@ namespace footstep_planner
 		~PlanningState();
 
 		/**
-		 * Compare two states on equality of x,y,theta, leg.
-		 * Uses the non-unique hashtag first for ruling out different states.
+		 * @brief Compare two states on equality of x, y, theta, leg. Makes
+		 * first use of the non-unique hash tag to rule out unequal states.
 		 */
 		bool operator ==(const PlanningState& s2) const;
+
+		/**
+         * @brief Compare two states on inequality of x, y, theta, leg by
+         * comparing the hash tags of the states.
+         */
 		bool operator !=(const PlanningState& s2) const;
 
 		/**
@@ -95,9 +101,8 @@ namespace footstep_planner
 		int getX() const { return ivX; };
 		int getY() const { return ivY; };
 
-
 		/**
-		 * @return The (ununique) hash tag used to identify the planning
+		 * @return The (non-unique) hash tag used to identify the planning
 		 * state.
 		 */
 		unsigned int getHashTag() const { return ivHashTag; };
@@ -125,8 +130,8 @@ namespace footstep_planner
 	    int ivId;
 
 	    /**
-	     * The (non-unique) hash tag of the planning state.
-	     * However, different hashtags imply that the states differ in x,y,theta,leg
+	     * The (non-unique) hash tag of the planning state. Different hash tags
+	     * imply that the states differ in x, y, theta, leg.
 	     */
 		unsigned int ivHashTag;
 	};

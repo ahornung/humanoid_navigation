@@ -54,10 +54,10 @@ namespace footstep_planner
 
     PlanningState::PlanningState(const State& s, double cell_size,
                                  int num_angle_bins, int max_hash_size)
-        : ivX(state_2_cell(s.x, cell_size)),
-          ivY(state_2_cell(s.y, cell_size)),
-          ivTheta(angle_state_2_cell(s.theta, num_angle_bins)),
-          ivLeg(s.leg),
+        : ivX(state_2_cell(s.getX(), cell_size)),
+          ivY(state_2_cell(s.getY(), cell_size)),
+          ivTheta(angle_state_2_cell(s.getTheta(), num_angle_bins)),
+          ivLeg(s.getLeg()),
           ivId(-1),
           ivHashTag(calc_hash_tag(ivX, ivY, ivTheta, ivLeg, max_hash_size))
     {}
@@ -78,10 +78,11 @@ namespace footstep_planner
 
 
 	bool
-	PlanningState::operator ==(const PlanningState &s2)
+	PlanningState::operator ==(const PlanningState& s2)
 	const
 	{
-		// First test the hash tag. If they differ, the states are definitely different.
+		// First test the hash tag. If they differ, the states are definitely
+	    // different.
 	    if (ivHashTag != s2.getHashTag())
             return false;
 
@@ -91,7 +92,7 @@ namespace footstep_planner
 
 
 	bool
-	PlanningState::operator !=(const PlanningState &s2)
+	PlanningState::operator !=(const PlanningState& s2)
 	const
 	{
 		return ivHashTag != s2.getHashTag();

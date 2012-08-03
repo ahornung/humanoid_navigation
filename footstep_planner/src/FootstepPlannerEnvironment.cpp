@@ -323,11 +323,11 @@ namespace footstep_planner
             return false;
 
         const PlanningState* planning_state = ivStateId2State[id];
-        s->x = cell_2_state(planning_state->getX(), ivCellSize);
-        s->y = cell_2_state(planning_state->getY(), ivCellSize);
-        s->theta = angles::normalize_angle(
-        		angle_cell_2_state(planning_state->getTheta(), ivNumAngleBins));
-        s->leg = planning_state->getLeg();
+        s->setX(cell_2_state(planning_state->getX(), ivCellSize));
+        s->setY(cell_2_state(planning_state->getY(), ivCellSize));
+        s->setTheta(angles::normalize_angle(angle_cell_2_state(
+                planning_state->getTheta(), ivNumAngleBins)));
+        s->setLeg(planning_state->getLeg());
 
         return true;
     }
@@ -585,9 +585,11 @@ namespace footstep_planner
     }
 
     int
-    FootstepPlannerEnvironment::GetFromToHeuristic(const PlanningState& from, const PlanningState& to)
+    FootstepPlannerEnvironment::GetFromToHeuristic(const PlanningState& from,
+                                                   const PlanningState& to)
     {
-    	return cvMmScale * ivHeuristicScale * ivHeuristicConstPtr->getHValue(from, to);
+    	return cvMmScale * ivHeuristicScale *
+    	       ivHeuristicConstPtr->getHValue(from, to);
     }
 
 

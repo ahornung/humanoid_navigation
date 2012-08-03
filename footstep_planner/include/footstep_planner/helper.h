@@ -44,28 +44,6 @@ namespace footstep_planner
     enum Leg { RIGHT=0, LEFT=1, NOLEG=2 };
 
 
-    /// @brief A struct representing a continuous, global robot state.
-    // TODO: implement as class instead of struct
-    struct State
-    {
-    	State()
-    		: x(0.0), y(0.0), theta(0.0), leg(RIGHT)
-    	{};
-
-    	State(double x_, double y_, double theta_, Leg leg_)
-    		: x(x_), y(y_), theta(theta_), leg(leg_)
-    	{};
-
-    	/// Comparison operator.
-        bool operator ==(const State& s2) const;
-        bool operator !=(const State& s2) const;
-
-        double x;
-        double y;
-        double theta;
-        Leg leg;
-    };
-
     /**
      * @return Squared euclidean distance between two integer coordinates
      * (cells).
@@ -75,6 +53,7 @@ namespace footstep_planner
         // note: do *not* use pow() to square!
         return (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2);
     }
+
 
     /// @return Euclidean distance between two integer coordinates (cells).
     inline double euclidean_distance(int x1, int y1, int x2, int y2)
@@ -88,6 +67,7 @@ namespace footstep_planner
     {
         return sqrt(euclidean_distance_sq(x1,y1,x2,y2));
     }
+
 
     /// @return Squared euclidean distance between two coordinates.
     inline double euclidean_distance_sq(double x1, double y1, double x2,

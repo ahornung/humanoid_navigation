@@ -25,16 +25,17 @@
 #define FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
 
 
-#include <vector>
 #include <boost/tr1/unordered_map.hpp>
 #include <boost/tr1/unordered_set.hpp>
-
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
 #include <footstep_planner/Heuristic.h>
 #include <footstep_planner/Footstep.h>
 #include <footstep_planner/PlanningState.h>
+#include <footstep_planner/State.h>
 #include <sbpl/headers.h>
+
+#include <vector>
 
 
 namespace footstep_planner

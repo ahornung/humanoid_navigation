@@ -356,7 +356,7 @@ namespace footstep_planner
         }
 
         // add last neutral step
-        if (ivPath.back().leg == RIGHT)
+        if (ivPath.back().getLeg() == RIGHT)
             ivPath.push_back(ivGoalFootLeft);
         else // last_leg == LEFT
             ivPath.push_back(ivGoalFootRight);
@@ -450,17 +450,18 @@ namespace footstep_planner
     	state_iter_t path_iter;
     	for (path_iter = getPathBegin(); path_iter != getPathEnd(); path_iter++)
     	{
-    		foot.pose.x = path_iter->x;
-    		foot.pose.y = path_iter->y;
-    		foot.pose.theta = path_iter->theta;
-    		if (path_iter->leg == LEFT)
+    		foot.pose.x = path_iter->getX();
+    		foot.pose.y = path_iter->getY();
+    		foot.pose.theta = path_iter->getTheta();
+    		if (path_iter->getLeg() == LEFT)
     		    foot.leg = humanoid_nav_msgs::StepTarget::left;
-    		else if (path_iter->leg == RIGHT)
+    		else if (path_iter->getLeg() == RIGHT)
     		    foot.leg = humanoid_nav_msgs::StepTarget::right;
     		else
     		{
     			ROS_ERROR("Footstep pose at (%f, %f, %f) is set to NOLEG!",
-                          path_iter->x, path_iter->y, path_iter->theta);
+                          path_iter->getX(), path_iter->getY(),
+                          path_iter->getTheta());
     			continue;
     		}
 
@@ -647,7 +648,7 @@ namespace footstep_planner
 //        {
 //            ROS_INFO("Received an updated map => change detection");
 //
-//            std::vector<State> changed_states;
+//            std::vector<State2> changed_states;
 //            cv::Mat changed_cells;
 //
 //            // get new occupied cells only (0: occupied in binary map)
@@ -673,7 +674,7 @@ namespace footstep_planner
 //            // loop over changed cells (now marked with 255 in the mask):
 //            unsigned int num_changed_cells = 0;
 //            double wx, wy;
-//            State s;
+//            State2 s;
 //            for (int y = 0; y < changed_cells.rows; ++y)
 //            {
 //                for (int x = 0; x < changed_cells.cols; ++x)
@@ -682,14 +683,14 @@ namespace footstep_planner
 //                    {
 //                        num_changed_cells++;
 //                        ivMapPtr->mapToWorld(x, y, wx, wy);
-//                        s.x = wx;
-//                        s.y = wy;
+//                        s.setX(wx);
+//                        s.setY(wy);
 //                        // on each grid cell ivNumAngleBins-many planning states
 //                        // can be placed (if the resolution of the grid cells is
 //                        // the same as of the planning state grid)
 //                        for (int theta = 0; theta < ivNumAngleBins; ++theta)
 //                        {
-//                            s.theta = angle_cell_2_state(theta, ivNumAngleBins);
+//                            s.setTheta(angle_cell_2_state(theta, ivNumAngleBins));
 //                            changed_states.push_back(s);
 //                        }
 //                    }
@@ -749,16 +750,16 @@ namespace footstep_planner
     State
     FootstepPlanner::getFootPose(const State& robot, Leg leg)
     {
-        double shift_x = -sin(robot.theta) * ivFootSeparation / 2.0;
-        double shift_y =  cos(robot.theta) * ivFootSeparation / 2.0;
+        double shift_x = -sin(robot.getTheta()) * ivFootSeparation / 2.0;
+        double shift_y =  cos(robot.getTheta()) * ivFootSeparation / 2.0;
 
         double sign = -1.0;
         if (leg == LEFT)
         	sign = 1.0;
 
-        return State(robot.x + sign * shift_x,
-		             robot.y + sign * shift_y,
-		             robot.theta,
+        return State(robot.getX() + sign * shift_x,
+		             robot.getY() + sign * shift_y,
+		             robot.getTheta(),
 		             leg);
     }
 
@@ -840,7 +841,7 @@ namespace footstep_planner
         marker.header.frame_id = ivMapPtr->getFrameID();
 
 		// add the missing start foot to the publish vector for visualization:
-        if (ivPath.front().leg == LEFT)
+        if (ivPath.front().getLeg() == LEFT)
         	footPoseToMarker(ivStartFootRight, &marker);
         else
         	footPoseToMarker(ivStartFootLeft, &marker);
@@ -889,8 +890,8 @@ namespace footstep_planner
 				}
 				else
 				{
-					point.x = s.x;
-					point.y = s.y;
+					point.x = s.getX();
+					point.y = s.getY();
 					point.z = 0.01;
 					points.push_back(point);
 				}
@@ -923,8 +924,8 @@ namespace footstep_planner
         state_iter_t path_iter;
         for(path_iter = getPathBegin(); path_iter != getPathEnd(); path_iter++)
         {
-            state.pose.position.x = path_iter->x;
-            state.pose.position.y = path_iter->y;
+            state.pose.position.x = path_iter->getX();
+            state.pose.position.y = path_iter->getY();
             path_msg.poses.push_back(state);
         }
 
@@ -943,21 +944,21 @@ namespace footstep_planner
         marker->type = visualization_msgs::Marker::CUBE;
         marker->action = visualization_msgs::Marker::ADD;
 
-        float cos_theta = cos(foot_pose.theta);
-        float sin_theta = sin(foot_pose.theta);
+        float cos_theta = cos(foot_pose.getTheta());
+        float sin_theta = sin(foot_pose.getTheta());
         float x_shift = cos_theta * ivOriginFootShiftX -
                         sin_theta * ivOriginFootShiftY;
         float y_shift;
-        if (foot_pose.leg == LEFT)
+        if (foot_pose.getLeg() == LEFT)
             y_shift = sin_theta * ivOriginFootShiftX +
                       cos_theta * ivOriginFootShiftY;
         else // leg == RLEG
             y_shift = sin_theta * ivOriginFootShiftX -
                       cos_theta * ivOriginFootShiftY;
-        marker->pose.position.x = foot_pose.x + x_shift;
-        marker->pose.position.y = foot_pose.y + y_shift;
+        marker->pose.position.x = foot_pose.getX() + x_shift;
+        marker->pose.position.y = foot_pose.getY() + y_shift;
         marker->pose.position.z = ivFootsizeZ / 2.0;
-        tf::quaternionTFToMsg(tf::createQuaternionFromYaw(foot_pose.theta),
+        tf::quaternionTFToMsg(tf::createQuaternionFromYaw(foot_pose.getTheta()),
                               marker->pose.orientation);
 
         marker->scale.x = ivFootsizeX; // - 0.01;
@@ -965,7 +966,7 @@ namespace footstep_planner
         marker->scale.z = ivFootsizeZ;
 
         // TODO: make color configurable?
-        if (foot_pose.leg == RIGHT)
+        if (foot_pose.getLeg() == RIGHT)
         {
             marker->color.r = 0.0f;
             marker->color.g = 1.0f;

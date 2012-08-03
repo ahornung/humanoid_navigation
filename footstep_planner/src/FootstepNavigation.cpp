@@ -114,7 +114,6 @@ namespace footstep_planner
     	humanoid_nav_msgs::StepTargetService step_srv;
 
     	tf::Transform from_transform;
-    	State from;
     	std::string support_foot_id;
     	Leg from_leg;
 
@@ -130,7 +129,7 @@ namespace footstep_planner
     	to_planned++;
     	while (to_planned != ivPlanner.getPathEnd())
     	{
-    		if (to_planned->leg == LEFT)
+    		if (to_planned->getLeg() == LEFT)
     		{
     			support_foot_id = ivIdFootRight;
     			from_leg = RIGHT;
@@ -146,10 +145,10 @@ namespace footstep_planner
     			getFootTransform(support_foot_id, ivIdMapFrame,
     			                 ros::Time::now(), from_transform);
     		}
-			from = State(from_transform.getOrigin().x(),
-			             from_transform.getOrigin().y(),
-			             tf::getYaw(from_transform.getRotation()),
-						 from_leg);
+			State from(from_transform.getOrigin().x(),
+			           from_transform.getOrigin().y(),
+			           tf::getYaw(from_transform.getRotation()),
+					   from_leg);
     		// calculate relative step
     		performable = getFootstep(from, *to_planned, step);
 
@@ -200,7 +199,7 @@ namespace footstep_planner
 
     	humanoid_nav_msgs::ExecFootstepsGoal goal;
     	State support_leg;
-    	if (ivPlanner.getPathBegin()->leg == RIGHT)
+    	if (ivPlanner.getPathBegin()->getLeg() == RIGHT)
     		support_leg = ivPlanner.getStartFootRight();
     	else // leg == LEFT
     		support_leg = ivPlanner.getStartFootLeft();
@@ -277,13 +276,13 @@ namespace footstep_planner
         // get executed foot placement
         tf::Transform executed_tf;
         std::string foot_id;
-        if (planned.leg == RIGHT)
+        if (planned.getLeg() == RIGHT)
             foot_id = ivIdFootRight;
         else
             foot_id = ivIdFootLeft;
         getFootTransform(foot_id, ivIdMapFrame, ros::Time::now(), executed_tf);
         State executed(executed_tf.getOrigin().x(), executed_tf.getOrigin().y(),
-                       tf::getYaw(executed_tf.getRotation()), planned.leg);
+                       tf::getYaw(executed_tf.getRotation()), planned.getLeg());
 
         // check if the currently executed footstep is no longer observed (i.e.
         // the robot no longer follows its calculated path)
@@ -332,8 +331,10 @@ namespace footstep_planner
     	else
     	{
             ROS_DEBUG("planned (%f, %f, %f, %i) vs. executed (%f, %f, %f, %i)",
-                      planned.x, planned.y, planned.theta, planned.leg,
-                      executed.x, executed.y, executed.theta, executed.leg);
+                      planned.getX(), planned.getY(), planned.getTheta(),
+                      planned.getLeg(),
+                      executed.getX(), executed.getY(), executed.getTheta(),
+                      executed.getLeg());
 
             // adjust the internal step counters if the footstep has been
             // performed correctly; otherwise check in the next iteration if
@@ -525,12 +526,12 @@ namespace footstep_planner
     {
         // calculate the necessary footstep to reach the foot placement
         double footstep_x, footstep_y, footstep_theta;
-        get_footstep(from.x, from.y, from.theta, from.leg,
-                     to.x, to.y, to.theta,
+        get_footstep(from.getX(), from.getY(), from.getTheta(), from.getLeg(),
+                     to.getX(), to.getY(), to.getTheta(),
                      footstep_x, footstep_y, footstep_theta);
 
         footstep.pose.x = footstep_x;
-        if (from.leg == RIGHT)
+        if (from.getLeg() == RIGHT)
         {
             footstep.pose.y = footstep_y;
             footstep.pose.theta = footstep_theta;
@@ -634,9 +635,10 @@ namespace footstep_planner
     FootstepNavigation::performanceValid(const State& planned,
 	                                     const State& executed)
     {
-    	return (fabs(planned.x - executed.x) <= ivAccuracyX &&
-    			fabs(planned.y - executed.y) <= ivAccuracyY &&
-    			fabs(planned.theta - executed.theta) <= ivAccuracyTheta &&
-    			planned.leg == executed.leg);
+    	return (fabs(planned.getX() - executed.getX()) <= ivAccuracyX &&
+    			fabs(planned.getY() - executed.getY()) <= ivAccuracyY &&
+    			fabs(planned.getTheta() - executed.getTheta()) <=
+    			        ivAccuracyTheta &&
+    			planned.getLeg() == executed.getLeg());
     }
 }

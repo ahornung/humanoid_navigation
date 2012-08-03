@@ -33,10 +33,10 @@
 #include <footstep_planner/PathCostHeuristic.h>
 #include <footstep_planner/FootstepPlannerEnvironment.h>
 #include <footstep_planner/PlanningStateChangeQuery.h>
+#include <footstep_planner/State.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
-
 #include <sensor_msgs/PointCloud.h>
 #include <tf/tf.h>
 #include <visualization_msgs/Marker.h>

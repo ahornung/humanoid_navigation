@@ -110,16 +110,19 @@ namespace footstep_planner
 
 	bool
 	State::operator ==(const State& s2)
+	const
 	{
 		return (fabs(x - s2.x) <= FLOAT_CMP_THR &&
 		        fabs(y - s2.y) <= FLOAT_CMP_THR &&
-		        fabs(theta - s2.theta) <= FLOAT_CMP_THR &&
+		        fabs(angles::shortest_angular_distance(theta, s2.theta)) <=
+		                FLOAT_CMP_THR &&
 		        leg == s2.leg);
 	}
 
 
 	bool
 	State::operator !=(const State& s2)
+	const
 	{
 		return not (*this == s2);
 	}

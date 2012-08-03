@@ -57,8 +57,8 @@ namespace footstep_planner
     	{};
 
     	/// Comparison operator.
-        bool operator ==(const State& s2);
-        bool operator !=(const State& s2);
+        bool operator ==(const State& s2) const;
+        bool operator !=(const State& s2) const;
 
         double x;
         double y;

@@ -125,7 +125,7 @@ namespace footstep_planner
         		const actionlib::SimpleClientGoalState& state,
                 const humanoid_nav_msgs::ExecFootstepsResultConstPtr& result);
         void feedbackCallback(
-        		const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
+				const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
 
         /**
          * @param footstep The response from the clip footstep service (i.e. it
@@ -142,6 +142,8 @@ namespace footstep_planner
          * executed equivalent is within certain ranges.
          */
         bool performanceValid(const State& planned, const State& executed);
+
+        void restartFootstepExecution();
 
         FootstepPlanner ivPlanner;
 
@@ -176,10 +178,14 @@ namespace footstep_planner
     	actionlib::SimpleActionClient<
 				humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
 
+    	int ivExecutionShift;
+    	int ivControlStepIdx;
+    	int ivResetStepIdx;
+
+    	// TODO: get rid of these when no longer needed
     	int ivEqualStepsThreshold;
     	int ivEqualStepsNum;
-    	int ivExecutionShift;
-    	int ivLastStepNum;
+    	bool ivLastStepValid;
     };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

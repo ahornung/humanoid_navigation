@@ -39,7 +39,7 @@ namespace footstep_planner
 {
 	static const double TWO_PI = 2 * M_PI;
 
-	static const double FLOAT_CMP_THR = 0.0055;
+	static const double FLOAT_CMP_THR = 0.00001;
 
     enum Leg { RIGHT=0, LEFT=1, NOLEG=2 };
 
@@ -58,14 +58,14 @@ namespace footstep_planner
     /// @return Euclidean distance between two integer coordinates (cells).
     inline double euclidean_distance(int x1, int y1, int x2, int y2)
     {
-        return sqrt(double(euclidean_distance_sq(x1,y1,x2,y2)));
+        return sqrt(double(euclidean_distance_sq(x1, y1, x2, y2)));
     }
 
 
     /// @return Euclidean distance between two coordinates.
     inline double euclidean_distance(double x1, double y1, double x2, double y2)
     {
-        return sqrt(euclidean_distance_sq(x1,y1,x2,y2));
+        return sqrt(euclidean_distance_sq(x1, y1, x2, y2));
     }
 
 
@@ -129,6 +129,7 @@ namespace footstep_planner
 
 
     /// @brief Discretize a (continuous) value into cell size.
+    // TODO: check consistency for negative values
     inline int disc_val(double length, double cell_size)
     {
         return int(floor((length / cell_size) + 0.5));
@@ -139,6 +140,7 @@ namespace footstep_planner
      * @brief Calculates the continuous value for a length discretized in cell
      * size.
      */
+    // TODO: check consistency for negative values
     inline double cont_val(int length, double cell_size)
     {
         return double(length * cell_size);

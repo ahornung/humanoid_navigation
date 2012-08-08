@@ -79,7 +79,11 @@ namespace footstep_planner
                   float goal_x, float goal_y, float goal_theta);
 
         /**
-         * @brief Starts a planning task based on previous planning information.
+         * @brief Starts a planning task based on previous planning information
+         * (note that this method can also be used when no previous planning was
+         * performed). Map and start, goal poses need to be set beforehand.
+         *
+         * @return Success of planning.
          */
         bool replan();
 
@@ -192,12 +196,17 @@ namespace footstep_planner
 		State getStartFootLeft() { return ivStartFootLeft; };
 		State getStartFootRight() { return ivStartFootRight; };
 
+		// TODO: remove after debug
+		bool reachable_test(const State& from, const State& to);
+
     protected:
         void broadcastExpandedNodesVis();
         void broadcastRandomNodesVis();
         void broadcastFootstepPathVis();
         void broadcastHeuristicPathVis();
         void broadcastPathVis();
+
+        bool calculatedNewPath(const std::vector<int>& new_path);
 
         /**
          * @brief Extracts the path (list of foot poses) from a list of state
@@ -208,6 +217,8 @@ namespace footstep_planner
         /// @brief Generates a visualization msgs for a foot pose.
         void footPoseToMarker(const State& footstep,
                               visualization_msgs::Marker* marker);
+
+        void reset();
 
         /// @brief Starts the planning task in the underlying SBPL.
         bool run();

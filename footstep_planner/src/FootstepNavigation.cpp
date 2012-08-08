@@ -35,6 +35,7 @@ namespace footstep_planner
           ivFootstepsExecution("footsteps_execution", true),
           ivExecutionShift(2),
           ivControlStepIdx(-1),
+          ivProtectiveExecution(true),
           ivEqualStepsThreshold(-1),
           ivEqualStepsNum(-1),
           ivLastStepValid(true)
@@ -71,9 +72,11 @@ namespace footstep_planner
         nh_private.param("accuracy/cell_size", ivCellSize, 0.005);
         nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 128);
 
-        nh_private.param("feedback_frequence", ivFeedbackFrequence, 5.0);
+        nh_private.param("feedback_frequence", ivFeedbackFrequency, 5.0);
 
-        ivEqualStepsThreshold = (int) ((0.5 / ivFeedbackFrequence) * 0.5);
+        nh_private.param("protective_execution", ivProtectiveExecution, true);
+
+        ivEqualStepsThreshold = (int) ((0.5 / ivFeedbackFrequency) * 0.5);
     }
 
 
@@ -88,13 +91,14 @@ namespace footstep_planner
 		ivExecutingFootsteps = true;
 		// calculate path
         if (ivPlanner.plan())
-            // TODO: make this switchable via parameter
-			// execution thread
-			boost::thread footstepExecutionThread(
-					&FootstepNavigation::executeFootsteps, this);
-
-//        	// ALTERNATIVE:
-//        	executeFootsteps_alt();
+            if (ivProtectiveExecution)
+                // TODO: make this switchable via parameter
+                // execution thread
+                boost::thread footstepExecutionThread(
+                        &FootstepNavigation::executeFootsteps, this);
+            else
+                // ALTERNATIVE:
+                executeFootsteps_alt();
         else
         	// free the lock if the planning failed
         	ivExecutingFootsteps = false;
@@ -110,15 +114,15 @@ namespace footstep_planner
     	// lock this thread
     	ivExecutingFootsteps = true;
 
+    	ROS_INFO("Start walking towards the goal.");
+
     	humanoid_nav_msgs::StepTarget step;
     	humanoid_nav_msgs::StepTargetService step_srv;
 
-    	tf::Transform from_transform;
+    	tf::Transform from;
     	std::string support_foot_id;
-    	Leg from_leg;
 
     	// calculate and perform relative footsteps until goal is reached
-    	bool performable = false;
     	state_iter_t to_planned = ivPlanner.getPathBegin();
     	if (to_planned == ivPlanner.getPathEnd())
     	{
@@ -130,58 +134,52 @@ namespace footstep_planner
     	while (to_planned != ivPlanner.getPathEnd())
     	{
     		if (to_planned->getLeg() == LEFT)
-    		{
     			support_foot_id = ivIdFootRight;
-    			from_leg = RIGHT;
-    		}
     		else // support_foot = LLEG
-    		{
     			support_foot_id = ivIdFootLeft;
-    			from_leg = LEFT;
-    		}
     		{
     			boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
     			// get real placement of the support foot
     			getFootTransform(support_foot_id, ivIdMapFrame,
-    			                 ros::Time::now(), from_transform);
+    			                 ros::Time::now(), from);
     		}
-			State from(from_transform.getOrigin().x(),
-			           from_transform.getOrigin().y(),
-			           tf::getYaw(from_transform.getRotation()),
-					   from_leg);
-    		// calculate relative step
-    		performable = getFootstep(from, *to_planned, step);
 
-    		to_planned++;
-
-    		// if step cannot be performed initialize replanning..
-    		if (!performable)
-    		{
-    			ROS_INFO("Footstep cannot be performed: new path planning "
-    					 "necessary");
-
-    			if (updateStart())
-    			{
-                    if (ivPlanner.replan())
-                    {
-                        // if replanning was successful start new execution thread
-                        boost::thread footstepExecutionThread(
-                                &FootstepNavigation::executeFootsteps, this);
-                    }
-    			}
-    	        else
-    	            ROS_ERROR("start pose not accessible: check your odometry");
-
-                // leave this thread
-                return;
-    		}
-    		// ..otherwise perform step
-    		else
+    		// calculate relative step and check if it can be performed
+    		if (getFootstep(from, *to_planned, step))
     		{
     			step_srv.request.step = step;
     			ivFootstepSrv.call(step_srv);
     		}
+    		// ..if it cannot be performed initialize replanning
+    		else
+    		{
+    			ROS_INFO("Footstep cannot be performed. Replanning necessary");
+
+    			if (updateStart())
+                    if (ivPlanner.replan())
+                    {
+                        // start new execution thread
+                        boost::thread footstepExecutionThread(
+                                &FootstepNavigation::executeFootsteps, this);
+                    }
+                    else
+                    {
+                        ROS_INFO("Replanning not possible. Trying planning from"
+                                 " the scratch.");
+                        run();
+                    }
+    	        else
+    	            ROS_ERROR("Start pose not accessible. Robot navigation "
+    	                      "not possible.");
+
+                // leave this thread
+                return;
+    		}
+
+    		to_planned++;
     	}
+
+    	ROS_INFO("Succeeded walking to the goal.");
 
     	// free the lock
     	ivExecutingFootsteps = false;
@@ -205,7 +203,7 @@ namespace footstep_planner
     		support_leg = ivPlanner.getStartFootLeft();
     	if (getFootstepsFromPath(support_leg, 1, goal.footsteps))
     	{
-			goal.feedback_frequence = ivFeedbackFrequence;
+			goal.feedback_frequence = ivFeedbackFrequency;
 			ivEqualStepsNum = 0;
 			ivControlStepIdx = 0;
 			ivResetStepIdx = 0;
@@ -288,7 +286,7 @@ namespace footstep_planner
         // the robot no longer follows its calculated path)
         if (executed_steps_idx >= ivControlStepIdx + 2)
     	{
-    	    ivFootstepsExecution.cancelAllGoals();
+    	    ivFootstepsExecution.cancelGoal();
 
     	    ROS_DEBUG("Footstep execution incorrect.");
 
@@ -317,12 +315,23 @@ namespace footstep_planner
     	    // a new path
     	    else
     	    {
-    	        ROS_INFO("Replanning necessary!");
+                ROS_INFO("Footstep cannot be performed. Replanning necessary");
 
-    	        // update the robots pose
-    	        updateStart();
-    	        // replan
-    	        run();
+                if (updateStart())
+                    if (ivPlanner.replan())
+                    {
+                        // start new execution
+                        executeFootsteps_alt();
+                    }
+                    else
+                    {
+                        ROS_INFO("Replanning not possible. Trying planning from"
+                                 " the scratch.");
+                        run();
+                    }
+                else
+                    ROS_ERROR("Start pose not accessible. Robot navigation "
+                              "not possible.");
     	    }
 
     	    return;
@@ -512,7 +521,7 @@ namespace footstep_planner
                              foot_right);
         }
         State left(foot_left.getOrigin().x(), foot_left.getOrigin().y(),
-        		tf::getYaw(foot_left.getRotation()), LEFT);
+        		   tf::getYaw(foot_left.getRotation()), LEFT);
         State right(foot_right.getOrigin().x(), foot_right.getOrigin().y(),
 		            tf::getYaw(foot_right.getRotation()), RIGHT);
 
@@ -521,42 +530,105 @@ namespace footstep_planner
 
 
     bool
-    FootstepNavigation::getFootstep(const State& from, const State& to,
+    FootstepNavigation::getFootstep(const tf::Pose& from, const State& to,
                                     humanoid_nav_msgs::StepTarget& footstep)
     {
         // calculate the necessary footstep to reach the foot placement
         double footstep_x, footstep_y, footstep_theta;
-        get_footstep(from.getX(), from.getY(), from.getTheta(), from.getLeg(),
+        Leg from_leg = to.getLeg() == LEFT ? RIGHT : LEFT;
+
+        // TODO: get rid of get_footstep
+        get_footstep(from.getOrigin().x(), from.getOrigin().y(),
+                     tf::getYaw(from.getRotation()), from_leg,
                      to.getX(), to.getY(), to.getTheta(),
                      footstep_x, footstep_y, footstep_theta);
 
         footstep.pose.x = footstep_x;
-        if (from.getLeg() == RIGHT)
+        if (to.getLeg() == LEFT)
         {
             footstep.pose.y = footstep_y;
             footstep.pose.theta = footstep_theta;
             footstep.leg = humanoid_nav_msgs::StepTarget::left;
         }
-        else // from.leg == LEFT
+        else // to.leg == RIGHT
         {
             footstep.pose.y = -footstep_y;
             footstep.pose.theta = -footstep_theta;
             footstep.leg = humanoid_nav_msgs::StepTarget::right;
         }
 
-        humanoid_nav_msgs::ClipFootstep footstep_srv;
-        footstep_srv.request.step = footstep;
-        ivClipFootstepSrv.call(footstep_srv);
 
-        if (performable(footstep_srv))
+
+//        // check if relative footstep is calculated correctly
+//        // by transforming into a tf::Transformation and recalculating
+//        // 'to' from 'from'.
+//        tf::Transform tf_to(tf::createQuaternionFromYaw(to.getTheta()),
+//                            tf::Point(to.getX(), to.getY(), 0.0));
+//        tf::Transform tf_step = from.inverse() * tf_to;
+//        if (!((fabs(tf_step.getOrigin().x() - footstep.pose.x) <
+//                       FLOAT_CMP_THR &&
+//               fabs(tf_step.getOrigin().y() - footstep.pose.y) <
+//                       FLOAT_CMP_THR &&
+//               fabs(angles::shortest_angular_distance(
+//                   tf::getYaw(tf_step.getRotation()), footstep.pose.theta)) <
+//                       FLOAT_CMP_THR)))
+//        {
+//            ROS_INFO("fs (%f, %f, %f)",
+//                     footstep.pose.x, footstep.pose.y, footstep.pose.theta);
+//            ROS_INFO("fs tf (%f, %f, %f)",
+//                     tf_step.getOrigin().x(), tf_step.getOrigin().y(),
+//                     tf::getYaw(tf_step.getRotation()));
+//
+//            exit(0);
+//        }
+
+        // TODO 2: implement collision check in the environment
+
+
+
+
+        humanoid_nav_msgs::ClipFootstep fs_clip;
+        fs_clip.request.step = footstep;
+        ivClipFootstepSrv.call(fs_clip);
+//
+        bool unclipped = performanceValid(fs_clip);
+        State from_s(from.getOrigin().x(),
+                     from.getOrigin().y(),
+                     tf::getYaw(from.getRotation()),
+                     to.getLeg() == LEFT ? RIGHT : LEFT);
+//        bool performable = ivPlanner.reachable_test(from_s, to);
+//        if ((performable && !unclipped))
+//        {
+//            ROS_INFO("---");
+//            ROS_INFO("from: (%f, %f, %f, %i)",
+//                     from_s.getX(), from_s.getY(), from_s.getTheta(),
+//                     from_s.getLeg());
+//            ROS_INFO("to: (%f, %f, %f, %i)",
+//                     to.getX(), to.getY(), to.getTheta(), to.getLeg());
+//            ROS_INFO("footstep (%f, %f, %f)",
+//                     footstep_x, footstep_y, footstep_theta);
+//            ROS_INFO("cont. footstep clipped (%f, %f, %f)",
+//                     fs_clip.response.step.pose.x, fs_clip.response.step.pose.y,
+//                     fs_clip.response.step.pose.theta);
+//            ROS_INFO("x: %i", fabs(footstep.pose.x - fs_clip.response.step.pose.x) < FLOAT_CMP_THR);
+//            ROS_INFO("y: %i", fabs(footstep.pose.y - fs_clip.response.step.pose.y) < FLOAT_CMP_THR);
+//            ROS_INFO("theta: %i", fabs(angles::shortest_angular_distance(footstep.pose.theta, fs_clip.response.step.pose.theta)) < FLOAT_CMP_THR);
+//            ROS_INFO("unclipped? %i", unclipped);
+//            ROS_INFO("performable? %i", performable);
+//
+//            exit(0);
+//        }
+
+        if (unclipped)
         {
-            footstep.pose.x = footstep_srv.response.step.pose.x;
-            footstep.pose.y = footstep_srv.response.step.pose.y;
-            footstep.pose.theta = footstep_srv.response.step.pose.theta;
+            footstep.pose.x = fs_clip.response.step.pose.x;
+            footstep.pose.y = fs_clip.response.step.pose.y;
+            footstep.pose.theta = fs_clip.response.step.pose.theta;
             return true;
         }
         else
         {
+//            assert(performable == unclipped);
             return false;
         }
     }
@@ -570,24 +642,27 @@ namespace footstep_planner
     	humanoid_nav_msgs::StepTarget footstep;
 
     	state_iter_t current = ivPlanner.getPathBegin() + starting_step_num;
-    	State last = current_support_leg;
-    	bool performable = false;
+    	tf::Pose last(
+            tf::createQuaternionFromYaw(current_support_leg.getTheta()),
+            tf::Point(current_support_leg.getX(), current_support_leg.getY(),
+                      0.0));
     	for (; current != ivPlanner.getPathEnd(); current++)
     	{
 //    		ROS_INFO("(%f, %f, %f, %i)",
 //			         current->x, current->y, current->theta, current->leg);
 
-    		performable = getFootstep(last, *current, footstep);
-    		if (!performable)
+    		if (getFootstep(last, *current, footstep))
+    		{
+    		    footsteps.push_back(footstep);
+    		}
+    		else
     		{
 	        	ROS_ERROR("Calculated path cannot be performed!");
     			return false;
     		}
-    		else
-    		{
-    			footsteps.push_back(footstep);
-    		}
-    		last = *current;
+
+    		last = tf::Pose(tf::createQuaternionFromYaw(current->getTheta()),
+                            tf::Point(current->getX(), current->getY(), 0.0));
     	}
 
     	return true;
@@ -619,14 +694,16 @@ namespace footstep_planner
 
 
     bool
-    FootstepNavigation::performable(const humanoid_nav_msgs::ClipFootstep& step)
+    FootstepNavigation::performanceValid(
+            const humanoid_nav_msgs::ClipFootstep& step)
     {
         return (fabs(step.request.step.pose.x - step.response.step.pose.x) <=
-                ivAccuracyX &&
+                        ivAccuracyX &&
                 fabs(step.request.step.pose.y - step.response.step.pose.y) <=
-                ivAccuracyY &&
-                fabs(step.request.step.pose.theta -
-                step.response.step.pose.theta) <= ivAccuracyTheta &&
+                        ivAccuracyY &&
+                fabs(angles::shortest_angular_distance(
+                        step.request.step.pose.theta,
+                        step.response.step.pose.theta)) <= ivAccuracyTheta &&
                 step.request.step.leg == step.response.step.leg);
     }
 
@@ -637,8 +714,9 @@ namespace footstep_planner
     {
     	return (fabs(planned.getX() - executed.getX()) <= ivAccuracyX &&
     			fabs(planned.getY() - executed.getY()) <= ivAccuracyY &&
-    			fabs(planned.getTheta() - executed.getTheta()) <=
-    			        ivAccuracyTheta &&
+    			fabs(angles::shortest_angular_distance(
+                        planned.getTheta(), executed.getTheta())) <=
+                                ivAccuracyTheta &&
     			planned.getLeg() == executed.getLeg());
     }
 }

@@ -35,6 +35,11 @@
 #include <footstep_planner/State.h>
 #include <sbpl/headers.h>
 
+
+#include <humanoid_nav_msgs/ClipFootstep.h>
+
+
+
 #include <vector>
 
 
@@ -258,6 +263,10 @@ namespace footstep_planner
          */
         void updateHeuristicValues();
 
+        // TODO: remove after debug
+        bool reachable_test(const State& from, const State& to);
+        ros::ServiceClient ivClipFootstepSrv;
+
         /// Used to scale continuous values in meter to discrete values in mm.
         static const int cvMmScale = 1000;
 
@@ -418,7 +427,6 @@ namespace footstep_planner
         exp_states_2d_t ivExpandedStates;
         exp_states_t ivRandomStates; ///< random intermediate states for R*
         size_t ivNumExpandedStates;
-
     };
 }
 

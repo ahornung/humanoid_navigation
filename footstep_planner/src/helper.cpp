@@ -37,14 +37,14 @@ namespace footstep_planner
         double theta_sin = sin(-from_theta);
 		to_x -= from_x;
 		to_y -= from_y;
+
+		footstep_x = theta_cos * to_x - theta_sin * to_y;
         if (from_leg == RIGHT)
         {
-            footstep_x = theta_cos * to_x - theta_sin * to_y;
             footstep_y = theta_sin * to_x + theta_cos * to_y;
         }
         else
         {
-            footstep_x =  theta_cos * to_x - theta_sin * to_y;
             footstep_y = -theta_sin * to_x - theta_cos * to_y;
             footstep_theta = -footstep_theta;
         }

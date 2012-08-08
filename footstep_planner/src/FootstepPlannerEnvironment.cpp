@@ -87,6 +87,17 @@ namespace footstep_planner
         if (ivMaxInvFootstepTheta >= num_angle_bins_half)
             ivMaxInvFootstepTheta -= ivNumAngleBins;
 
+
+//        // TODO: remove after debug
+//        ROS_INFO("Accuracies:");
+//        ROS_INFO("\t(%i, %i, %i)",
+//                 ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta);
+//        ROS_INFO("\t(%i, %i, %i)\n",
+//                 ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta);
+//
+//        ros::NodeHandle nh_public;
+//        ivClipFootstepSrv = nh_public.serviceClient<
+//                humanoid_nav_msgs::ClipFootstep>("clip_footstep_srv");
     }
 
 
@@ -179,6 +190,14 @@ namespace footstep_planner
             ivIdStartFootRight = p_foot_right->getId();
         }
 
+        if (start_foot_id_left != ivIdStartFootLeft ||
+            start_foot_id_right != ivIdStartFootRight)
+        {
+            ROS_INFO("start feet changed from (%i, %i) to (%i, %i)",
+                     start_foot_id_left, start_foot_id_right,
+                     ivIdStartFootLeft, ivIdStartFootRight);
+        }
+
         // check if everything has been set correctly
         assert(ivIdStartFootLeft != -1);
         assert(ivIdStartFootRight != -1);
@@ -257,7 +276,9 @@ namespace footstep_planner
     }
 
     const PlanningState*
-    FootstepPlannerEnvironment::createHashEntryIfNotExists(const PlanningState& s){
+    FootstepPlannerEnvironment::createHashEntryIfNotExists(
+            const PlanningState& s)
+    {
     	const PlanningState* hash_entry = getHashEntry(s);
     	if (hash_entry == NULL)
     		hash_entry = createNewHashEntry(s);
@@ -484,20 +505,85 @@ namespace footstep_planner
         else if (footstep_theta < -num_angle_bins_half)
             footstep_theta += ivNumAngleBins;
 
+
+
+
+//        State from_ = from.getState(ivCellSize, ivNumAngleBins);
+//        State to_ = to.getState(ivCellSize, ivNumAngleBins);
+//        tf::Pose from_tf(tf::createQuaternionFromYaw(from_.getTheta()),
+//                         tf::Point(from_.getX(), from_.getY(), 0.0));
+//        tf::Pose to_tf(tf::createQuaternionFromYaw(to_.getTheta()),
+//                       tf::Point(to_.getX(), to_.getY(), 0.0));
+//        tf::Pose step = from_tf.inverse() * to_tf;
+//
+//        if (!(fabs(cont_val(footstep_x, ivCellSize) - step.getOrigin().x()) <
+//                      ivCellSize/2.0 &&
+//              fabs(cont_val(footstep_y, ivCellSize) - step.getOrigin().y()) <
+//                      ivCellSize/2.0 &&
+//              fabs(angles::shortest_angular_distance(
+//                      angle_cell_2_state(footstep_theta, ivNumAngleBins),
+//                      tf::getYaw(step.getRotation()))) <
+//                              (1.0/(float)ivNumAngleBins)*M_PI))
+//        {
+//
+//            ROS_INFO("from (%f, %f, %f, %i) (%i, %i, %i, %i)",
+//                     from_.getX(), from_.getY(), from_.getTheta(),
+//                     from_.getLeg(),
+//                     from.getX(), from.getY(), from.getTheta(), from.getLeg());
+//            ROS_INFO("to (%f, %f, %f, %i) (%i, %i, %i, %i)\n",
+//                     to_.getX(), to_.getY(), to_.getTheta(), to_.getLeg(),
+//                     to.getX(), to.getY(), to.getTheta(), to.getLeg());
+//
+//            ROS_INFO("disc. fs (%i, %i, %i)",
+//                     footstep_x, footstep_y, footstep_theta);
+//            ROS_INFO("cont. fs (%f, %f, %f)",
+//                     cont_val(footstep_x, ivCellSize),
+//                     cont_val(footstep_y, ivCellSize),
+//                     angle_cell_2_state(footstep_theta, ivNumAngleBins));
+//            ROS_INFO("cont. fs tf (%f, %f, %f)",
+//                     step.getOrigin().x(), step.getOrigin().y(),
+//                     tf::getYaw(step.getRotation()));
+//
+//            ROS_INFO("%i",
+//                     fabs(cont_val(footstep_x, ivCellSize) - step.getOrigin().x()) < ivCellSize/2.0);
+//            ROS_INFO("%i",
+//                     fabs(cont_val(footstep_y, ivCellSize) - step.getOrigin().y()) < ivCellSize/2.0);
+//            ROS_INFO("%i",
+//                     fabs(angles::shortest_angular_distance(angle_cell_2_state(
+//                             footstep_theta, ivNumAngleBins),
+//                             tf::getYaw(step.getRotation()))) <
+//                                     (1.0/(float)ivNumAngleBins)*M_PI);
+//
+//            exit(0);
+//        }
+
+
+
         // adjust for the left foot
         if (from.getLeg() == LEFT)
         {
             footstep_y = -footstep_y;
             footstep_theta = -footstep_theta;
         }
+        return (footstep_x <= ivMaxFootstepX &&
+                footstep_x >= ivMaxInvFootstepX &&
+                footstep_y <= ivMaxFootstepY &&
+                footstep_y >= ivMaxInvFootstepY &&
+                footstep_theta <= ivMaxFootstepTheta &&
+                footstep_theta >= ivMaxInvFootstepTheta);
+    }
 
-        // return if the footstep can be performed or not
-        return ((footstep_x <= ivMaxFootstepX &&
-                 footstep_x >= ivMaxInvFootstepX) &&
-                (footstep_y <= ivMaxFootstepY &&
-                 footstep_y >= ivMaxInvFootstepY) &&
-                (footstep_theta <= ivMaxFootstepTheta &&
-                 footstep_theta >= ivMaxInvFootstepTheta));
+
+    bool
+    FootstepPlannerEnvironment::reachable_test(const State& from,
+                                               const State& to)
+    {
+        const PlanningState* a_ = getHashEntry(from);
+        const PlanningState* b_ = getHashEntry(to);
+        assert (a_ != NULL);
+        assert (b_ != NULL);
+
+        return reachable(*a_, *b_);
     }
 
 
@@ -607,23 +693,27 @@ namespace footstep_planner
     {
         PredIDV->clear();
         CostV->clear();
-        assert(TargetStateID >= 0 && (unsigned int) TargetStateID < ivStateId2State.size());
-        //ivExpandedStates.push_back(TargetStateID);
+
+        assert(TargetStateID >= 0 &&
+               (unsigned int) TargetStateID < ivStateId2State.size());
 
         // make goal state absorbing (only left!)
         if (TargetStateID == ivIdStartFootLeft)
         	return;
 
         const PlanningState* current = ivStateId2State[TargetStateID];
-        ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
-        ivNumExpandedStates++;
+
         // add cheap transition from right to left, so right becomes an equivalent goal
-        if (TargetStateID == ivIdStartFootRight && current->getLeg() == RIGHT){
-          PredIDV->push_back(ivIdStartFootLeft);
-          CostV->push_back(ivStepCost);
-          return;
+        if (TargetStateID == ivIdStartFootRight && current->getLeg() == RIGHT)
+        {
+            PredIDV->push_back(ivIdStartFootLeft);
+            CostV->push_back(ivStepCost);
+            return;
         }
 
+        ivExpandedStates.insert(std::pair<int,int>(current->getX(),
+                                                   current->getY()));
+        ivNumExpandedStates++;
 
         if (closeToStart(*current))
         {
@@ -634,9 +724,8 @@ namespace footstep_planner
                 start_id = ivIdStartFootRight;
 
             const PlanningState* start = ivStateId2State[start_id];
-            int cost = stepCost(*current, *start);
             PredIDV->push_back(start_id);
-            CostV->push_back(cost);
+            CostV->push_back(stepCost(*current, *start));
 
             return;
         }
@@ -653,7 +742,8 @@ namespace footstep_planner
             if (occupied(predecessor))
                 continue;
 
-            const PlanningState* predecessor_hash = createHashEntryIfNotExists(predecessor);
+            const PlanningState* predecessor_hash = createHashEntryIfNotExists(
+                    predecessor);
 
             int cost = stepCost(*current, *predecessor_hash);
             PredIDV->push_back(predecessor_hash->getId());
@@ -677,23 +767,27 @@ namespace footstep_planner
         SuccIDV->clear();
         CostV->clear();
 
-        assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
-        //ivExpandedStates.push_back(SourceStateID);
-        const PlanningState* current = ivStateId2State[SourceStateID];
-        ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
-        ivNumExpandedStates++;
+        assert(SourceStateID >= 0 &&
+               unsigned(SourceStateID) < ivStateId2State.size());
 
         // make goal state absorbing (only left!)
-        if (SourceStateID == ivIdGoalFootLeft){
+        if (SourceStateID == ivIdGoalFootLeft)
         	return;
+
+        const PlanningState* current = ivStateId2State[SourceStateID];
+
+        // add cheap transition from right to left, so right becomes an
+        // equivalent goal
+        if (SourceStateID == ivIdGoalFootRight && current->getLeg() == RIGHT)
+        {
+            SuccIDV->push_back(ivIdGoalFootLeft);
+            CostV->push_back(ivStepCost);
+            return;
         }
 
-        // add cheap transition from right to left, so right becomes an equivalent goal
-        if (SourceStateID == ivIdGoalFootRight && current->getLeg() == RIGHT){
-          SuccIDV->push_back(ivIdGoalFootLeft);
-          CostV->push_back(ivStepCost);
-          return;
-        }
+        ivExpandedStates.insert(std::pair<int,int>(current->getX(),
+                                                   current->getY()));
+        ivNumExpandedStates++;
 
         if (closeToGoal(*current))
         {
@@ -705,9 +799,8 @@ namespace footstep_planner
                 goal_id = ivIdGoalFootRight;
 
             const PlanningState* goal = ivStateId2State[goal_id];
-            int cost = stepCost(*current, *goal);
             SuccIDV->push_back(goal_id);
-            CostV->push_back(cost);
+            CostV->push_back(stepCost(*current, *goal));
 
             return;
         }
@@ -724,7 +817,8 @@ namespace footstep_planner
             if (occupied(successor))
                 continue;
 
-            const PlanningState* successor_hash_entry = createHashEntryIfNotExists(successor);
+            const PlanningState* successor_hash_entry =
+                    createHashEntryIfNotExists(successor);
 
             int cost = stepCost(*current, *successor_hash_entry);
             SuccIDV->push_back(successor_hash_entry->getId());
@@ -740,8 +834,8 @@ namespace footstep_planner
         SuccIDV->clear();
         CostV->clear();
 
-        assert(SourceStateID >= 0 && unsigned(SourceStateID) < ivStateId2State.size());
-        //ivExpandedStates.push_back(SourceStateID);
+        assert(SourceStateID >= 0 &&
+               unsigned(SourceStateID) < ivStateId2State.size());
 
         // make goal state absorbing
         if (SourceStateID == ivIdGoalFootLeft ){

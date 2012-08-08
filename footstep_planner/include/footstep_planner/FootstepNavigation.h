@@ -102,7 +102,7 @@ namespace footstep_planner
          *
          * @return True if an performable footstep has been found.
          */
-        bool getFootstep(const State& from, const State& to,
+        bool getFootstep(const tf::Pose& from, const State& to,
                          humanoid_nav_msgs::StepTarget& footstep);
 
         bool getFootstepsFromPath(
@@ -136,11 +136,11 @@ namespace footstep_planner
          * @return True if the footstep can be performed by the robot (i.e. it
          * is within the robot's max ranges).
          */
-        bool performable(const humanoid_nav_msgs::ClipFootstep& footstep);
+        bool performanceValid(const humanoid_nav_msgs::ClipFootstep& footstep);
 
         /**
-         * @return True if the difference between the planned state and its
-         * executed equivalent is within certain ranges.
+         * @return True if the footstep can be performed by the robot (i.e. it
+         * is within the robot's max ranges).
          */
         bool performanceValid(const State& planned, const State& executed);
 
@@ -173,7 +173,7 @@ namespace footstep_planner
         /// Used to lock the calculation and execution of footsteps.
         bool   ivExecutingFootsteps;
         /// The rate the action server sends its feedback.
-        double ivFeedbackFrequence;
+        double ivFeedbackFrequency;
 
         /// @brief Simple action client to control a footstep execution.
     	actionlib::SimpleActionClient<
@@ -182,6 +182,8 @@ namespace footstep_planner
     	int ivExecutionShift;
     	int ivControlStepIdx;
     	int ivResetStepIdx;
+
+    	bool ivProtectiveExecution;
 
     	// TODO: get rid of these when no longer needed
     	int ivEqualStepsThreshold;

@@ -101,6 +101,7 @@ namespace footstep_planner
 
 	State
 	PlanningState::getState(double cell_size, int num_angle_bins)
+	const
 	{
 		return State(cell_2_state(ivX, cell_size),
 		             cell_2_state(ivY, cell_size),

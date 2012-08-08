@@ -22,6 +22,8 @@
  */
 
 #include <footstep_planner/FootstepPlanner.h>
+#include <humanoid_nav_msgs/ClipFootstep.h>
+
 #include <time.h>
 
 
@@ -59,7 +61,6 @@ namespace footstep_planner
         int num_random_nodes;
         double random_node_dist;
         double heuristic_scale;
-
 
         // read parameters from config file:
         // - planner environment settings
@@ -102,7 +103,9 @@ namespace footstep_planner
                          0.05);
 
         // for heuristic inflation
-        double foot_incircle = std::min((ivFootsizeX/2.0 -std::abs(ivOriginFootShiftX)), (ivFootsizeY/2.0 -std::abs(ivOriginFootShiftY)));
+        double foot_incircle = std::min(
+                (ivFootsizeX / 2.0 -std::abs(ivOriginFootShiftX)),
+                (ivFootsizeY / 2.0 -std::abs(ivOriginFootShiftY)));
         assert (foot_incircle > 0.0);
 
         // - footstep discretization
@@ -138,6 +141,11 @@ namespace footstep_planner
             ROS_ERROR("No footstep parameterization available, exiting.");
             exit(0);
         }
+
+        ros::ServiceClient footstep_clip_srv = nh_public.serviceClient<
+                humanoid_nav_msgs::ClipFootstep>("clip_footstep_srv");
+        humanoid_nav_msgs::ClipFootstep footstep_clipping;
+        humanoid_nav_msgs::StepTarget footstep;
 
         // create footstep set
         ivFootstepSet.clear();
@@ -175,7 +183,8 @@ namespace footstep_planner
         else if (heuristic_type == "PathCostHeuristic")
         {
             h.reset(new PathCostHeuristic(ivCellSize, ivNumAngleBins, step_cost,
-                                          diff_angle_cost, max_step_width, foot_incircle));
+                                          diff_angle_cost, max_step_width,
+                                          foot_incircle));
             ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
                      "with step costs");
             // keep a local ptr for visualization
@@ -235,11 +244,26 @@ namespace footstep_planner
         	ROS_INFO_STREAM("Search direction: backward planning");
         }
         setPlanner();
+
+
+//        // TODO: remove after debug
+//        ROS_INFO("Accuracies:");
+//        ROS_INFO("\t(%f, %f, %f)",
+//                 ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta);
+//        ROS_INFO("\t(%f, %f, %f)\n",
+//                 ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta);
     }
 
 
     FootstepPlanner::~FootstepPlanner()
     {}
+
+
+    bool
+    FootstepPlanner::reachable_test(const State& from, const State& to)
+    {
+        return ivPlannerEnvironmentPtr->reachable_test(from, to);
+    }
 
 
     void
@@ -299,34 +323,35 @@ namespace footstep_planner
                                    &path_cost);
         ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;
 
-        if (ret && solution_state_ids.size() > 0)
+        if (ret && solution_state_ids.size() > 0 &&
+            calculatedNewPath(solution_state_ids))
         {
             ROS_INFO("Solution of size %zu found after %f s",
                      solution_state_ids.size(),
             		 (ros::WallTime::now()-startTime).toSec());
 
-            ivPathExists = extractPath(solution_state_ids);
-            broadcastExpandedNodesVis();
-            broadcastRandomNodesVis();
+            if (extractPath(solution_state_ids))
+            {
+                ROS_INFO("Expanded states: %i total / %i new",
+                         ivPlannerEnvironmentPtr->getNumExpandedStates(),
+                         ivPlannerPtr->get_n_expands());
+                ROS_INFO("Final eps: %f", ivPlannerPtr->get_final_epsilon());
+                ROS_INFO("Path cost: %f (%i)\n", ivPathCost, path_cost);
 
-            if (!ivPathExists)
+                ivPlanningStatesIds = solution_state_ids;
+
+                broadcastExpandedNodesVis();
+                broadcastRandomNodesVis();
+                broadcastFootstepPathVis();
+                broadcastPathVis();
+
+                return true;
+            }
+            else
             {
                 ROS_ERROR("extracting path failed\n\n");
                 return false;
             }
-
-            ivPlanningStatesIds = solution_state_ids;
-
-            ROS_INFO("Expanded states: %i total / %i new",
-                     ivPlannerEnvironmentPtr->getNumExpandedStates(),
-                     ivPlannerPtr->get_n_expands());
-            ROS_INFO("Final eps: %f", ivPlannerPtr->get_final_epsilon());
-            ROS_INFO("Path cost: %f (%i)\n", ivPathCost, path_cost);
-
-            broadcastFootstepPathVis();
-            broadcastPathVis();
-
-            return true;
         }
         else
         {
@@ -365,6 +390,19 @@ namespace footstep_planner
     }
 
 
+    void
+    FootstepPlanner::reset()
+    {
+        // reset the previously calculated paths
+        ivPath.clear();
+        ivPlanningStatesIds.clear();
+        // reset the planner
+        ivPlannerEnvironmentPtr->reset();
+        //ivPlannerPtr->force_planning_from_scratch();
+        setPlanner();
+    }
+
+
     bool
     FootstepPlanner::plan()
     {
@@ -380,12 +418,27 @@ namespace footstep_planner
             return false;
         }
 
-        // reset the planner
-        ivPlannerEnvironmentPtr->reset();
-        //ivPlannerPtr->force_planning_from_scratch();
-        setPlanner();
-
+        reset();
         // start the planning and return success
+        return run();
+    }
+
+
+    bool
+    FootstepPlanner::replan()
+    {
+        if (!ivMapPtr)
+        {
+            ROS_ERROR("FootstepPlanner has no map for re-planning yet.");
+            return false;
+        }
+        if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
+        {
+            ROS_ERROR("FootstepPlanner has not set start and/or goal pose "
+                      "yet.");
+            return false;
+        }
+
         return run();
     }
 
@@ -412,25 +465,6 @@ namespace footstep_planner
         }
 
         return plan();
-    }
-
-
-    bool
-    FootstepPlanner::replan()
-    {
-    	if (!ivMapPtr)
-		{
-			ROS_ERROR("FootstepPlanner has no map for re-planning yet.");
-			return false;
-		}
-        if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
-        {
-            ROS_ERROR("FootstepPlanner has not set start and/or goal pose "
-                      "yet.");
-            return false;
-        }
-
-        return run();
     }
 
 
@@ -479,9 +513,8 @@ namespace footstep_planner
     FootstepPlanner::goalPoseCallback(
     		const geometry_msgs::PoseStampedConstPtr& goal_pose)
     {
-        bool success = setGoal(goal_pose);
         // update the goal states in the environment
-        if (success)
+        if (setGoal(goal_pose))
         {
             if (ivStartPoseSetUp)
             	run();
@@ -493,10 +526,9 @@ namespace footstep_planner
     FootstepPlanner::startPoseCallback(
     		const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose)
     {
-        bool success = setStart(start_pose->pose.pose.position.x,
-                                start_pose->pose.pose.position.y,
-                                tf::getYaw(start_pose->pose.pose.orientation));
-        if (success)
+        if (setStart(start_pose->pose.pose.position.x,
+                     start_pose->pose.pose.position.y,
+                     tf::getYaw(start_pose->pose.pose.orientation)))
         {
             if (ivGoalPoseSetUp)
                 run();
@@ -761,6 +793,22 @@ namespace footstep_planner
 		             robot.getY() + sign * shift_y,
 		             robot.getTheta(),
 		             leg);
+    }
+
+
+    bool
+    FootstepPlanner::calculatedNewPath(const std::vector<int>& new_path)
+    {
+        if (new_path.size() != ivPlanningStatesIds.size())
+            return true;
+
+        bool unequal = true;
+        for (int i = 0; i < new_path.size(); i++)
+        {
+            unequal = new_path[i] != ivPlanningStatesIds[i] && unequal;
+        }
+
+        return unequal;
     }
 
 

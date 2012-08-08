@@ -47,10 +47,10 @@ namespace footstep_planner
     State::operator ==(const State& s2)
     const
     {
-        return (fabs(ivX - s2.getX()) <= FLOAT_CMP_THR &&
-                fabs(ivY - s2.getY()) <= FLOAT_CMP_THR &&
-                fabs(angles::shortest_angular_distance(
-                    ivTheta, s2.getTheta())) <= FLOAT_CMP_THR &&
+        return (fabs(ivX - s2.getX()) < FLOAT_CMP_THR &&
+                fabs(ivY - s2.getY()) < FLOAT_CMP_THR &&
+                fabs(angles::shortest_angular_distance(ivTheta, s2.getTheta()))
+                        < FLOAT_CMP_THR &&
                 ivLeg == s2.getLeg());
     }
 

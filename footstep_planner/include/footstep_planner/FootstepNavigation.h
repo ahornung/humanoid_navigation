@@ -184,11 +184,6 @@ namespace footstep_planner
     	int ivResetStepIdx;
 
     	bool ivProtectiveExecution;
-
-    	// TODO: get rid of these when no longer needed
-    	int ivEqualStepsThreshold;
-    	int ivEqualStepsNum;
-    	bool ivLastStepValid;
     };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

@@ -25,32 +25,6 @@
 
 namespace footstep_planner
 {
-    void get_footstep(
-            double from_x, double from_y, double from_theta, Leg from_leg,
-            double to_x, double to_y, double to_theta,
-            double& footstep_x, double& footstep_y, double& footstep_theta)
-    {
-        footstep_theta = angles::shortest_angular_distance(from_theta,
-                                                           to_theta);
-
-        double theta_cos = cos(-from_theta);
-        double theta_sin = sin(-from_theta);
-		to_x -= from_x;
-		to_y -= from_y;
-
-		footstep_x = theta_cos * to_x - theta_sin * to_y;
-        if (from_leg == RIGHT)
-        {
-            footstep_y = theta_sin * to_x + theta_cos * to_y;
-        }
-        else
-        {
-            footstep_y = -theta_sin * to_x - theta_cos * to_y;
-            footstep_theta = -footstep_theta;
-        }
-    }
-
-
 	bool
 	collision_check(double x, double y, double theta, double height,
                     double width, int accuracy, const GridMap2D& distance_map)

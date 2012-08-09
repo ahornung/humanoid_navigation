@@ -35,10 +35,7 @@ namespace footstep_planner
           ivFootstepsExecution("footsteps_execution", true),
           ivExecutionShift(2),
           ivControlStepIdx(-1),
-          ivProtectiveExecution(true),
-          ivEqualStepsThreshold(-1),
-          ivEqualStepsNum(-1),
-          ivLastStepValid(true)
+          ivProtectiveExecution(true)
     {
         // private NodeHandle for parameters and private messages (debug / info)
         ros::NodeHandle nh_private("~");
@@ -72,11 +69,7 @@ namespace footstep_planner
         nh_private.param("accuracy/cell_size", ivCellSize, 0.005);
         nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 128);
 
-        nh_private.param("feedback_frequence", ivFeedbackFrequency, 5.0);
-
         nh_private.param("protective_execution", ivProtectiveExecution, true);
-
-        ivEqualStepsThreshold = (int) ((0.5 / ivFeedbackFrequency) * 0.5);
 
         // check if each footstep can be performed by the NAO robot
         XmlRpc::XmlRpcValue footsteps_x;
@@ -250,10 +243,8 @@ namespace footstep_planner
     	if (getFootstepsFromPath(support_leg, 1, goal.footsteps))
     	{
 			goal.feedback_frequence = ivFeedbackFrequency;
-			ivEqualStepsNum = 0;
 			ivControlStepIdx = 0;
 			ivResetStepIdx = 0;
-			ivLastStepValid = false;
 
 			// start the execution via action; _1, _2 are place holders for
 			// function arguments (see boost doc)
@@ -395,15 +386,10 @@ namespace footstep_planner
             // performed correctly; otherwise check in the next iteration if
             // the step really has been incorrect
             if (performanceValid(planned, executed))
-            {
                 ivControlStepIdx++;
-                ivEqualStepsNum = 0;
-            }
             else
-            {
                 ROS_DEBUG("Invalid step. Wait next step update before declaring"
                           " step incorrect.");
-            }
     	}
     }
 
@@ -579,45 +565,28 @@ namespace footstep_planner
     FootstepNavigation::getFootstep(const tf::Pose& from, const State& to,
                                     humanoid_nav_msgs::StepTarget& footstep)
     {
-        // calculate the necessary footstep to reach the foot placement
-        double footstep_x, footstep_y, footstep_theta;
-        Leg from_leg = to.getLeg() == LEFT ? RIGHT : LEFT;
+        // get footstep to reach 'to' from 'from'
+        tf::Transform step = from.inverse() * tf::Pose(
+                tf::createQuaternionFromYaw(to.getTheta()),
+                tf::Point(to.getX(), to.getY(), 0.0));
 
-        // TODO: get rid of get_footstep
-        get_footstep(from.getOrigin().x(), from.getOrigin().y(),
-                     tf::getYaw(from.getRotation()), from_leg,
-                     to.getX(), to.getY(), to.getTheta(),
-                     footstep_x, footstep_y, footstep_theta);
-
-        footstep.pose.x = footstep_x;
+        // set the footstep
+        footstep.pose.x = step.getOrigin().x();
+        footstep.pose.y = step.getOrigin().y();
+        footstep.pose.theta = tf::getYaw(step.getRotation());
         if (to.getLeg() == LEFT)
-        {
-            footstep.pose.y = footstep_y;
-            footstep.pose.theta = footstep_theta;
             footstep.leg = humanoid_nav_msgs::StepTarget::left;
-        }
         else // to.leg == RIGHT
-        {
-            footstep.pose.y = -footstep_y;
-            footstep.pose.theta = -footstep_theta;
             footstep.leg = humanoid_nav_msgs::StepTarget::right;
-        }
 
-        humanoid_nav_msgs::ClipFootstep fs_clip;
-        fs_clip.request.step = footstep;
-        ivClipFootstepSrv.call(fs_clip);
-
-        if (performanceValid(fs_clip))
-        {
-            footstep.pose.x = fs_clip.response.step.pose.x;
-            footstep.pose.y = fs_clip.response.step.pose.y;
-            footstep.pose.theta = fs_clip.response.step.pose.theta;
+        // check if the footstep can be performed by the NAO robot
+        humanoid_nav_msgs::ClipFootstep footstep_clip;
+        footstep_clip.request.step = footstep;
+        ivClipFootstepSrv.call(footstep_clip);
+        if (performanceValid(footstep_clip))
             return true;
-        }
         else
-        {
             return false;
-        }
     }
 
 

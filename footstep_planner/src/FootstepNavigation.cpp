@@ -77,6 +77,53 @@ namespace footstep_planner
         nh_private.param("protective_execution", ivProtectiveExecution, true);
 
         ivEqualStepsThreshold = (int) ((0.5 / ivFeedbackFrequency) * 0.5);
+
+        // check if each footstep can be performed by the NAO robot
+        XmlRpc::XmlRpcValue footsteps_x;
+        XmlRpc::XmlRpcValue footsteps_y;
+        XmlRpc::XmlRpcValue footsteps_theta;
+        ros::ServiceClient footstep_clip_srv = nh_public.serviceClient<
+                humanoid_nav_msgs::ClipFootstep>("clip_footstep_srv");
+        humanoid_nav_msgs::ClipFootstep performable_step;
+        humanoid_nav_msgs::StepTarget step;
+        // read the footstep parameters
+        nh_private.getParam("footsteps/x", footsteps_x);
+        nh_private.getParam("footsteps/y", footsteps_y);
+        nh_private.getParam("footsteps/theta", footsteps_theta);
+        if (footsteps_x.getType() != XmlRpc::XmlRpcValue::TypeArray)
+            ROS_ERROR("Error reading footsteps/x from config file.");
+        if (footsteps_y.getType() != XmlRpc::XmlRpcValue::TypeArray)
+            ROS_ERROR("Error reading footsteps/y from config file.");
+        if (footsteps_theta.getType() != XmlRpc::XmlRpcValue::TypeArray)
+            ROS_ERROR("Error reading footsteps/theta from config file.");
+        // check each footstep
+        for(int i=0; i < footsteps_x.size(); i++)
+        {
+            double x = (double) footsteps_x[i];
+            double y = (double) footsteps_y[i];
+            double theta = (double) footsteps_theta[i];
+
+            step.pose.x = x;
+            step.pose.y = y;
+            step.pose.theta = theta;
+            step.leg = humanoid_nav_msgs::StepTarget::left;
+
+            performable_step.request.step = step;
+            footstep_clip_srv.call(performable_step);
+
+            if (fabs(step.pose.x - performable_step.response.step.pose.x) >
+                        FLOAT_CMP_THR ||
+                fabs(step.pose.y - performable_step.response.step.pose.y) >
+                        FLOAT_CMP_THR ||
+                fabs(angles::shortest_angular_distance(
+                    step.pose.theta, performable_step.response.step.pose.theta)) >
+                        FLOAT_CMP_THR)
+            {
+                ROS_ERROR("Step (%f, %f, %f) cannot be performed by the NAO "
+                          "robot. Exit!", x, y, theta);
+                exit(2);
+            }
+        }
     }
 
 
@@ -92,7 +139,6 @@ namespace footstep_planner
 		// calculate path
         if (ivPlanner.plan())
             if (ivProtectiveExecution)
-                // TODO: make this switchable via parameter
                 // execution thread
                 boost::thread footstepExecutionThread(
                         &FootstepNavigation::executeFootsteps, this);
@@ -557,69 +603,11 @@ namespace footstep_planner
             footstep.leg = humanoid_nav_msgs::StepTarget::right;
         }
 
-
-
-//        // check if relative footstep is calculated correctly
-//        // by transforming into a tf::Transformation and recalculating
-//        // 'to' from 'from'.
-//        tf::Transform tf_to(tf::createQuaternionFromYaw(to.getTheta()),
-//                            tf::Point(to.getX(), to.getY(), 0.0));
-//        tf::Transform tf_step = from.inverse() * tf_to;
-//        if (!((fabs(tf_step.getOrigin().x() - footstep.pose.x) <
-//                       FLOAT_CMP_THR &&
-//               fabs(tf_step.getOrigin().y() - footstep.pose.y) <
-//                       FLOAT_CMP_THR &&
-//               fabs(angles::shortest_angular_distance(
-//                   tf::getYaw(tf_step.getRotation()), footstep.pose.theta)) <
-//                       FLOAT_CMP_THR)))
-//        {
-//            ROS_INFO("fs (%f, %f, %f)",
-//                     footstep.pose.x, footstep.pose.y, footstep.pose.theta);
-//            ROS_INFO("fs tf (%f, %f, %f)",
-//                     tf_step.getOrigin().x(), tf_step.getOrigin().y(),
-//                     tf::getYaw(tf_step.getRotation()));
-//
-//            exit(0);
-//        }
-
-        // TODO 2: implement collision check in the environment
-
-
-
-
         humanoid_nav_msgs::ClipFootstep fs_clip;
         fs_clip.request.step = footstep;
         ivClipFootstepSrv.call(fs_clip);
-//
-        bool unclipped = performanceValid(fs_clip);
-        State from_s(from.getOrigin().x(),
-                     from.getOrigin().y(),
-                     tf::getYaw(from.getRotation()),
-                     to.getLeg() == LEFT ? RIGHT : LEFT);
-//        bool performable = ivPlanner.reachable_test(from_s, to);
-//        if ((performable && !unclipped))
-//        {
-//            ROS_INFO("---");
-//            ROS_INFO("from: (%f, %f, %f, %i)",
-//                     from_s.getX(), from_s.getY(), from_s.getTheta(),
-//                     from_s.getLeg());
-//            ROS_INFO("to: (%f, %f, %f, %i)",
-//                     to.getX(), to.getY(), to.getTheta(), to.getLeg());
-//            ROS_INFO("footstep (%f, %f, %f)",
-//                     footstep_x, footstep_y, footstep_theta);
-//            ROS_INFO("cont. footstep clipped (%f, %f, %f)",
-//                     fs_clip.response.step.pose.x, fs_clip.response.step.pose.y,
-//                     fs_clip.response.step.pose.theta);
-//            ROS_INFO("x: %i", fabs(footstep.pose.x - fs_clip.response.step.pose.x) < FLOAT_CMP_THR);
-//            ROS_INFO("y: %i", fabs(footstep.pose.y - fs_clip.response.step.pose.y) < FLOAT_CMP_THR);
-//            ROS_INFO("theta: %i", fabs(angles::shortest_angular_distance(footstep.pose.theta, fs_clip.response.step.pose.theta)) < FLOAT_CMP_THR);
-//            ROS_INFO("unclipped? %i", unclipped);
-//            ROS_INFO("performable? %i", performable);
-//
-//            exit(0);
-//        }
 
-        if (unclipped)
+        if (performanceValid(fs_clip))
         {
             footstep.pose.x = fs_clip.response.step.pose.x;
             footstep.pose.y = fs_clip.response.step.pose.y;
@@ -628,7 +616,6 @@ namespace footstep_planner
         }
         else
         {
-//            assert(performable == unclipped);
             return false;
         }
     }

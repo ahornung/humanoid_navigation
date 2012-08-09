@@ -5,7 +5,7 @@
 # NOTE: not all footsteps within the max values can be performed since the
 #       boundary of allowd footsteps is an ellipse
 # WARNING: data type has to be float since integers will cause an exception
-footsteps/x:     [0.000,0.040,0.026,0.040,0.026,-0.014,0.000,-0.014,-0.030,-0.040,-0.030,-0.030,0.00,0.03]
+footsteps/x:     [0.000,0.040,0.026,0.040,0.026,-0.014,0.000,-0.014,-0.030,-0.030,-0.030,-0.030,0.00,0.03]
 footsteps/y:     [0.095,0.095,0.093,0.135,0.133, 0.093,0.135, 0.133, 0.095, 0.093, 0.135, 0.133,0.09,0.09]
 footsteps/theta: [0.000,0.000,0.300,0.000,0.300, 0.300,0.000, 0.300, 0.000, 0.300, 0.000, 0.300,0.00,0.00]
 

@@ -196,9 +196,6 @@ namespace footstep_planner
 		State getStartFootLeft() { return ivStartFootLeft; };
 		State getStartFootRight() { return ivStartFootRight; };
 
-		// TODO: remove after debug
-		bool reachable_test(const State& from, const State& to);
-
     protected:
         void broadcastExpandedNodesVis();
         void broadcastRandomNodesVis();

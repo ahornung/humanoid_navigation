@@ -86,18 +86,6 @@ namespace footstep_planner
             ivMaxFootstepTheta -= ivNumAngleBins;
         if (ivMaxInvFootstepTheta >= num_angle_bins_half)
             ivMaxInvFootstepTheta -= ivNumAngleBins;
-
-
-//        // TODO: remove after debug
-//        ROS_INFO("Accuracies:");
-//        ROS_INFO("\t(%i, %i, %i)",
-//                 ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta);
-//        ROS_INFO("\t(%i, %i, %i)\n",
-//                 ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta);
-//
-//        ros::NodeHandle nh_public;
-//        ivClipFootstepSrv = nh_public.serviceClient<
-//                humanoid_nav_msgs::ClipFootstep>("clip_footstep_srv");
     }
 
 
@@ -505,60 +493,6 @@ namespace footstep_planner
         else if (footstep_theta < -num_angle_bins_half)
             footstep_theta += ivNumAngleBins;
 
-
-
-
-//        State from_ = from.getState(ivCellSize, ivNumAngleBins);
-//        State to_ = to.getState(ivCellSize, ivNumAngleBins);
-//        tf::Pose from_tf(tf::createQuaternionFromYaw(from_.getTheta()),
-//                         tf::Point(from_.getX(), from_.getY(), 0.0));
-//        tf::Pose to_tf(tf::createQuaternionFromYaw(to_.getTheta()),
-//                       tf::Point(to_.getX(), to_.getY(), 0.0));
-//        tf::Pose step = from_tf.inverse() * to_tf;
-//
-//        if (!(fabs(cont_val(footstep_x, ivCellSize) - step.getOrigin().x()) <
-//                      ivCellSize/2.0 &&
-//              fabs(cont_val(footstep_y, ivCellSize) - step.getOrigin().y()) <
-//                      ivCellSize/2.0 &&
-//              fabs(angles::shortest_angular_distance(
-//                      angle_cell_2_state(footstep_theta, ivNumAngleBins),
-//                      tf::getYaw(step.getRotation()))) <
-//                              (1.0/(float)ivNumAngleBins)*M_PI))
-//        {
-//
-//            ROS_INFO("from (%f, %f, %f, %i) (%i, %i, %i, %i)",
-//                     from_.getX(), from_.getY(), from_.getTheta(),
-//                     from_.getLeg(),
-//                     from.getX(), from.getY(), from.getTheta(), from.getLeg());
-//            ROS_INFO("to (%f, %f, %f, %i) (%i, %i, %i, %i)\n",
-//                     to_.getX(), to_.getY(), to_.getTheta(), to_.getLeg(),
-//                     to.getX(), to.getY(), to.getTheta(), to.getLeg());
-//
-//            ROS_INFO("disc. fs (%i, %i, %i)",
-//                     footstep_x, footstep_y, footstep_theta);
-//            ROS_INFO("cont. fs (%f, %f, %f)",
-//                     cont_val(footstep_x, ivCellSize),
-//                     cont_val(footstep_y, ivCellSize),
-//                     angle_cell_2_state(footstep_theta, ivNumAngleBins));
-//            ROS_INFO("cont. fs tf (%f, %f, %f)",
-//                     step.getOrigin().x(), step.getOrigin().y(),
-//                     tf::getYaw(step.getRotation()));
-//
-//            ROS_INFO("%i",
-//                     fabs(cont_val(footstep_x, ivCellSize) - step.getOrigin().x()) < ivCellSize/2.0);
-//            ROS_INFO("%i",
-//                     fabs(cont_val(footstep_y, ivCellSize) - step.getOrigin().y()) < ivCellSize/2.0);
-//            ROS_INFO("%i",
-//                     fabs(angles::shortest_angular_distance(angle_cell_2_state(
-//                             footstep_theta, ivNumAngleBins),
-//                             tf::getYaw(step.getRotation()))) <
-//                                     (1.0/(float)ivNumAngleBins)*M_PI);
-//
-//            exit(0);
-//        }
-
-
-
         // adjust for the left foot
         if (from.getLeg() == LEFT)
         {
@@ -571,19 +505,6 @@ namespace footstep_planner
                 footstep_y >= ivMaxInvFootstepY &&
                 footstep_theta <= ivMaxFootstepTheta &&
                 footstep_theta >= ivMaxInvFootstepTheta);
-    }
-
-
-    bool
-    FootstepPlannerEnvironment::reachable_test(const State& from,
-                                               const State& to)
-    {
-        const PlanningState* a_ = getHashEntry(from);
-        const PlanningState* b_ = getHashEntry(to);
-        assert (a_ != NULL);
-        assert (b_ != NULL);
-
-        return reachable(*a_, *b_);
     }
 
 

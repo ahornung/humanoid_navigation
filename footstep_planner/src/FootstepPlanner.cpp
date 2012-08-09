@@ -133,19 +133,14 @@ namespace footstep_planner
             {
                 ROS_ERROR("Footstep parameterization has different sizes for "
                 		  "x/y/theta, exiting.");
-                exit(0);
+                exit(2);
             }
         }
         catch (const XmlRpc::XmlRpcException& e)
         {
             ROS_ERROR("No footstep parameterization available, exiting.");
-            exit(0);
+            exit(2);
         }
-
-        ros::ServiceClient footstep_clip_srv = nh_public.serviceClient<
-                humanoid_nav_msgs::ClipFootstep>("clip_footstep_srv");
-        humanoid_nav_msgs::ClipFootstep footstep_clipping;
-        humanoid_nav_msgs::StepTarget footstep;
 
         // create footstep set
         ivFootstepSet.clear();
@@ -244,26 +239,11 @@ namespace footstep_planner
         	ROS_INFO_STREAM("Search direction: backward planning");
         }
         setPlanner();
-
-
-//        // TODO: remove after debug
-//        ROS_INFO("Accuracies:");
-//        ROS_INFO("\t(%f, %f, %f)",
-//                 ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta);
-//        ROS_INFO("\t(%f, %f, %f)\n",
-//                 ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta);
     }
 
 
     FootstepPlanner::~FootstepPlanner()
     {}
-
-
-    bool
-    FootstepPlanner::reachable_test(const State& from, const State& to)
-    {
-        return ivPlannerEnvironmentPtr->reachable_test(from, to);
-    }
 
 
     void

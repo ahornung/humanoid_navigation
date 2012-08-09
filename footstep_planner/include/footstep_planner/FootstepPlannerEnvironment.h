@@ -263,10 +263,6 @@ namespace footstep_planner
          */
         void updateHeuristicValues();
 
-        // TODO: remove after debug
-        bool reachable_test(const State& from, const State& to);
-        ros::ServiceClient ivClipFootstepSrv;
-
         /// Used to scale continuous values in meter to discrete values in mm.
         static const int cvMmScale = 1000;
 

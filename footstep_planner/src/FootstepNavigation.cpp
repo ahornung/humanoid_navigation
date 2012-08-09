@@ -394,87 +394,6 @@ namespace footstep_planner
     }
 
 
-//    void
-//    FootstepNavigation::feedbackCallback(
-//    		const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb)
-//    {
-//    	int executed_steps_idx = fb->executed_footsteps.size() -
-//    			                 ivExecutionShift;
-//    	// make sure at least one step has been performed
-//    	if (executed_steps_idx < 0)
-//    	    return;
-//    	// since the footstep feedback is send while the actual footstep is
-//    	// performed we have to wait a few feedback callsbacks; ivEqualStepsNum
-//    	// keeps track of these equal feedback callbacks
-//    	else if (executed_steps_idx == ivControlStepIdx)
-//    	    ivEqualStepsNum++;
-//
-//    	// wait until a reasonable number of equal feedback callbacks has been
-//    	// received + check if the last step has been valid (used in the later)
-//    	if (ivEqualStepsNum != ivEqualStepsThreshold && ivLastStepValid)
-//    	    return;
-//
-//    	ROS_INFO("%i / %i (%i)", executed_steps_idx, ivControlStepIdx,
-//    			 ivEqualStepsNum);
-//
-//    	// get the actual planned footstep placement
-//    	const State& planned = *(ivPlanner.getPathBegin() + executed_steps_idx);
-//
-//    	// get the actual executed footstep placement
-//    	tf::Transform executed_tf;
-//    	std::string foot_id;
-//    	if (planned.leg == RIGHT)
-//    	    foot_id = ivIdFootRight;
-//    	else
-//    	    foot_id = ivIdFootLeft;
-//    	getFootTransform(foot_id, ivIdMapFrame, ros::Time::now(), executed_tf);
-//    	State executed(executed_tf.getOrigin().x(), executed_tf.getOrigin().y(),
-//    	               tf::getYaw(executed_tf.getRotation()), planned.leg);
-//
-//    	// check if the everything is just as planned
-//    	ivLastStepValid = performanceValid(planned, executed);
-//
-//    	ROS_INFO("planned (%f, %f, %f, %i) vs. executed (%f, %f, %f, %i)",
-//    	         planned.x, planned.y, planned.theta, planned.leg,
-//    	         executed.x, executed.y, executed.theta, executed.leg);
-//    	ROS_INFO("valid? %i\n", ivLastStepValid);
-//
-//    	if (!ivLastStepValid)
-//    	{
-//			ROS_INFO("x: %f <= %f? %i",
-//					 fabs(planned.x - executed.x), ivAccuracyX,
-//					 fabs(planned.x - executed.x) <= ivAccuracyX);
-//			ROS_INFO("y: %f <= %f? %i",
-//					 fabs(planned.y - executed.y), ivAccuracyY,
-//					 fabs(planned.y - executed.y) <= ivAccuracyY);
-//			ROS_INFO("theta: %f <= %f? %i",
-//					 fabs(planned.theta - executed.theta), ivAccuracyTheta,
-//					 fabs(planned.theta - executed.theta) <= ivAccuracyTheta);
-//			ROS_INFO("Not valid... (%i / %i, %i / %i)",
-//    				 ivEqualStepsNum, ivEqualStepsThreshold, ivControlStepIdx,
-//    				 executed_steps_idx);
-//
-//    		if (executed_steps_idx == ivControlStepIdx)
-//    		{
-//    			ROS_INFO("Wait next step update before declaring step failed.\n");
-//    			ivEqualStepsNum--;
-//    		}
-//    		else
-//    		{
-//    			ROS_INFO("Readjustment necessary.\n");
-//    			ivFootstepsExecution.cancelAllGoals();
-//
-//    			return;
-//    		}
-//    	}
-//    	else
-//    	{
-//        	ivControlStepIdx++;
-//            ivEqualStepsNum = 0;
-//    	}
-//    }
-
-
     void
     FootstepNavigation::goalPoseCallback(
             const geometry_msgs::PoseStampedConstPtr& goal_pose)
@@ -583,10 +502,7 @@ namespace footstep_planner
         humanoid_nav_msgs::ClipFootstep footstep_clip;
         footstep_clip.request.step = footstep;
         ivClipFootstepSrv.call(footstep_clip);
-        if (performanceValid(footstep_clip))
-            return true;
-        else
-            return false;
+        return performanceValid(footstep_clip);
     }
 
 
@@ -650,17 +566,26 @@ namespace footstep_planner
 
 
     bool
+    FootstepNavigation::performanceValid(float a_x, float a_y, float a_theta,
+                                         float b_x, float b_y, float b_theta)
+    {
+        return (fabs(a_x - b_x) < ivAccuracyX &&
+                fabs(a_y - b_y) < ivAccuracyY &&
+                fabs(angles::shortest_angular_distance(a_theta, b_theta)) <
+                        ivAccuracyTheta);
+    }
+
+
+    bool
     FootstepNavigation::performanceValid(
             const humanoid_nav_msgs::ClipFootstep& step)
     {
-        return (fabs(step.request.step.pose.x - step.response.step.pose.x) <=
-                        ivAccuracyX &&
-                fabs(step.request.step.pose.y - step.response.step.pose.y) <=
-                        ivAccuracyY &&
-                fabs(angles::shortest_angular_distance(
-                        step.request.step.pose.theta,
-                        step.response.step.pose.theta)) <= ivAccuracyTheta &&
-                step.request.step.leg == step.response.step.leg);
+        return performanceValid(step.request.step.pose.x,
+                                step.request.step.pose.y,
+                                step.request.step.pose.theta,
+                                step.response.step.pose.x,
+                                step.response.step.pose.y,
+                                step.response.step.pose.theta);
     }
 
 
@@ -668,11 +593,8 @@ namespace footstep_planner
     FootstepNavigation::performanceValid(const State& planned,
 	                                     const State& executed)
     {
-    	return (fabs(planned.getX() - executed.getX()) <= ivAccuracyX &&
-    			fabs(planned.getY() - executed.getY()) <= ivAccuracyY &&
-    			fabs(angles::shortest_angular_distance(
-                        planned.getTheta(), executed.getTheta())) <=
-                                ivAccuracyTheta &&
-    			planned.getLeg() == executed.getLeg());
+        return performanceValid(
+                planned.getX(), planned.getY(), planned.getTheta(),
+                executed.getX(), executed.getY(), executed.getTheta());
     }
 }

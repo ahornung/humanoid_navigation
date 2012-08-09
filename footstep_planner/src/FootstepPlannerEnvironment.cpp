@@ -178,14 +178,6 @@ namespace footstep_planner
             ivIdStartFootRight = p_foot_right->getId();
         }
 
-        if (start_foot_id_left != ivIdStartFootLeft ||
-            start_foot_id_right != ivIdStartFootRight)
-        {
-            ROS_INFO("start feet changed from (%i, %i) to (%i, %i)",
-                     start_foot_id_left, start_foot_id_right,
-                     ivIdStartFootLeft, ivIdStartFootRight);
-        }
-
         // check if everything has been set correctly
         assert(ivIdStartFootLeft != -1);
         assert(ivIdStartFootRight != -1);

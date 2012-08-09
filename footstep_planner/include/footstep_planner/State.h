@@ -51,7 +51,6 @@ namespace footstep_planner
         double getTheta() const { return ivTheta; };
         Leg getLeg() const { return ivLeg; };
 
-    private:
         /**
          * @brief Compare two states on equality of x, y, theta, leg upon
          * a certain degree of float precision.
@@ -64,9 +63,10 @@ namespace footstep_planner
          */
         bool operator !=(const State& s2) const;
 
-        /// The robot's pose in x direction.
+    private:
+        /// The robot's position in x direction.
         double ivX;
-        /// The robot's pose in y direction.
+        /// The robot's position in y direction.
         double ivY;
         /// The robot's orientation.
         double ivTheta;

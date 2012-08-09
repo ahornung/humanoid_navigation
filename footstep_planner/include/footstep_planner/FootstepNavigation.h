@@ -138,11 +138,12 @@ namespace footstep_planner
          */
         bool performanceValid(const humanoid_nav_msgs::ClipFootstep& footstep);
 
-        /**
-         * @return True if the footstep can be performed by the robot (i.e. it
-         * is within the robot's max ranges).
-         */
+        /// @return True if both states are equal upon some accuracy.
         bool performanceValid(const State& planned, const State& executed);
+
+        /// @return True if both states are equal upon some accuracy.
+        bool performanceValid(float a_x, float a_y, float a_theta,
+                              float b_x, float b_y, float b_theta);
 
         void restartFootstepExecution();
 

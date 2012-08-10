@@ -69,6 +69,8 @@ namespace footstep_planner
         nh_private.param("accuracy/cell_size", ivCellSize, 0.005);
         nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 128);
 
+        nh_private.param("feedback_frequency", ivFeedbackFrequency, 5.0);
+
         nh_private.param("protective_execution", ivProtectiveExecution, true);
 
         // check if each footstep can be performed by the NAO robot
@@ -218,7 +220,7 @@ namespace footstep_planner
     		to_planned++;
     	}
 
-    	ROS_INFO("Succeeded walking to the goal.");
+    	ROS_INFO("Succeeded walking to the goal.\n");
 
     	// free the lock
     	ivExecutingFootsteps = false;
@@ -335,6 +337,7 @@ namespace footstep_planner
     	    {
     	        ROS_INFO("Try to reach calculated path.");
 
+                goal.feedback_frequence = ivFeedbackFrequency;
     	        // adjust the internal counters
                 ivResetStepIdx += ivControlStepIdx + 1;
                 ivControlStepIdx = 0;

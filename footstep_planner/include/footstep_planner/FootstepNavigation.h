@@ -100,7 +100,7 @@ namespace footstep_planner
          * @brief Calculates the footstep necessary to reach 'to' from within
          * 'from'.
          *
-         * @return True if an performable footstep has been found.
+         * @return True if the footstep can be performed by the NAO robot.
          */
         bool getFootstep(const tf::Pose& from, const State& to,
                          humanoid_nav_msgs::StepTarget& footstep);

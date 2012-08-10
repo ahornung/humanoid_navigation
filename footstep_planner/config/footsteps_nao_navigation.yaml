@@ -1,15 +1,19 @@
 ### Footstep parameterization for the Aldebaran Robotics Nao humanoid ##########
 
 ### footstep settings ##########################################################
+
 # Footstep displacement vectors (in meter / rad)
 # NOTE: not all footsteps within the max values can be performed since the
 #       boundary of allowd footsteps is an ellipse
 # WARNING: data type has to be float since integers will cause an exception
-footsteps/x:     [0.000,0.040,0.026,0.040,0.026,-0.014,0.000,-0.014,-0.030,-0.030,-0.030,-0.030,0.00,0.03]
-footsteps/y:     [0.095,0.095,0.093,0.135,0.133, 0.093,0.135, 0.133, 0.095, 0.093, 0.135, 0.133,0.09,0.09]
-footsteps/theta: [0.000,0.000,0.300,0.000,0.300, 0.300,0.000, 0.300, 0.000, 0.300, 0.000, 0.300,0.00,0.00]
+footsteps:
+  x:     [0.000,0.040,0.026,0.040,0.026,-0.014,0.000,-0.014,-0.030,-0.030,-0.030,-0.030,0.00,0.03]
+  y:     [0.095,0.095,0.093,0.135,0.133, 0.093,0.135, 0.133, 0.095, 0.093, 0.135, 0.133,0.09,0.09]
+  theta: [0.000,0.000,0.300,0.000,0.300, 0.300,0.000, 0.300, 0.000, 0.300, 0.000, 0.300,0.00,0.00]
+
 
 ### foot settings ##############################################################
+
 foot:
   size: {x: 0.16, y: 0.088, z: 0.015}
   separation: 0.095
@@ -21,6 +25,16 @@ foot:
     inverse:
       step: {x: -0.02, y: 0.09, theta: 0.0}
 
+
 ### navigation settings ########################################################
+
 # feedback rate of the action server
-feedback_rate: 5.0
+feedback_frequency: 5.0
+
+# whether NAO should execute its footsteps slow but accurate or fast and
+# inaccurate
+protective_execution: True
+
+accuracy:
+  # the smaller the better a performed footstep has to fit into a planned one
+  footstep: {x: 0.01, y: 0.01, theta: 0.1}

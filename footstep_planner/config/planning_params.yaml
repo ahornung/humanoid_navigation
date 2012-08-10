@@ -1,5 +1,4 @@
 ### planner environment settings ###############################################
-
 # the size of the used hash map (the bigger the better); should be something
 # with 2^X (initially 2^16=65536)
 max_hash_size: 65536
@@ -27,5 +26,3 @@ forward_search: False
 # the limit of changed states that decides whether to replan or to start a hole
 # new planning task
 changed_cells_limit: 20000
-
-feedback_frequence: 0.1

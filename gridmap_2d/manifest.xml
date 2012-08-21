@@ -1,5 +1,5 @@
 <package>
-  <description brief="gridmap_2d">
+  <description brief="2D gridmap data structure and API based in OpenCV's cv::Mat">
 
      gridmap_2d - a simple 2D gridmap structure, based on OpenCV's cv::Mat
 

@@ -1,0 +1,30 @@
+<package>
+  <description brief="Kinematics library for humanoid robots based on KDL: CoM and static stability">
+
+     A small kinematics library for humanoid robots based on KDL. The main components are (recursive) center of mass, (static) stability, and support polygon computations.
+
+  </description>
+  <author>Armin Hornung</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hrl_kinematics</url>
+  
+  <depend package="roscpp"/>
+  <depend package="kdl_parser"/>
+
+  <depend package="tf_conversions"/> 
+  <depend package="geometric_shapes"/>
+  <depend package="sensor_msgs"/>
+  <depend package="robot_state_publisher"/>
+  <depend package="visualization_msgs"/>
+  <depend package="pcl" />
+  
+  <rosdep name="assimp" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/include"  lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lhrl_kinematics"/>
+  </export>
+
+</package>
+
+

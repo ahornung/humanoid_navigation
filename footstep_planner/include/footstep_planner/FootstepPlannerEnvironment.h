@@ -24,9 +24,8 @@
 #ifndef FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
 #define FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
 
-
-#include <boost/tr1/unordered_map.hpp>
-#include <boost/tr1/unordered_set.hpp>
+#include <tr1/unordered_set>
+#include <tr1/hashtable.h>
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
 #include <footstep_planner/Heuristic.h>
@@ -37,8 +36,6 @@
 
 
 #include <humanoid_nav_msgs/ClipFootstep.h>
-
-
 
 #include <vector>
 
@@ -55,9 +52,18 @@ namespace footstep_planner
     class FootstepPlannerEnvironment : public DiscreteSpaceInformation
     {
     public:
+        // specialization of hash<int,int>, similar to standard boost::hash on pairs?
+        struct IntPairHash{
+        public:
+        	size_t operator()(std::pair<int, int> x) const throw() {
+        		size_t seed = std::tr1::hash<int>()(x.first);
+        		return std::tr1::hash<int>()(x.second) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        	}
+        };
+
         typedef std::vector<int> exp_states_t;
         typedef exp_states_t::const_iterator exp_states_iter_t;
-        typedef std::tr1::unordered_set<std::pair<int,int> > exp_states_2d_t;
+        typedef std::tr1::unordered_set<std::pair<int,int>, IntPairHash > exp_states_2d_t;
         typedef exp_states_2d_t::const_iterator exp_states_2d_iter_t;
 
         /**

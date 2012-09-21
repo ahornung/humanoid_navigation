@@ -104,9 +104,14 @@ m_useIMU(false)
 
 
   } else{
+#ifndef SKIP_ENDPOINT_MODEL
     //m_mapModel = boost::shared_ptr<MapModel>(new DistanceMap(&m_privateNh));
     m_mapModel = boost::shared_ptr<MapModel>(new OccupancyMap(&m_privateNh));
     m_observationModel = boost::shared_ptr<ObservationModel>(new EndpointModel(&m_privateNh, m_mapModel, &m_rngEngine));
+#else
+    ROS_FATAL("EndpointModel not compiled due to missing dynamicEDT3D");
+    exit(-1);
+#endif
   }
 
 
@@ -182,6 +187,7 @@ void HumanoidLocalization::reset(){
     geometry_msgs::PoseWithCovarianceStampedPtr posePtr;
 
     if (m_initFromTruepose){
+    	ROS_ERROR("Init from Truepose service call not implemented\n");
 
       // TODO: fix below: instead of service lookup!
       //		geometry_msgs::PoseStamped truePose;
@@ -197,27 +203,27 @@ void HumanoidLocalization::reset(){
 
 
 
-      const static std::string servname = "simulator_truepose";
-      ROS_INFO("Requesting truepose from %s...", m_nh.resolveName(servname).c_str());
-      nao_msgs::GetTruepose::Request req;
-      nao_msgs::GetTruepose::Response resp;
-
-      while(m_nh.ok() && !ros::service::call(servname, req, resp))
-      {
-        ROS_WARN("Truepose for initialization request to %s failed; trying again...", m_nh.resolveName(servname).c_str());
-        usleep(1000000);
-      }
-
-      posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped(resp.pose));
-      // initial covariance acc. to params (Truepose has cov. 0)
-      for(int j=0; j < 6; ++j){
-        for (int i = 0; i < 6; ++i){
-          if (i == j)
-            posePtr->pose.covariance.at(i*6 +j) = m_initNoiseStd(i) * m_initNoiseStd(i);
-          else
-            posePtr->pose.covariance.at(i*6 +j) = 0.0;
-        }
-      }
+//      const static std::string servname = "simulator_truepose";
+//      ROS_INFO("Requesting truepose from %s...", m_nh.resolveName(servname).c_str());
+//      nao_msgs::GetTruepose::Request req;
+//      nao_msgs::GetTruepose::Response resp;
+//
+//      while(m_nh.ok() && !ros::service::call(servname, req, resp))
+//      {
+//        ROS_WARN("Truepose for initialization request to %s failed; trying again...", m_nh.resolveName(servname).c_str());
+//        usleep(1000000);
+//      }
+//
+//      posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped(resp.pose));
+//      // initial covariance acc. to params (Truepose has cov. 0)
+//      for(int j=0; j < 6; ++j){
+//        for (int i = 0; i < 6; ++i){
+//          if (i == j)
+//            posePtr->pose.covariance.at(i*6 +j) = m_initNoiseStd(i) * m_initNoiseStd(i);
+//          else
+//            posePtr->pose.covariance.at(i*6 +j) = 0.0;
+//        }
+//      }
 
     } else{
       posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped());

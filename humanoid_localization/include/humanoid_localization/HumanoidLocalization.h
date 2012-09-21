@@ -49,11 +49,12 @@
 #include <humanoid_localization/MotionModel.h>
 #include <humanoid_localization/ObservationModel.h>
 #include <humanoid_localization/RaycastingModel.h>
-#include <humanoid_localization/EndpointModel.h>
+#ifndef SKIP_ENDPOINT_MODEL
+  #include <humanoid_localization/EndpointModel.h>
+#endif
 
 
 #include <octomap/octomap.h>
-#include <nao_msgs/GetTruepose.h>
 #include <nao_msgs/TorsoIMU.h>
 #include <boost/circular_buffer.hpp>
 

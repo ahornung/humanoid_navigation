@@ -20,24 +20,36 @@ find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})                                                          
 link_directories(${OCTOMAP_LIBRARY_DIRS})
 
-find_package(dynamicEDT3D REQUIRED)                                                                        
-include_directories(${DYNAMICEDT3D_INCLUDE_DIRS})                                                          
-link_directories(${DYNAMICEDT3D_LIBRARY_DIRS})
 
-LINK_LIBRARIES(${OCTOMAP_LIBRARIES} ${DYNAMICEDT3D_LIBRARIES})                                                    
+set(LIB_FILES 
+  src/HumanoidLocalization.cpp 
+  src/MotionModel.cpp 
+  src/MapModel.cpp
+  src/ObservationModel.cpp 
+  src/RaycastingModel.cpp
+)
+
+find_package(dynamicEDT3D)
+if (${dynamicEDT3D_FOUND})                                                                       
+  include_directories(${DYNAMICEDT3D_INCLUDE_DIRS})                                                          
+  link_directories(${DYNAMICEDT3D_LIBRARY_DIRS})
+  LINK_LIBRARIES(${OCTOMAP_LIBRARIES} ${DYNAMICEDT3D_LIBRARIES})
+  list(APPEND LIB_FILES src/EndpointModel.cpp)                                      
+else (${dynamicEDT3D_FOUND})
+  MESSAGE(WARNING "dynamicEDT3D library (part of OctoMap >1.5) not found, skipping endpoint model")
+  add_definitions(-DSKIP_ENDPOINT_MODEL)
+endif (${dynamicEDT3D_FOUND})
+
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
 
-rosbuild_add_library(${PROJECT_NAME} src/HumanoidLocalization.cpp src/MotionModel.cpp src/MapModel.cpp
-		src/ObservationModel.cpp src/EndpointModel.cpp src/RaycastingModel.cpp)
+
+message(${LIB_FILES})
+rosbuild_add_library(${PROJECT_NAME} ${LIB_FILES})
 rosbuild_add_boost_directories()
 rosbuild_add_openmp_flags(${PROJECT_NAME})
 

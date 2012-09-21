@@ -19,5 +19,10 @@
   <depend stack="navigation" /> <!-- map_server -->
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- rospy, roscpp -->
+  <depend stack="perception_pcl" />
+  <depend stack="octomap_msgs" /> 
+  
+  <depends>octomap</depends>
+  
 
 </stack>

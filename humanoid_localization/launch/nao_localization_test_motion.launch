@@ -1,0 +1,8 @@
+<!-- Test MotionModel / Odometry by using only one particle w. no noise -->
+
+<launch>
+	<node pkg="octomap_server" type="octomap_server" name="octomap_server" args="$(find nao_localization)/map.bt" />
+	<node pkg="nao_localization" type="nao_localization" name="nao_localization" >
+		<rosparam file="$(find nao_localization)/localization_conf_motion_test.yaml" command="load" />
+	</node>
+</launch>

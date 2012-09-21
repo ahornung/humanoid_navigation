@@ -1,0 +1,18 @@
+use_raycasting: true
+init_from_truepose: true
+num_particles: 1
+neff_factor: 0
+
+initial_std_x: 0.0
+initial_std_y: 0.0
+initial_std_z: 0.0
+initial_std_roll: 0.0
+initial_std_pitch: 0.0
+initial_std_yaw: 0.0
+
+motion_noise/xx: 0.0
+motion_noise/yy: 0.0
+motion_noise/zz: 0.0
+motion_noise/RR: 0.0
+motion_noise/PP: 0.0
+motion_noise/YY: 0.0

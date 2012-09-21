@@ -1,0 +1,80 @@
+
+ # raycasting (slow) or endpoint model (approx)
+use_raycasting: true
+
+# for testing only!
+# weight_factor_roll: 0.0
+# weight_factor_pitch: 0.0
+#weight_factor_z: 5.0
+
+
+num_particles: 500
+init_global: false
+init_from_truepose: false
+
+# global loc:
+# num_particles: 20000
+# init_global: true
+# init_from_truepose: false
+
+# rel. number of effectice particles for resampling threshold (0: never, 1: always)
+neff_factor: 1.0 
+
+# minimum weight for a particle (normal scale, need to sum up to < 1!)
+# Warning: this keeps the particles from converging properly!
+#min_particle_weight: 0.000001
+
+num_sensor_beams: 48
+
+# min traversed odometry interval between laser measurements:
+# 
+laser_thres_trans: 0.2
+laser_thres_rot: 0.4
+
+# laser obs. model (for raycasting only)
+laser_z_hit: 0.8
+laser_z_short: 0.1
+laser_z_max: 0.05
+laser_z_rand: 0.05
+laser_sigma_hit: 0.05
+laser_lambda_short: 0.1
+
+# laser obs.model (for endpoint model only)
+# std.dev for gaussian (p_hit)
+#use in loc
+laser_endp_sigma: 0.05
+#used for global:
+#laser_endp_sigma: 0.07
+
+
+#motion_mean_z: 0.317
+#motion_range_z: 0.03
+#motion_range_roll: 0.25
+#motion_range_pitch: 0.1
+
+motion_sigma_z: 0.02
+motion_sigma_roll: 0.015 # 0.85 deg.
+motion_sigma_pitch: 0.015 # 0.85 deg.
+
+motion_noise/x: 0.15    # per m
+motion_noise/y: 0.15    # per m
+motion_noise/z: 0.05   # per m
+motion_noise/R: 0.1    # per m
+motion_noise/P: 0.1    # per m
+motion_noise/Y: 0.8    # per m
+
+# initial pose (when no truepose available):
+initial_pose_x: 2.0
+initial_pose_y: 2.0
+initial_pose_z: 0.31     # over z-plane 
+initial_pose_roll: 0.0
+initial_pose_pitch: 0.0
+initial_pose_yaw: 4.71    
+
+# std dev for initial noise (truepose or manual init)
+initial_std_x: 0.03
+initial_std_y: 0.03
+initial_std_z: 0.015
+initial_std_roll: 0.04
+initial_std_pitch: 0.04
+initial_std_yaw: 0.2    # ~13 deg

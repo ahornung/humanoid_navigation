@@ -1,0 +1,5 @@
+<launch>    
+	<node pkg="humanoid_localization" type="localization_node" name="humanoid_localization" output="screen" >
+		<rosparam file="$(find humanoid_localization)/config/nao_localization_laser.yaml" command="load" />
+	</node>
+</launch>

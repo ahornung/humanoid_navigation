@@ -337,6 +337,7 @@ namespace footstep_planner
         {
             broadcastExpandedNodesVis();
             broadcastRandomNodesVis();
+
         	ROS_ERROR("No solution found");
             return false;
         }
@@ -348,11 +349,32 @@ namespace footstep_planner
     {
         ivPath.clear();
 
-        State s;
-        for(unsigned i = 0; i < state_ids.size(); ++i)
+        State first, second;
+        if (!ivPlannerEnvironmentPtr->getState(0, &first))
         {
-            bool success = ivPlannerEnvironmentPtr->getState(state_ids[i], &s);
-            if (!success)
+            ivPath.clear();
+            return false;
+        }
+        if (!ivPlannerEnvironmentPtr->getState(1, &second))
+        {
+            ivPath.clear();
+            return false;
+        }
+
+        // check if the planner used both start feet; only the last one is
+        // necessary to generate a footstep path
+        unsigned int i = 2;
+        if (first == ivStartFootLeft && second == ivStartFootRight)
+            ivPath.push_back(second);
+        else if (first == ivStartFootRight && second == ivStartFootLeft)
+            ivPath.push_back(second);
+        else
+            i = 0;
+
+        State s;
+        for(; i < state_ids.size(); ++i)
+        {
+            if (!ivPlannerEnvironmentPtr->getState(state_ids[i], &s))
             {
                 ivPath.clear();
                 return false;
@@ -545,17 +567,17 @@ namespace footstep_planner
         }
 
         State goal(x, y, theta, NOLEG);
-        State left_foot = getFootPose(goal, LEFT);
-        State right_foot = getFootPose(goal, RIGHT);
+        State foot_left = getFootPose(goal, LEFT);
+        State foot_right = getFootPose(goal, RIGHT);
 
-        if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
-            ivPlannerEnvironmentPtr->occupied(right_foot))
+        if (ivPlannerEnvironmentPtr->occupied(foot_left) ||
+            ivPlannerEnvironmentPtr->occupied(foot_right))
         {
             ROS_ERROR("Goal pose at (%f %f %f) not accessible.", x, y, theta);
             return false;
         }
-        ivGoalFootLeft = left_foot;
-        ivGoalFootRight = right_foot;
+        ivGoalFootLeft = foot_left;
+        ivGoalFootRight = foot_right;
 
         ivGoalPoseSetUp = true;
         ROS_INFO("Goal pose set to (%f %f %f)", x, y, theta);
@@ -784,9 +806,7 @@ namespace footstep_planner
 
         bool unequal = true;
         for (int i = 0; i < new_path.size(); i++)
-        {
             unequal = new_path[i] != ivPlanningStatesIds[i] && unequal;
-        }
 
         return unequal;
     }

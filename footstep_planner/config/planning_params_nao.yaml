@@ -2,6 +2,7 @@
 
 # cost to perform one footstep (in addition to distance costs, corresponds to 'meters')
 step_cost: 0.01
+
 # cost to estimate the difference between the current orientation and the goal
 # orientation; used in the heuristic it can easily overestimate the true path
 # cost since this cost is not incorporated in each step

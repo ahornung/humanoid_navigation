@@ -1,4 +1,5 @@
 ### planner environment settings ###############################################
+
 # the size of the used hash map (the bigger the better); should be something
 # with 2^X (initially 2^16=65536)
 max_hash_size: 65536
@@ -18,9 +19,12 @@ planner_type: ARAPlanner
 
 # search until a specific time limit is reached or first solution is found
 search_until_first_solution: False
+
 # the maximum search time if search_until_first_solution is set to False
 allocated_time: 7.0
+
 initial_epsilon: 8.0
+
 forward_search: False
 
 # the limit of changed states that decides whether to replan or to start a hole

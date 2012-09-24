@@ -35,6 +35,7 @@ namespace footstep_planner
           ivFootstepsExecution("footsteps_execution", true),
           ivExecutionShift(2),
           ivControlStepIdx(-1),
+          ivResetStepIdx(0),
           ivProtectiveExecution(true)
     {
         // private NodeHandle for parameters and private messages (debug / info)

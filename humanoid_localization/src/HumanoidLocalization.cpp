@@ -157,7 +157,7 @@ m_useIMU(false)
   m_pauseLocSrv = m_privateNh.advertiseService("pause_localization_srv", &HumanoidLocalization::pauseLocalizationSrvCallback, this);
   m_resumeLocSrv = m_privateNh.advertiseService("resume_localization_srv", &HumanoidLocalization::resumeLocalizationSrvCallback, this);
 
-  m_imuSub = m_nh.subscribe("torso_imu", 5, &HumanoidLocalization::imuCallback, this);
+  m_imuSub = m_nh.subscribe("imu", 5, &HumanoidLocalization::imuCallback, this);
 
   ROS_INFO("NaoLocalization initialized with %d particles.", m_numParticles);
 }
@@ -248,8 +248,7 @@ void HumanoidLocalization::reset(){
 
         // Get latest roll and pitch
         if(!m_lastIMUMsgBuffer.empty()) {
-          roll = m_lastIMUMsgBuffer.back().angleX;
-          pitch = m_lastIMUMsgBuffer.back().angleY;
+          getRPY(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
         } else {
           ROS_WARN("Could not determine current roll and pitch, falling back to init_pose_{roll,pitch}");
           roll = m_initPose(3);
@@ -628,7 +627,7 @@ void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2Cons
   m_lastLaserTime = msg->header.stamp;
 }
 
-void HumanoidLocalization::imuCallback(const nao_msgs::TorsoIMUConstPtr& msg){
+void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){
   m_lastIMUMsgBuffer.push_back(*msg);
 }
 
@@ -636,7 +635,7 @@ bool HumanoidLocalization::getImuMsg(const ros::Time& stamp, ros::Time& imuStamp
   if(m_lastIMUMsgBuffer.empty())
     return false;
 
-  typedef boost::circular_buffer<nao_msgs::TorsoIMU>::const_iterator ItT;
+  typedef boost::circular_buffer<sensor_msgs::Imu>::const_iterator ItT;
   const double maxAge = 0.2;
   double closestOlderStamp = std::numeric_limits<double>::max();
   double closestNewerStamp = std::numeric_limits<double>::max();
@@ -658,10 +657,11 @@ bool HumanoidLocalization::getImuMsg(const ros::Time& stamp, ros::Time& imuStamp
     const double weightNewer = 1.0 - weightOlder;
     imuStamp = ros::Time(weightOlder * closestOlder->header.stamp.toSec()
                           + weightNewer * closestNewer->header.stamp.toSec());
-    angleX   = weightOlder * closestOlder->angleX
-        + weightNewer * closestNewer->angleX;
-    angleY   = weightOlder * closestOlder->angleY
-        + weightNewer * closestNewer->angleY;
+    double olderX, olderY, newerX, newerY;
+    getRPY(closestOlder->orientation, olderX, olderY);
+    getRPY(closestNewer->orientation, newerX, newerY);
+    angleX   = weightOlder * olderX  + weightNewer * newerX;
+    angleY   = weightOlder * olderY + weightNewer * newerY;
     ROS_DEBUG("Msg: %.3f, Interpolate [%.3f .. %.3f .. %.3f]\n", stamp.toSec(), closestOlder->header.stamp.toSec(),
               imuStamp.toSec(), closestNewer->header.stamp.toSec());
     return true;
@@ -669,8 +669,7 @@ bool HumanoidLocalization::getImuMsg(const ros::Time& stamp, ros::Time& imuStamp
     // Return closer one
     ItT it = (closestOlderStamp < closestNewerStamp) ? closestOlder : closestNewer;
     imuStamp = it->header.stamp;
-    angleX   = it->angleX;
-    angleY   = it->angleY;
+    getRPY(it->orientation, angleX, angleY);
     return true;
   } else {
     if(closestOlderStamp < closestNewerStamp)
@@ -738,8 +737,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
           double roll, pitch;
           if(msg->header.stamp.isZero()) {
             // Header stamp is not set (e.g. RViz), use stamp from latest IMU message instead
-            roll = m_lastIMUMsgBuffer.back().angleX;
-            pitch = m_lastIMUMsgBuffer.back().angleY;
+            getRPY(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
             ok = true;
           } else {
             ros::Time imuStamp;

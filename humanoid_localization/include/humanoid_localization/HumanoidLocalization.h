@@ -55,10 +55,17 @@
 
 
 #include <octomap/octomap.h>
-#include <nao_msgs/TorsoIMU.h>
+#include <sensor_msgs/Imu.h>
 #include <boost/circular_buffer.hpp>
 
 namespace humanoid_localization{
+
+static inline void getRPY(const geometry_msgs::Quaternion& msg_q, double& roll, double& pitch){
+  tf::Quaternion bt_q;
+  tf::quaternionMsgToTF(msg_q, bt_q);
+  double useless_yaw;
+  tf::Matrix3x3(bt_q).getRPY(roll, pitch, useless_yaw);
+}
 
 class HumanoidLocalization {
 public:
@@ -73,7 +80,7 @@ public:
   bool pauseLocalizationSrvCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   /// unpause localization by service call
   bool resumeLocalizationSrvCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-  void imuCallback(const nao_msgs::TorsoIMUConstPtr& msg);
+  void imuCallback(const sensor_msgs::ImuConstPtr& msg);
 
   /**
    * Importance sampling from m_particles according to weights,
@@ -197,7 +204,7 @@ protected:
   int m_bestParticleIdx;
   tf::Pose m_odomPose; // incrementally added odometry pose (=dead reckoning)
   geometry_msgs::PoseArray m_poseArray; // particles as PoseArray (preallocated)
-  boost::circular_buffer<nao_msgs::TorsoIMU> m_lastIMUMsgBuffer;
+  boost::circular_buffer<sensor_msgs::Imu> m_lastIMUMsgBuffer;
 
   bool m_bestParticleAsMean;
   bool m_firstLaserReceived;

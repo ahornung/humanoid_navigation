@@ -22,7 +22,7 @@
   <depend package="octomap_msgs"/>
   <depend package="visualization_msgs"/>
   <depend package="pcl_ros"/>
-  <depend package="nao_msgs"/>
+  <depend package="sensor_msgs"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lhumanoid_localization"/>

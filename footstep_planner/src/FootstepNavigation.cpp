@@ -245,7 +245,7 @@ namespace footstep_planner
     		support_leg = ivPlanner.getStartFootLeft();
     	if (getFootstepsFromPath(support_leg, 1, goal.footsteps))
     	{
-			goal.feedback_frequence = ivFeedbackFrequency;
+			goal.feedback_frequency = ivFeedbackFrequency;
 			ivControlStepIdx = 0;
 			ivResetStepIdx = 0;
 
@@ -338,7 +338,7 @@ namespace footstep_planner
     	    {
     	        ROS_INFO("Try to reach calculated path.");
 
-                goal.feedback_frequence = ivFeedbackFrequency;
+                goal.feedback_frequency = ivFeedbackFrequency;
     	        // adjust the internal counters
                 ivResetStepIdx += ivControlStepIdx + 1;
                 ivControlStepIdx = 0;

@@ -2,7 +2,7 @@
 
 # whether NAO should execute its footsteps slow but accurate or fast and
 # inaccurate
-protective_execution: True
+safe_execution: True
 
 # feedback rate of the action server
 feedback_frequency: 5.0

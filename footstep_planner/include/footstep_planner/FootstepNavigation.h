@@ -58,11 +58,12 @@ namespace footstep_planner
 
         /// @brief Wrapper for FootstepPlanner::setGoal.
         bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
+
         /// @brief Wrapper for FootstepPlanner::setGoal.
         bool setGoal(float x, float y, float theta);
 
         /**
-         * @brief Callback to retreive the robot's position.
+         * @brief Callback to retrieve the robot's position.
          *
          * Subscribed to 'amcl_pose'.
          */
@@ -85,7 +86,10 @@ namespace footstep_planner
         void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancy_map);
 
     protected:
-        /// @brief Starts the planning task via FootstepPlanner::plan().
+        /**
+         * @brief Starts the planning task (from scratch) via
+         * FootstepPlanner::plan().
+         */
         void run();
 
         /**
@@ -105,6 +109,19 @@ namespace footstep_planner
         bool getFootstep(const tf::Pose& from, const State& to,
                          humanoid_nav_msgs::StepTarget& footstep);
 
+        /**
+         * @brief Extracts the footsteps necessary to perform the calculated
+         * path.
+         *
+         * @param current_support_leg The current support leg of the robot. Used
+         * to calculate the footstep necessary to reach the calculated path.
+         * @param starting_step_num Index of the state in the path which has
+         * to be reached first. Usually this is 1 (since state 0 is the current
+         * support leg of the robot) but for readjustments indices different
+         * from 1 are necessary.
+         *
+         * @return False if an extracted footstep is invalid.
+         */
         bool getFootstepsFromPath(
         		const State& current_support_leg, int starting_step_num,
         		std::vector<humanoid_nav_msgs::StepTarget>& footsteps);
@@ -117,14 +134,28 @@ namespace footstep_planner
 
         /**
          * @brief Alternative (and more fluid) execution of footsteps using
-         * ROS's actionlib. (NOTE: not fully implemented so far!)
+         * ROS' actionlib.
          */
-        void executeFootsteps_alt();
+        void executeFootstepsFast();
 
+        /**
+         * @brief Called from within ROS' actionlib at the start of a new goal
+         * request.
+         */
         void activeCallback();
+
+        /**
+         * @brief Called from within ROS' actionlib at the end of a goal
+         * request.
+         */
         void doneCallback(
         		const actionlib::SimpleClientGoalState& state,
                 const humanoid_nav_msgs::ExecFootstepsResultConstPtr& result);
+
+        /**
+         * @brief Called from within ROS' actionlib during the execution of
+         * a goal request.
+         */
         void feedbackCallback(
 				const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
 
@@ -145,13 +176,11 @@ namespace footstep_planner
         bool performanceValid(float a_x, float a_y, float a_theta,
                               float b_x, float b_y, float b_theta);
 
-        void restartFootstepExecution();
-
         FootstepPlanner ivPlanner;
 
-        ros::Subscriber ivGridMapSub, ivRobotPoseSub, ivGoalPoseSub;
-
-        ros::Publisher  ivPathVisPub;
+        ros::Subscriber ivGridMapSub;
+        ros::Subscriber ivRobotPoseSub;
+        ros::Subscriber ivGoalPoseSub;
 
         ros::ServiceClient ivFootstepSrv;
         ros::ServiceClient ivClipFootstepSrv;
@@ -176,15 +205,27 @@ namespace footstep_planner
         /// The rate the action server sends its feedback.
         double ivFeedbackFrequency;
 
-        /// @brief Simple action client to control a footstep execution.
+        /// Simple action client to control a footstep execution.
     	actionlib::SimpleActionClient<
 				humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
 
-    	int ivExecutionShift;
+    	/// Fixed delay (=2) of the incoming footsteps.
+    	const int ivExecutionShift;
+
+    	/**
+    	 *  Index to keep track of the currently executed footstep and the
+    	 *  currently observed one.
+    	 */
     	int ivControlStepIdx;
+
+    	/**
+    	 * Index used to keep track of the currently observed footstep after
+    	 * replanning.
+    	 */
     	int ivResetStepIdx;
 
-    	bool ivProtectiveExecution;
+    	/// Whether to use the slower but more cautious execution or not.
+    	bool ivSafeExecution;
     };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

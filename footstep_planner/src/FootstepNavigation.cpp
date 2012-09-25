@@ -36,7 +36,7 @@ namespace footstep_planner
           ivExecutionShift(2),
           ivControlStepIdx(-1),
           ivResetStepIdx(0),
-          ivProtectiveExecution(true)
+          ivSafeExecution(true)
     {
         // private NodeHandle for parameters and private messages (debug / info)
         ros::NodeHandle nh_private("~");
@@ -72,7 +72,7 @@ namespace footstep_planner
 
         nh_private.param("feedback_frequency", ivFeedbackFrequency, 5.0);
 
-        nh_private.param("protective_execution", ivProtectiveExecution, true);
+        nh_private.param("protective_execution", ivSafeExecution, true);
 
         // check if each footstep can be performed by the NAO robot
         XmlRpc::XmlRpcValue footsteps_x;
@@ -134,13 +134,13 @@ namespace footstep_planner
 		ivExecutingFootsteps = true;
 		// calculate path
         if (ivPlanner.plan())
-            if (ivProtectiveExecution)
+            if (ivSafeExecution)
                 // execution thread
                 boost::thread footstepExecutionThread(
                         &FootstepNavigation::executeFootsteps, this);
             else
                 // ALTERNATIVE:
-                executeFootsteps_alt();
+                executeFootstepsFast();
         else
         	// free the lock if the planning failed
         	ivExecutingFootsteps = false;
@@ -229,7 +229,7 @@ namespace footstep_planner
 
 
     void
-    FootstepNavigation::executeFootsteps_alt()
+    FootstepNavigation::executeFootstepsFast()
     {
     	if (ivPlanner.getPathSize() <= 1)
     		return;
@@ -362,7 +362,7 @@ namespace footstep_planner
                     if (ivPlanner.replan())
                     {
                         // start new execution
-                        executeFootsteps_alt();
+                        executeFootstepsFast();
                     }
                     else
                     {
@@ -417,13 +417,6 @@ namespace footstep_planner
     		else
     			ROS_ERROR("Start pose not accessible: check your odometry");
     	}
-    }
-
-
-    void
-    FootstepNavigation::restartFootstepExecution()
-    {
-
     }
 
 

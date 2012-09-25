@@ -112,11 +112,15 @@ namespace footstep_planner
                 fabs(step.pose.y - performable_step.response.step.pose.y) >
                         FLOAT_CMP_THR ||
                 fabs(angles::shortest_angular_distance(
-                    step.pose.theta, performable_step.response.step.pose.theta)) >
+                    step.pose.theta,
+                    performable_step.response.step.pose.theta)) >
                         FLOAT_CMP_THR)
             {
-                ROS_ERROR("Step (%f, %f, %f) cannot be performed by the NAO "
-                          "robot. Exit!", x, y, theta);
+                ROS_ERROR("Step (%f, %f, %f) (%f, %f, %f) cannot be performed by the NAO "
+                          "robot. Exit!", x, y, theta,
+                          performable_step.response.step.pose.x,
+                          performable_step.response.step.pose.y,
+                          performable_step.response.step.pose.theta);
                 exit(2);
             }
         }

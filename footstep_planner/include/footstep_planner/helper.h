@@ -39,7 +39,7 @@ namespace footstep_planner
 {
 	static const double TWO_PI = 2 * M_PI;
 
-	static const double FLOAT_CMP_THR = 0.00001;
+	static const double FLOAT_CMP_THR = 0.0001;
 
     enum Leg { RIGHT=0, LEFT=1, NOLEG=2 };
 

@@ -48,7 +48,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 
 
-message(${LIB_FILES})
 rosbuild_add_library(${PROJECT_NAME} ${LIB_FILES})
 rosbuild_add_boost_directories()
 rosbuild_add_openmp_flags(${PROJECT_NAME})

@@ -63,7 +63,7 @@ namespace footstep_planner
         bool calculateDistances(const PlanningState& start,
                                 const PlanningState& goal);
 
-        void updateMap(GridMap2DPtr map);
+        void updateMap(gridmap_2d::GridMap2DPtr map);
 
     private:
         static const int cvObstacleThreshold = 200;
@@ -78,7 +78,7 @@ namespace footstep_planner
         unsigned int ivGoalX;
         unsigned int ivGoalY;
 
-        boost::shared_ptr<GridMap2D> ivMapPtr;
+        gridmap_2d::GridMap2DPtr ivMapPtr;
         boost::shared_ptr<SBPL2DGridSearch> ivGridSearchPtr;
 
         void resetGrid();

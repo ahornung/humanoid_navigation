@@ -131,7 +131,7 @@ namespace footstep_planner
         /// @brief Update the start pose for both feet.
         void updateStart(const State& foot_left, const State& right_right);
 
-        void updateMap(GridMap2DPtr map);
+        void updateMap(gridmap_2d::GridMap2DPtr map);
 
         /**
          * @return True iff the foot in State s is colliding with an
@@ -210,7 +210,7 @@ namespace footstep_planner
                       std::vector<int> *CostV);
 
         /**
-         * @brief Mainly used for RStar: generate succs/preds at some
+         * @brief Used for RStar: generate succs/preds at some
          * domain-dependent distance. The number of generated succs/preds is up
          * to the environment.
          */
@@ -219,7 +219,7 @@ namespace footstep_planner
 		                                      std::vector<int>* CLowV);
 
         /**
-         * @brief Mainly used for RStar: generate succs/preds at some
+         * @brief Used for RStar: generate succs/preds at some
          * domain-dependent distance. The number of generated succs/preds is up
          * to the environment.
          */
@@ -424,7 +424,7 @@ namespace footstep_planner
         bool ivHeuristicExpired;
 
         /// Pointer to the map.
-        boost::shared_ptr<GridMap2D> ivMapPtr;
+        boost::shared_ptr<gridmap_2d::GridMap2D> ivMapPtr;
 
         exp_states_2d_t ivExpandedStates;
         exp_states_t ivRandomStates; ///< random intermediate states for R*

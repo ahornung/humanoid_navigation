@@ -437,7 +437,7 @@ namespace footstep_planner
     FootstepNavigation::mapCallback(
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
-        GridMap2DPtr map(new GridMap2D(occupancy_map));
+	gridmap_2d::GridMap2DPtr map(new gridmap_2d::GridMap2D(occupancy_map));
         ivIdMapFrame = map->getFrameID();
         ivPlanner.updateMap(map);
     }

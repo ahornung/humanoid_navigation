@@ -26,12 +26,12 @@
   <depend package="tf"/>
   <depend package="visualization_msgs"/>
   
-  <!-- for electric: -->
-  <depend package="sbpl"/>
+  <!-- for electric: 
+  <depend package="sbpl"/> -->
 
 
-  <!-- for fuerte, does not seem to work right now?
-    <rosdep name="sbpl" /> -->
+  <!-- for fuerte and later -->
+  <rosdep name="sbpl" />
 
 </package>
 

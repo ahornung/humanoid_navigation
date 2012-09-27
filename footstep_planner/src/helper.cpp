@@ -27,7 +27,7 @@ namespace footstep_planner
 {
 	bool
 	collision_check(double x, double y, double theta, double height,
-                    double width, int accuracy, const GridMap2D& distance_map)
+                    double width, int accuracy, const gridmap_2d::GridMap2D& distance_map)
 	{
 		double d = distance_map.distanceMapAt(x, y);
 		if (d < 0.0) // if out of bounds => collision

@@ -24,8 +24,8 @@
 #include <footstep_planner/FootstepPlannerEnvironment.h>
 
 
-namespace footstep_planner
-{
+namespace footstep_planner{
+
     FootstepPlannerEnvironment::FootstepPlannerEnvironment(
             const  std::vector<Footstep>& footstep_set,
             const  boost::shared_ptr<Heuristic> heuristic,
@@ -335,7 +335,7 @@ namespace footstep_planner
 
 
     void
-    FootstepPlannerEnvironment::updateMap(GridMap2DPtr map)
+    FootstepPlannerEnvironment::updateMap(gridmap_2d::GridMap2DPtr map)
     {
         ivMapPtr.reset();
         ivMapPtr = map;

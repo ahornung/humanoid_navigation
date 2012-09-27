@@ -26,6 +26,8 @@
 
 #include <time.h>
 
+using gridmap_2d::GridMap2D;
+using gridmap_2d::GridMap2DPtr;
 
 namespace footstep_planner
 {

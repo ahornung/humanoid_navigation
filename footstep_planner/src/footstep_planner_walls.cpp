@@ -28,6 +28,9 @@
 
 
 using namespace footstep_planner;
+using gridmap_2d::GridMap2D;
+using gridmap_2d::GridMap2DPtr;
+
 /**
  * @brief Wrapper class for FootstepPlanner, providing callbacks for
  * the node functionality. This node additionally sets wall regions

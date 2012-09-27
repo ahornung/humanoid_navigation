@@ -202,7 +202,7 @@ namespace footstep_planner
 	 */
 	bool collision_check(double x, double y, double theta,
                          double height, double width, int accuracy,
-						 const GridMap2D& distance_map);
+						 const gridmap_2d::GridMap2D& distance_map);
 }
 
 #endif  /* FOOTSTEP_PLANNER_HELPER_H_ */

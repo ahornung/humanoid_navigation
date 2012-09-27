@@ -32,13 +32,18 @@
  */
 
 
-#ifndef GRIDMAP2D_H_
-#define GRIDMAP2D_H_
+#ifndef GRIDMAP2D_GRIDMAP2D_H_
+#define GRIDMAP2D_GRIDMAP2D_H_
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <nav_msgs/OccupancyGrid.h>
 
+
+
+
+
+namespace gridmap_2d{
 /**
  * @brief Stores a nav_msgs::OccupancyGrid in a convenient opencv cv::Mat
  * as binary map (free: 255, occupied: 0) and as distance map (distance
@@ -46,86 +51,87 @@
  */
 class GridMap2D {
 public:
-	GridMap2D();
-	GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap);
-	virtual ~GridMap2D();
+  GridMap2D();
+  GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap);
+  virtual ~GridMap2D();
 
-	void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;
-	bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
-	void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+  void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;
+  bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+  void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
-	/// check if a coordinate is covered by the map extent (same as worldToMap)
-	bool inMapBounds(double wx, double wy) const;
+  /// check if a coordinate is covered by the map extent (same as worldToMap)
+  bool inMapBounds(double wx, double wy) const;
 
-	/**
-	 * Inflate occupancy map by inflationRadius
-	 */
-	void inflateMap(double inflationRaduis);
+  /**
+   * Inflate occupancy map by inflationRadius
+   */
+  void inflateMap(double inflationRaduis);
 
-	/// Distance (in m) between two map coordinates (indices)
-	inline double worldDist(unsigned x1, unsigned y1, unsigned x2, unsigned y2){
-		return worldDist(cv::Point(x1, y1), cv::Point(x2, y2));
-	}
+  /// Distance (in m) between two map coordinates (indices)
+  inline double worldDist(unsigned x1, unsigned y1, unsigned x2, unsigned y2){
+    return worldDist(cv::Point(x1, y1), cv::Point(x2, y2));
+  }
 
-	inline double worldDist(const cv::Point& p1, const cv::Point& p2){
-		return GridMap2D::pointDist(p1, p2) * m_mapInfo.resolution;
-	}
+  inline double worldDist(const cv::Point& p1, const cv::Point& p2){
+    return GridMap2D::pointDist(p1, p2) * m_mapInfo.resolution;
+  }
 
-	/// Euclidean distance between two points:
-	static inline double pointDist(const cv::Point& p1, const cv::Point& p2){
-		return sqrt(pointDist2(p1, p2));
-	}
+  /// Euclidean distance between two points:
+  static inline double pointDist(const cv::Point& p1, const cv::Point& p2){
+    return sqrt(pointDist2(p1, p2));
+  }
 
-	/// Squared distance between two points:
-	static inline double pointDist2(const cv::Point& p1, const cv::Point& p2){
-		return (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
-	}
+  /// Squared distance between two points:
+  static inline double pointDist2(const cv::Point& p1, const cv::Point& p2){
+    return (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
+  }
 
-	/// Returns distance (in m) at world coordinates <wx,wy> in m; -1 if out of bounds!
-	float distanceMapAt(double wx, double wy) const;
+  /// Returns distance (in m) at world coordinates <wx,wy> in m; -1 if out of bounds!
+  float distanceMapAt(double wx, double wy) const;
 
-	/// Returns distance (in m) at map cell <mx, my> in m; -1 if out of bounds!
-	float distanceMapAtCell(unsigned int mx, unsigned int my) const;
+  /// Returns distance (in m) at map cell <mx, my> in m; -1 if out of bounds!
+  float distanceMapAtCell(unsigned int mx, unsigned int my) const;
 
-	/// Returns map value at world coordinates <wx, wy>; out of bounds will be returned as 0!
-	uchar binaryMapAt(double wx, double wy) const;
+  /// Returns map value at world coordinates <wx, wy>; out of bounds will be returned as 0!
+  uchar binaryMapAt(double wx, double wy) const;
 
-	/// Returns map value at map cell <mx, my>; out of bounds will be returned as 0!
-	uchar binaryMapAtCell(unsigned int mx, unsigned int my) const;
+  /// Returns map value at map cell <mx, my>; out of bounds will be returned as 0!
+  uchar binaryMapAtCell(unsigned int mx, unsigned int my) const;
 
-	/// @return true if map is occupied at world coordinate <wx, wy>. Out of bounds
-	/// 		will be returned as occupied.
-	bool isOccupiedAt(double wx, double wy) const;
+  /// @return true if map is occupied at world coordinate <wx, wy>. Out of bounds
+  /// 		will be returned as occupied.
+  bool isOccupiedAt(double wx, double wy) const;
 
-	/// @return true if map is occupied at cell <mx, my>
-	bool isOccupiedAtCell(unsigned int mx, unsigned int my) const;
+  /// @return true if map is occupied at cell <mx, my>
+  bool isOccupiedAtCell(unsigned int mx, unsigned int my) const;
 
-	/// Initialize map from a ROS OccupancyGrid message
-	void setMap(const nav_msgs::OccupancyGridConstPtr& gridMap);
+  /// Initialize map from a ROS OccupancyGrid message
+  void setMap(const nav_msgs::OccupancyGridConstPtr& gridMap);
 
-	/// Initialize from an existing cv::Map. mapInfo (in particular resultion) remains the same!
-	void setMap(const cv::Mat& binaryMap);
+  /// Initialize from an existing cv::Map. mapInfo (in particular resultion) remains the same!
+  void setMap(const cv::Mat& binaryMap);
 
-	inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
-	inline float getResolution() const {return m_mapInfo.resolution; };
-	/// returns the tf frame ID of the map (usually "/map")
-	inline const std::string getFrameID() const {return m_frameId;}
-	/// @return the cv::Mat distance image.
-	const cv::Mat& distanceMap() const {return m_distMap;}
-	/// @return the cv::Mat binary image.
-	const cv::Mat& binaryMap() const {return m_binaryMap;}
-	/// @return the size of the cv::Mat binary image. Note that x/y are swapped wrt. height/width
-	inline const CvSize size() const {return m_binaryMap.size();};
+  inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
+  inline float getResolution() const {return m_mapInfo.resolution; };
+  /// returns the tf frame ID of the map (usually "/map")
+  inline const std::string getFrameID() const {return m_frameId;}
+  /// @return the cv::Mat distance image.
+  const cv::Mat& distanceMap() const {return m_distMap;}
+  /// @return the cv::Mat binary image.
+  const cv::Mat& binaryMap() const {return m_binaryMap;}
+  /// @return the size of the cv::Mat binary image. Note that x/y are swapped wrt. height/width
+  inline const CvSize size() const {return m_binaryMap.size();};
 
 
 protected:
-	cv::Mat m_binaryMap;	///< binary occupancy map. 255: free, 0 occupied.
-	cv::Mat m_distMap;		///< distance map (in meter)
-	nav_msgs::MapMetaData m_mapInfo;
-	std::string m_frameId;	///< "map" frame where ROS OccupancyGrid originated from
+  cv::Mat m_binaryMap;	///< binary occupancy map. 255: free, 0 occupied.
+  cv::Mat m_distMap;		///< distance map (in meter)
+  nav_msgs::MapMetaData m_mapInfo;
+  std::string m_frameId;	///< "map" frame where ROS OccupancyGrid originated from
 
 };
 
 typedef boost::shared_ptr< GridMap2D> GridMap2DPtr;
+}
 
 #endif /* GRIDMAP2D_H_ */

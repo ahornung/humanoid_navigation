@@ -805,7 +805,7 @@ namespace footstep_planner
             return true;
 
         bool unequal = true;
-        for (int i = 0; i < new_path.size(); i++)
+        for (unsigned i = 0; i < new_path.size(); i++)
             unequal = new_path[i] != ivPlanningStatesIds[i] && unequal;
 
         return unequal;

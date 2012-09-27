@@ -147,11 +147,11 @@ namespace footstep_planner
             resetGrid();
         ivpGrid = new unsigned char* [width];
 
-        for (int x = 0; x < width; ++x)
+        for (unsigned x = 0; x < width; ++x)
             ivpGrid[x] = new unsigned char [height];
-        for (int y = 0; y < height; ++y)
+        for (unsigned y = 0; y < height; ++y)
         {
-            for (int x = 0; x < width; ++x)
+            for (unsigned x = 0; x < width; ++x)
             {
             	float dist = ivMapPtr->distanceMapAtCell(x,y);
             	if (dist < 0.0f){

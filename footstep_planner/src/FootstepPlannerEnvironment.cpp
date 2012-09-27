@@ -917,24 +917,6 @@ namespace footstep_planner
     		NeighIDV->push_back(goal_left->getId());
     		CLowV->push_back(clow);
     		ivRandomStates.push_back(goal_left->getId());
-
-
-//    		std::vector<Footstep>::const_iterator footstep_set_iter;
-//    		for(footstep_set_iter = ivFootstepSet.begin();
-//    				footstep_set_iter != ivFootstepSet.end();
-//    				footstep_set_iter++)
-//    		{
-//    			const PlanningState predecessor =
-//    					footstep_set_iter->reverseMeOnThisState(*goal_left);
-//    			if (occupied(predecessor))
-//    				continue;
-//
-//    			const PlanningState* predecessor_hash_entry = createHashEntryIfNotExists(predecessor);
-//
-//    			int cost = GetFromToHeuristic(*predecessor_hash_entry, *currentState);
-//    			NeighIDV->push_back(predecessor_hash_entry->getId());
-//    			CLowV->push_back(cost);
-//    		}
     	}
 
     	//add right if within the distance
@@ -989,24 +971,18 @@ namespace footstep_planner
     		//get the coords of the state
     		int newX = X + dX;
     		int newY = Y + dY;
-    		if (newX < 0 || newY < 0 || newX >= ivMapPtr->getInfo().width || newY >= ivMapPtr->getInfo().height){
+    		// check if outside of map:
+    		if (newX < 0 || newY < 0 || unsigned(newX) >= ivMapPtr->getInfo().width || unsigned(newY) >= ivMapPtr->getInfo().height){
     			i--;
     			continue;
     		}
 
-
-    		// random theta:
-    		//int newTheta = rand() % ivNumAngleBins;
-
     		// direction of random exploration (facing forward):
     		int newTheta = angle_state_2_cell(fDir, ivNumAngleBins);
 
-    		// old orientation:
-    		//int newTheta = theta;
-
     		// random left/right
     		Leg newLeg = Leg(rand() % 2);
-    		//Leg newLeg = LEFT;
+
     		PlanningState randomState(newX, newY, newTheta, newLeg, ivHashTableSize);
 
     		// add both left and right if available:
@@ -1016,19 +992,6 @@ namespace footstep_planner
 //    		PlanningState randomState(newX+ddX, newY+ddY, newTheta, LEFT, ivHashTableSize);
 //
 //    		PlanningState randomStateR(newX-ddX, newY-ddY, newTheta, RIGHT, ivHashTableSize);
-
-
-    		// better?
-    		// randomly concat. actions until distance reached:
-//    		PlanningState randomState(*currentState);
-//    		while(euclidean_distance_sq(X, Y, randomState.getX(), randomState.getY()) < nDist_sq){
-//    			int randomIdx = rand() % ivFootstepSet.size();
-//    			if (bSuccs)
-//    				randomState = ivFootstepSet[randomIdx].performMeOnThisState(randomState);
-//    			else
-//    				randomState = ivFootstepSet[randomIdx].reverseMeOnThisState(randomState);
-//    		}
-
 
     		if(!occupied(randomState))
     		{
@@ -1092,12 +1055,6 @@ namespace footstep_planner
 
 		if (StateID1 == StateID2)
 			return true;
-// Does not seem to be necessary:
-//		if ((StateID1 == ivIdGoalFootLeft && StateID2 == ivIdGoalFootRight)
-//				|| (StateID1 == ivIdGoalFootRight && StateID2 == ivIdGoalFootLeft)){
-//			ROS_INFO("Left goal equiv to right");
-//			return true;
-//		}
 
 		const PlanningState* s1 = ivStateId2State[StateID1];
 		const PlanningState* s2 = ivStateId2State[StateID2];

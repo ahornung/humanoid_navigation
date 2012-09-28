@@ -257,9 +257,14 @@ namespace footstep_planner
         else if (ivPlannerType == "ADPlanner")
             ivPlannerPtr.reset(new ADPlanner(ivPlannerEnvironmentPtr.get(),
                                              ivForwardSearch));
-        else if (ivPlannerType == "RSTARPlanner")
-            ivPlannerPtr.reset(new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
-                                                ivForwardSearch));
+        else if (ivPlannerType == "RSTARPlanner"){
+          RSTARPlanner* p = new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
+                                            ivForwardSearch);
+          // new options, require patched SBPL
+//          p->set_local_expand_thres(500);
+//          p->set_eps_step(1.0);
+          ivPlannerPtr.reset(p);
+        }
 //        else if (ivPlannerType == "ANAPlanner")
 //        	ivPlannerPtr.reset(new anaPlanner(ivPlannerEnvironmentPtr.get(),
 //        	                                  ivForwardSearch));
@@ -269,6 +274,12 @@ namespace footstep_planner
     bool
     FootstepPlanner::run()
     {
+      // Workaround for R*: need to reinit. everything
+      if (ivPlannerType == "RSTARPlanner"){
+        ROS_INFO("R* planner reset");
+        reset();
+      }
+
         // commit start/goal poses to the environment
         ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
         ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft, ivGoalFootRight);

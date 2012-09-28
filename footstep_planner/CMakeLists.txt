@@ -20,10 +20,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SBPL REQUIRED sbpl)
-
-
-# hardcoded fix for fuerte?
-#include_directories(/opt/ros/fuerte/include/sbpl)
+include_directories(${SBPL_INCLUDE_DIRS})
+link_directories(${SBPL_LIBRARY_DIRS})
 
 find_package(OpenCV REQUIRED)
 
@@ -45,6 +43,6 @@ target_link_libraries(${PROJECT_NAME} ${SBPL_LIBRARIES})
 rosbuild_add_executable(footstep_planner_node src/footstep_planner.cpp)
 target_link_libraries(footstep_planner_node ${PROJECT_NAME} ${SBPL_LIBRARIES})
 rosbuild_add_executable(footstep_planner_walls src/footstep_planner_walls.cpp)
-target_link_libraries(footstep_planner_walls ${PROJECT_NAME} ${sbpl_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(footstep_planner_walls ${PROJECT_NAME} ${SBPL_LIBRARIES} ${OpenCV_LIBS})
 rosbuild_add_executable(footstep_navigation_node src/footstep_navigation.cpp)
 target_link_libraries(footstep_navigation_node ${PROJECT_NAME} ${SBPL_LIBRARIES})

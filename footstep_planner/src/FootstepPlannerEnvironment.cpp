@@ -768,14 +768,6 @@ namespace footstep_planner{
           return;
         }
 
-//        ROS_INFO("GetSuccsTo %d", goalStateId);
-
-//        if (goalStateId == ivIdGoalFootLeft)
-//        	ROS_INFO("GetSuccsTo left goal");
-//
-//        if (goalStateId == ivIdGoalFootRight)
-//        	ROS_INFO("GetSuccsTo right goal");
-
         if (closeToGoal(*current))
         {
             int goal_id;
@@ -939,43 +931,23 @@ namespace footstep_planner{
     	for (int i = 0; i < nNumofNeighs && nAttempts < 5*nNumofNeighs; i++, nAttempts++)
     	{
 
-//    		// random direction
-//    		//pick a direction
-    		//unsigned randomTheta = rand() % ivNumAngleBins;
-    		//double fDir = angle_cell_2_state(randomTheta, ivNumAngleBins);
+    		// pick goal in random direction
     		float fDir = (float)(TWO_PI*(((double)rand())/RAND_MAX));
-
-    		//compute the successor that result from following this direction until one of the coordinates reaches the desired distance
-    		//decide whether |dX| = dist or |dY| = dist
-//    		float fRadius = 0;
-//    		if(fabs(cos(fDir)) > fabs(sin(fDir)))
-//    		{
-//    			fRadius = (float)((nDist_c+0.5)/fabs(cos(fDir)));
-//    		}
-//    		else
-//    		{
-//    			fRadius = (float)((nDist_c+0.5)/fabs(sin(fDir)));
-//    		}
 
     		int dX = (int)(nDist_c*cos(fDir));
     		int dY = (int)(nDist_c*sin(fDir));
 
-
-//    		if((fabs((float)dX) < nDist_c && fabs((float)dY) < nDist_c) || fabs((float)dX) > nDist_c ||
-//    				fabs((float)dY) > nDist_c)
-//    		{
-//    			SBPL_ERROR("ERROR in EnvNav2D genneighs function: dX=%d dY=%d\n", dX, dY);
-//    			throw new SBPL_Exception();
-//    		}
-
     		//get the coords of the state
     		int newX = X + dX;
     		int newY = Y + dY;
+
+    		// TODO / FIXME x,y, can be negative! need offset
     		// check if outside of map:
-    		if (newX < 0 || newY < 0 || unsigned(newX) >= ivMapPtr->getInfo().width || unsigned(newY) >= ivMapPtr->getInfo().height){
-    			i--;
-    			continue;
-    		}
+//    		if (newX < 0 || newY < 0 || unsigned(newX) >= ivMapPtr->getInfo().width || unsigned(newY) >= ivMapPtr->getInfo().height){
+//    			i--;
+//    			ROS_INFO("Outside of map: %d %d", newX, newY);
+//    			continue;
+//    		}
 
     		// direction of random exploration (facing forward):
     		int newTheta = angle_state_2_cell(fDir, ivNumAngleBins);
@@ -1041,9 +1013,14 @@ namespace footstep_planner{
 
     	}
 
-    	ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d "
-    	          "(%d %d)", NeighIDV->size(), nAttempts, currentState->getId(),
-    	          X, Y);
+    	if (NeighIDV->size() == 0){
+    	  ROS_WARN("Could not create any random neighbor nodes (%d attempts) from id %d (%d %d)",
+    	       nAttempts, currentState->getId(), X, Y);
+    	} else
+
+          ROS_DEBUG("Created %zu random neighbors (%d attempts) from id %d "
+                    "(%d %d)", NeighIDV->size(), nAttempts, currentState->getId(),
+                    X, Y);
     }
 
 	bool

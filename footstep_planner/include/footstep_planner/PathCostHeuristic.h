@@ -31,57 +31,57 @@
 
 namespace footstep_planner
 {
-    /**
-     * @brief Determining the heuristic value by calculating a 2D path from each
-     * grid cell of the map to the goal and using the path length as expected
-     * distance.
-     *
-     * The heuristic value consists of the following factors:
-     *
-     *  + The expected distance retreived from the 2D path.
-     *
-     *  + The expected path costs.
-     *
-     *  + The difference between the orientation of the two states multiplied
-     *    by some cost factor.
-     */
-    class PathCostHeuristic : public Heuristic
-    {
-    public:
-        PathCostHeuristic(double cell_size, int num_angle_bins,
-                          double step_cost, double diff_angle_cost,
-                          double max_step_width, double inflation_radius);
-        virtual ~PathCostHeuristic();
+/**
+ * @brief Determining the heuristic value by calculating a 2D path from each
+ * grid cell of the map to the goal and using the path length as expected
+ * distance.
+ *
+ * The heuristic value consists of the following factors:
+ *
+ *  + The expected distance retreived from the 2D path.
+ *
+ *  + The expected path costs.
+ *
+ *  + The difference between the orientation of the two states multiplied
+ *    by some cost factor.
+ */
+class PathCostHeuristic : public Heuristic
+{
+public:
+  PathCostHeuristic(double cell_size, int num_angle_bins,
+                    double step_cost, double diff_angle_cost,
+                    double max_step_width, double inflation_radius);
+  virtual ~PathCostHeuristic();
 
-        virtual double getHValue(const PlanningState& from,
-		                         const PlanningState& to) const;
+  virtual double getHValue(const PlanningState& from,
+                           const PlanningState& to) const;
 
-        /**
-         * @brief Calculates for each grid cell of the map a 2D path to the
-         * goal. (The start state is not really needed here.)
-         */
-        bool calculateDistances(const PlanningState& start,
-                                const PlanningState& goal);
+  /**
+   * @brief Calculates for each grid cell of the map a 2D path to the
+   * goal. (The start state is not really needed here.)
+   */
+  bool calculateDistances(const PlanningState& start,
+                          const PlanningState& goal);
 
-        void updateMap(gridmap_2d::GridMap2DPtr map);
+  void updateMap(gridmap_2d::GridMap2DPtr map);
 
-    private:
-        static const int cvObstacleThreshold = 200;
+private:
+  static const int cvObstacleThreshold = 200;
 
-        unsigned char** ivpGrid;
+  unsigned char** ivpGrid;
 
-        double ivStepCost;
-        double ivDiffAngleCost;
-        double ivMaxStepWidth;
-        double ivInflationRadius;
+  double ivStepCost;
+  double ivDiffAngleCost;
+  double ivMaxStepWidth;
+  double ivInflationRadius;
 
-        unsigned int ivGoalX;
-        unsigned int ivGoalY;
+  unsigned int ivGoalX;
+  unsigned int ivGoalY;
 
-        gridmap_2d::GridMap2DPtr ivMapPtr;
-        boost::shared_ptr<SBPL2DGridSearch> ivGridSearchPtr;
+  gridmap_2d::GridMap2DPtr ivMapPtr;
+  boost::shared_ptr<SBPL2DGridSearch> ivGridSearchPtr;
 
-        void resetGrid();
-    };
+  void resetGrid();
+};
 }
 #endif  // FOOTSTEP_PLANNER_PATHCOSTHEURISTIC_H_

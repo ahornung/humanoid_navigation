@@ -25,59 +25,59 @@
 
 namespace footstep_planner
 {
-	bool
-	collision_check(double x, double y, double theta, double height,
-                    double width, int accuracy, const gridmap_2d::GridMap2D& distance_map)
-	{
-		double d = distance_map.distanceMapAt(x, y);
-		if (d < 0.0) // if out of bounds => collision
-			return true;
-		d -= distance_map.getResolution();
+bool
+collision_check(double x, double y, double theta, double height,
+                double width, int accuracy, const gridmap_2d::GridMap2D& distance_map)
+{
+  double d = distance_map.distanceMapAt(x, y);
+  if (d < 0.0) // if out of bounds => collision
+    return true;
+  d -= distance_map.getResolution();
 
-		double r_o = sqrt(width*width + height*height) / 2.0;
+  double r_o = sqrt(width*width + height*height) / 2.0;
 
-		if (d >= r_o)
-			return false;
-		else if (accuracy == 0)
-			return false;
+  if (d >= r_o)
+    return false;
+  else if (accuracy == 0)
+    return false;
 
-		double h_half = height / 2.0f;
-		double w_half = width / 2.0f;
-		double r_i = std::min(w_half, h_half);
+  double h_half = height / 2.0f;
+  double w_half = width / 2.0f;
+  double r_i = std::min(w_half, h_half);
 
-		if (d <= r_i)
-			return true;
-		else if (accuracy == 1)
-			return true;
+  if (d <= r_i)
+    return true;
+  else if (accuracy == 1)
+    return true;
 
-		double h_new;
-		double w_new;
-		double delta_x;
-		double delta_y;
-		if (width < height)
-		{
-			double h_clear = sqrt(d*d - w_half*w_half);
-			h_new = h_half - h_clear;
-			w_new = width;
-			delta_x = h_clear + h_new/2.0;
-			delta_y = 0.0;
-		}
-		else // footWidth >= footHeight
-		{
-			double w_clear = sqrt(d*d - h_half*h_half);
-			h_new = height;
-			w_new = w_half - w_clear;
-			delta_x = 0.0;
-			delta_y = w_clear + w_new/2.0;
-		}
-		double theta_cos = cos(theta);
-		double theta_sin = sin(theta);
-		double x_shift = theta_cos*delta_x - theta_sin*delta_y;
-		double y_shift = theta_sin*delta_x + theta_cos*delta_y;
+  double h_new;
+  double w_new;
+  double delta_x;
+  double delta_y;
+  if (width < height)
+  {
+    double h_clear = sqrt(d*d - w_half*w_half);
+    h_new = h_half - h_clear;
+    w_new = width;
+    delta_x = h_clear + h_new/2.0;
+    delta_y = 0.0;
+  }
+  else // footWidth >= footHeight
+  {
+    double w_clear = sqrt(d*d - h_half*h_half);
+    h_new = height;
+    w_new = w_half - w_clear;
+    delta_x = 0.0;
+    delta_y = w_clear + w_new/2.0;
+  }
+  double theta_cos = cos(theta);
+  double theta_sin = sin(theta);
+  double x_shift = theta_cos*delta_x - theta_sin*delta_y;
+  double y_shift = theta_sin*delta_x + theta_cos*delta_y;
 
-		return (collision_check(x+x_shift, y+y_shift, theta, h_new, w_new,
-		                        accuracy, distance_map) ||
-				collision_check(x-x_shift, y-y_shift, theta, h_new, w_new,
-                                accuracy, distance_map));
-	}
+  return (collision_check(x+x_shift, y+y_shift, theta, h_new, w_new,
+                          accuracy, distance_map) ||
+      collision_check(x-x_shift, y-y_shift, theta, h_new, w_new,
+                      accuracy, distance_map));
+}
 }

@@ -39,55 +39,55 @@ using gridmap_2d::GridMap2DPtr;
  */
 class FootstepPlannerWallsNode {
 public:
-	FootstepPlannerWallsNode(){
-		ros::NodeHandle privateNh("~");
-		// params:
-		privateNh.param("footstep_wall_dist", ivFootstepWallDist, 0.15);
+  FootstepPlannerWallsNode(){
+    ros::NodeHandle privateNh("~");
+    // params:
+    privateNh.param("footstep_wall_dist", ivFootstepWallDist, 0.15);
 
-		// provide callbacks to interact with the footstep planner:
-		ivGridMapSub = ivNh.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepPlannerWallsNode::mapCallback, this);
-		ivGoalPoseSub = ivNh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
-		ivStartPoseSub = ivNh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &FootstepPlanner::startPoseCallback, &ivFootstepPlanner);
+    // provide callbacks to interact with the footstep planner:
+    ivGridMapSub = ivNh.subscribe<nav_msgs::OccupancyGrid>("map", 1, &FootstepPlannerWallsNode::mapCallback, this);
+    ivGoalPoseSub = ivNh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &FootstepPlanner::goalPoseCallback, &ivFootstepPlanner);
+    ivStartPoseSub = ivNh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &FootstepPlanner::startPoseCallback, &ivFootstepPlanner);
 
-		// service:
-		ivFootstepPlanService = ivNh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
+    // service:
+    ivFootstepPlanService = ivNh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
 
-	}
+  }
 
-	virtual ~FootstepPlannerWallsNode(){};
+  virtual ~FootstepPlannerWallsNode(){};
 
-	void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap){
+  void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap){
 
-		ROS_INFO("Obstacle map received, now waiting for wall map.");
-		ivGridMap = GridMap2DPtr(new GridMap2D(occupancyMap));
-		// don't set wall => wait for wall map!
-		//ivFootstepPlanner.setMap(ivGridMap);
+    ROS_INFO("Obstacle map received, now waiting for wall map.");
+    ivGridMap = GridMap2DPtr(new GridMap2D(occupancyMap));
+    // don't set wall => wait for wall map!
+    //ivFootstepPlanner.setMap(ivGridMap);
 
-		// now subscribe to walls, so that they arrive in order:
-		ivWallMapSub = ivNh.subscribe<nav_msgs::OccupancyGrid>("map_walls", 1, &FootstepPlannerWallsNode::wallMapCallback, this);
-	}
+    // now subscribe to walls, so that they arrive in order:
+    ivWallMapSub = ivNh.subscribe<nav_msgs::OccupancyGrid>("map_walls", 1, &FootstepPlannerWallsNode::wallMapCallback, this);
+  }
 
-	void wallMapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap){
-		ROS_INFO("Wall / Obstacle map received");
-		assert(ivGridMap);
-		GridMap2DPtr wallMap(new GridMap2D(occupancyMap));
+  void wallMapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap){
+    ROS_INFO("Wall / Obstacle map received");
+    assert(ivGridMap);
+    GridMap2DPtr wallMap(new GridMap2D(occupancyMap));
 
-		GridMap2DPtr enlargedWallMap(new GridMap2D(occupancyMap));
-		cv::Mat binaryMap =  (enlargedWallMap->distanceMap() > ivFootstepWallDist);
-		bitwise_and(binaryMap, ivGridMap->binaryMap(), binaryMap);
+    GridMap2DPtr enlargedWallMap(new GridMap2D(occupancyMap));
+    cv::Mat binaryMap =  (enlargedWallMap->distanceMap() > ivFootstepWallDist);
+    bitwise_and(binaryMap, ivGridMap->binaryMap(), binaryMap);
 
-		enlargedWallMap->setMap(binaryMap);
+    enlargedWallMap->setMap(binaryMap);
 
-		ivFootstepPlanner.updateMap(enlargedWallMap);
+    ivFootstepPlanner.updateMap(enlargedWallMap);
 
-	}
+  }
 protected:
-	ros::NodeHandle ivNh;
-	footstep_planner::FootstepPlanner ivFootstepPlanner;
-	GridMap2DPtr ivGridMap;
-	double ivFootstepWallDist;
-	ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivWallMapSub, ivStartPoseSub, ivRobotPoseSub;
-	ros::ServiceServer ivFootstepPlanService;
+  ros::NodeHandle ivNh;
+  footstep_planner::FootstepPlanner ivFootstepPlanner;
+  GridMap2DPtr ivGridMap;
+  double ivFootstepWallDist;
+  ros::Subscriber ivGoalPoseSub, ivGridMapSub, ivWallMapSub, ivStartPoseSub, ivRobotPoseSub;
+  ros::ServiceServer ivFootstepPlanService;
 };
 
 int main(int argc, char** argv){

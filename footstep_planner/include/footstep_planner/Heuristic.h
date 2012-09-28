@@ -30,76 +30,76 @@
 
 namespace footstep_planner
 {
-	/**
-	 * @brief An abstract super class providing methods necessary to be used as
-	 * heuristic function within the FootstepPlanner.
-	 */
-	class Heuristic
-	{
-	public:
-		enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, PATH_COST=2 };
+/**
+ * @brief An abstract super class providing methods necessary to be used as
+ * heuristic function within the FootstepPlanner.
+ */
+class Heuristic
+{
+public:
+  enum HeuristicType { EUCLIDEAN=0, EUCLIDEAN_STEPCOST=1, PATH_COST=2 };
 
-		Heuristic(double cell_size, int num_angle_bins, HeuristicType type);
-		virtual ~Heuristic();
+  Heuristic(double cell_size, int num_angle_bins, HeuristicType type);
+  virtual ~Heuristic();
 
-		/**
-		 * @return The heuristically determined path costs to get from
-		 * state 'from' to state 'to' where 'to' is supposed to be the goal of
-		 * the planning task. (Costs are in meter.)
-		 */
-		virtual double getHValue(const PlanningState& from,
-		                         const PlanningState& to) const = 0;
+  /**
+   * @return The heuristically determined path costs to get from
+   * state 'from' to state 'to' where 'to' is supposed to be the goal of
+   * the planning task. (Costs are in meter.)
+   */
+  virtual double getHValue(const PlanningState& from,
+                           const PlanningState& to) const = 0;
 
-		HeuristicType getHeuristicType() const { return ivHeuristicType; };
+  HeuristicType getHeuristicType() const { return ivHeuristicType; };
 
-	protected:
-		double ivCellSize;
-		int    ivNumAngleBins;
+protected:
+  double ivCellSize;
+  int    ivNumAngleBins;
 
-		const HeuristicType ivHeuristicType;
-	};
-
-
-	/**
-	 * @brief Determining the heuristic value by the euclidean distance between
-	 * two states.
-	 */
-	class EuclideanHeuristic : public Heuristic
-	{
-	public:
-		EuclideanHeuristic(double cell_size, int num_angle_bins);
-		virtual ~EuclideanHeuristic();
-
-		virtual double getHValue(const PlanningState& from,
-		                         const PlanningState& to) const;
-	};
+  const HeuristicType ivHeuristicType;
+};
 
 
-	/**
-	 * @brief Determining the heuristic value by the euclidean distance between
-	 * two states, the expected step costs to get from one state to the other
-	 * and the difference between the orientation of the two states multiplied
-	 * by some cost factor. (NOTE: choosing this angular difference cost might
-	 * overestimate the heuristic value.)
-	 */
-	class EuclStepCostHeuristic : public Heuristic
-	{
+/**
+ * @brief Determining the heuristic value by the euclidean distance between
+ * two states.
+ */
+class EuclideanHeuristic : public Heuristic
+{
+public:
+  EuclideanHeuristic(double cell_size, int num_angle_bins);
+  virtual ~EuclideanHeuristic();
 
-	public:
-		EuclStepCostHeuristic(double cell_size, int num_angle_bins,
-                              double step_cost, double diff_angle_cost,
-                              double max_step_width);
-		virtual ~EuclStepCostHeuristic();
+  virtual double getHValue(const PlanningState& from,
+                           const PlanningState& to) const;
+};
 
-		virtual double getHValue(const PlanningState& from,
-		                         const PlanningState& to) const;
 
-	private:
-		const double ivStepCost;
-		const double ivDiffAngleCost;
+/**
+ * @brief Determining the heuristic value by the euclidean distance between
+ * two states, the expected step costs to get from one state to the other
+ * and the difference between the orientation of the two states multiplied
+ * by some cost factor. (NOTE: choosing this angular difference cost might
+ * overestimate the heuristic value.)
+ */
+class EuclStepCostHeuristic : public Heuristic
+{
 
-		/// longest step width
-		const double ivMaxStepWidth;
-	};
+public:
+  EuclStepCostHeuristic(double cell_size, int num_angle_bins,
+                        double step_cost, double diff_angle_cost,
+                        double max_step_width);
+  virtual ~EuclStepCostHeuristic();
+
+  virtual double getHValue(const PlanningState& from,
+                           const PlanningState& to) const;
+
+private:
+  const double ivStepCost;
+  const double ivDiffAngleCost;
+
+  /// longest step width
+  const double ivMaxStepWidth;
+};
 }
 #endif  // FOOTSTEP_PLANNER_HEURISTIC_H_

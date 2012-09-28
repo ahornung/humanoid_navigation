@@ -34,25 +34,25 @@
 
 namespace footstep_planner
 {
-	/**
-	 * @brief Wrapper class for FootstepPlanner, providing callbacks for
-	 * the node functionality.
-	 */
-	class FootstepPlannerNode
-	{
-    public:
-        FootstepPlannerNode();
-        virtual ~FootstepPlannerNode();
+/**
+ * @brief Wrapper class for FootstepPlanner, providing callbacks for
+ * the node functionality.
+ */
+class FootstepPlannerNode
+{
+public:
+  FootstepPlannerNode();
+  virtual ~FootstepPlannerNode();
 
-    protected:
-        FootstepPlanner ivFootstepPlanner;
+protected:
+  FootstepPlanner ivFootstepPlanner;
 
-        ros::Subscriber ivGoalPoseSub;
-        ros::Subscriber ivGridMapSub;
-        ros::Subscriber ivStartPoseSub;
-        ros::Subscriber ivRobotPoseSub;
+  ros::Subscriber ivGoalPoseSub;
+  ros::Subscriber ivGridMapSub;
+  ros::Subscriber ivStartPoseSub;
+  ros::Subscriber ivRobotPoseSub;
 
-        ros::ServiceServer ivFootstepPlanService;
-	};
+  ros::ServiceServer ivFootstepPlanService;
+};
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPPLANNERNODE_H_

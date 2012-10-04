@@ -101,8 +101,6 @@ m_useIMU(false)
   if (m_useRaycasting){
     m_mapModel = boost::shared_ptr<MapModel>(new OccupancyMap(&m_privateNh));
     m_observationModel = boost::shared_ptr<ObservationModel>(new RaycastingModel(&m_privateNh, m_mapModel, &m_rngEngine));
-
-
   } else{
 #ifndef SKIP_ENDPOINT_MODEL
     //m_mapModel = boost::shared_ptr<MapModel>(new DistanceMap(&m_privateNh));
@@ -344,12 +342,11 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
       return;
 
 
-    //### Particles in log-form from here...
+//### Particles in log-form from here...
     toLogForm();
 
     // integrated pose (z, roll, pitch) meas. only if data OK:
-    double poseHeight;
-    bool imuMsgOk;
+    bool imuMsgOk = false;
     double angleX, angleY;
     if(m_useIMU) {
       ros::Time imuStamp;
@@ -363,12 +360,15 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
       }
     }
 
+    tf::StampedTransform footprintToTorso;
     if(imuMsgOk) {
-      if (!m_motionModel->lookupPoseHeight(msg->header.stamp, poseHeight)) {
+      if (!m_motionModel->lookupFootprintTf(msg->header.stamp, footprintToTorso)) {
         ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
       } else {
-        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, poseHeight);
+        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, footprintToTorso);
       }
+    } else {
+      ROS_WARN("Could not obtain roll and pitch measurement, skipping Pose integration");
     }
 
     PointCloud pc_filtered;
@@ -385,7 +385,7 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
 
     // normalize weights and transform back from log:
     normalizeWeights();
-    //### Particles back in regular form now
+//### Particles back in regular form now
 
     double nEffParticles = nEff();
 
@@ -449,7 +449,6 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
       ranges.push_back(range);
 
     } else{
-      std::cout << range << std::endl;
       numBeamsSkipped++;
     }
 
@@ -481,150 +480,151 @@ void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2Cons
   //tf::StampedTransform torsoToLaser;
   //m_observationModel->integratePointCloudMeasurement(m_particles, torsoToLaser, msg);
 
-  if (!m_motionModel || !m_observationModel){
-    ROS_ERROR("MotionModel or ObservationModel is NULL in localization!");
-    return;
-  }
-
-  if (!m_initialized){
-    ROS_WARN("Loclization not initialized yet, skipping point cloud callback.");
-    return;
-  }
-
-  ros::Duration timediff = msg->header.stamp - m_lastLaserTime;
-  if (m_firstLaserReceived && timediff < ros::Duration(0.0)){
-    ROS_WARN("Ignoring received laser data that is %f s older than previous data!", timediff.toSec());
-    return;
-  }
-
-  // compute current odometry transform first, see if it would trigger the
-  // integration of observations
-  tf::Transform odomTransform;
-  if (!m_motionModel->lookupOdomTransform(msg->header.stamp, odomTransform))
-    return;
-
-  // TODO: another lookup, not needed (combine w. above)?
-  tf::Stamped<tf::Pose> odomPose;
-  m_motionModel->lookupOdomPose(msg->header.stamp, odomPose);
-
-  float length = odomTransform.getOrigin().length();
-  if (length > 0.1){
-    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
-  }
-
-  m_translationSinceScan += length;
-  double yaw, pitch, roll;
-  odomTransform.getBasis().getRPY(roll, pitch, yaw);
-  if (std::abs(yaw) > 0.15){
-    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
-  }
-  m_rotationSinceScan += std::abs(yaw);
-
-  // transformation from torso frame to laser
-  // TODO: this takes the latest tf, assumes it did not change over temp. sampling!
-  double headYaw, headPitch, headRoll;
-  tf::StampedTransform torsoToLaser;
-  if (!m_motionModel->lookupLaserTransform(msg->header.frame_id, msg->header.stamp, torsoToLaser))
-    return; //TODO: should we apply applyOdomTransformTemporal, before returning
-
-  // lookup Transfrom Sensor to BaseFootprint
-  tf::StampedTransform sensorToBaseFootprint;
-  try{
-    m_tfListener.waitForTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, ros::Duration(0.2));
-    m_tfListener.lookupTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, sensorToBaseFootprint);
-
-
-  }catch(tf::TransformException& ex){
-    ROS_ERROR_STREAM( "Transform error for pointCloudCallback: " << ex.what() << ", quitting callback.\n");
-    return;
-  }
-
-
-
-  torsoToLaser.getBasis().getRPY(headRoll, headPitch, headYaw);
-  double headYawRotationSinceScan = std::abs(headYaw - m_headYawRotationLastScan);
-  double headPitchRotationSinceScan = std::abs(headPitch - m_headPitchRotationLastScan);
-
-  //ROS_INFO("%f %f %f", headYawRotationSinceScan, yaw, m_headYawRotationLastScan);
-
-  /*ROS_INFO("%d %d %d %d %d", m_translationSinceScan >= m_observationThresholdTrans, m_rotationSinceScan >= m_observationThresholdRot,
-         headYawRotationSinceScan>= m_observationThresholdHeadYawRot, headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot
-         , !m_firstLaserReceived);
-   */
-  bool integration_happend = false;
-  if (!m_paused
-      && (m_translationSinceScan >= m_observationThresholdTrans || m_rotationSinceScan >= m_observationThresholdRot ||
-          headYawRotationSinceScan>= m_observationThresholdHeadYawRot || headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot
-          || !m_firstLaserReceived))
-  {
-    ROS_INFO("integrating new measurement");
-
-    // apply motion model with temporal sampling:
-    m_motionModel->applyOdomTransformTemporal(m_particles, msg->header.stamp, m_temporalSamplingRange);
-
-
-    //### Particles in log-form from here...
-    toLogForm();
-
-    // integrated pose (z, roll, pitch) meas. only if data OK:
-    double poseHeight;
-    bool imuMsgOk;
-    double angleX, angleY;
-    if(m_useIMU) {
-      ros::Time imuStamp;
-      imuMsgOk = getImuMsg(msg->header.stamp, imuStamp, angleX, angleY);
-    } else {
-      tf::Stamped<tf::Pose> lastOdomPose;
-      if(m_motionModel->lookupOdomPose(msg->header.stamp, lastOdomPose)) {
-        double dropyaw;
-        lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
-        imuMsgOk = true;
-      }
-    }
-
-    if(imuMsgOk) {
-      if (!m_motionModel->lookupPoseHeight(msg->header.stamp, poseHeight)) {
-        ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
-      } else {
-        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, poseHeight);
-      }
-    }
-
-    m_observationModel->integratePointCloudMeasurement(m_particles, torsoToLaser, msg, sensorToBaseFootprint);
-    integration_happend = true;
-
-    m_mapModel->verifyPoses(m_particles);
-
-    // normalize weights and transform back from log:
-    normalizeWeights();
-    //### Particles back in regular form now
-
-    double nEffParticles = nEff();
-
-    std_msgs::Float32 nEffMsg;
-    nEffMsg.data = nEffParticles;
-    m_nEffPub.publish(nEffMsg);
-
-    if (nEffParticles <= m_nEffFactor*m_particles.size()){ // selective resampling
-      ROS_INFO("Resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
-      resample();
-    } else {
-      ROS_INFO("Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
-    }
-
-    m_firstLaserReceived = true;
-    m_rotationSinceScan = 0.0;
-    m_translationSinceScan = 0.0;
-    m_headYawRotationLastScan = headYaw;
-    m_headPitchRotationLastScan = headPitch;
-
-  } else{ // no observation necessary: propagate particles forward by full interval
-    m_motionModel->applyOdomTransform(m_particles, odomTransform);
-  }
-
-  m_motionModel->storeOdomPose(odomPose);
-  publishPoseEstimate(msg->header.stamp,integration_happend);
-  m_lastLaserTime = msg->header.stamp;
+  // TODO: needs to be rewritten / fixed
+//  if (!m_motionModel || !m_observationModel){
+//    ROS_ERROR("MotionModel or ObservationModel is NULL in localization!");
+//    return;
+//  }
+//
+//  if (!m_initialized){
+//    ROS_WARN("Loclization not initialized yet, skipping point cloud callback.");
+//    return;
+//  }
+//
+//  ros::Duration timediff = msg->header.stamp - m_lastLaserTime;
+//  if (m_firstLaserReceived && timediff < ros::Duration(0.0)){
+//    ROS_WARN("Ignoring received laser data that is %f s older than previous data!", timediff.toSec());
+//    return;
+//  }
+//
+//  // compute current odometry transform first, see if it would trigger the
+//  // integration of observations
+//  tf::Transform odomTransform;
+//  if (!m_motionModel->lookupOdomTransform(msg->header.stamp, odomTransform))
+//    return;
+//
+//  // TODO: another lookup, not needed (combine w. above)?
+//  tf::Stamped<tf::Pose> odomPose;
+//  m_motionModel->lookupOdomPose(msg->header.stamp, odomPose);
+//
+//  float length = odomTransform.getOrigin().length();
+//  if (length > 0.1){
+//    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
+//  }
+//
+//  m_translationSinceScan += length;
+//  double yaw, pitch, roll;
+//  odomTransform.getBasis().getRPY(roll, pitch, yaw);
+//  if (std::abs(yaw) > 0.15){
+//    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
+//  }
+//  m_rotationSinceScan += std::abs(yaw);
+//
+//  // transformation from torso frame to laser
+//  // TODO: this takes the latest tf, assumes it did not change over temp. sampling!
+//  double headYaw, headPitch, headRoll;
+//  tf::StampedTransform torsoToLaser;
+//  if (!m_motionModel->lookupLaserTransform(msg->header.frame_id, msg->header.stamp, torsoToLaser))
+//    return; //TODO: should we apply applyOdomTransformTemporal, before returning
+//
+//  // lookup Transfrom Sensor to BaseFootprint
+//  tf::StampedTransform sensorToBaseFootprint;
+//  try{
+//    m_tfListener.waitForTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, ros::Duration(0.2));
+//    m_tfListener.lookupTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, sensorToBaseFootprint);
+//
+//
+//  }catch(tf::TransformException& ex){
+//    ROS_ERROR_STREAM( "Transform error for pointCloudCallback: " << ex.what() << ", quitting callback.\n");
+//    return;
+//  }
+//
+//
+//
+//  torsoToLaser.getBasis().getRPY(headRoll, headPitch, headYaw);
+//  double headYawRotationSinceScan = std::abs(headYaw - m_headYawRotationLastScan);
+//  double headPitchRotationSinceScan = std::abs(headPitch - m_headPitchRotationLastScan);
+//
+//  //ROS_INFO("%f %f %f", headYawRotationSinceScan, yaw, m_headYawRotationLastScan);
+//
+//  /*ROS_INFO("%d %d %d %d %d", m_translationSinceScan >= m_observationThresholdTrans, m_rotationSinceScan >= m_observationThresholdRot,
+//         headYawRotationSinceScan>= m_observationThresholdHeadYawRot, headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot
+//         , !m_firstLaserReceived);
+//   */
+//  bool integration_happend = false;
+//  if (!m_paused
+//      && (m_translationSinceScan >= m_observationThresholdTrans || m_rotationSinceScan >= m_observationThresholdRot ||
+//          headYawRotationSinceScan>= m_observationThresholdHeadYawRot || headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot
+//          || !m_firstLaserReceived))
+//  {
+//    ROS_INFO("integrating new measurement");
+//
+//    // apply motion model with temporal sampling:
+//    m_motionModel->applyOdomTransformTemporal(m_particles, msg->header.stamp, m_temporalSamplingRange);
+//
+//
+//    //### Particles in log-form from here...
+//    toLogForm();
+//
+//    // integrated pose (z, roll, pitch) meas. only if data OK:
+//    double poseHeight;
+//    bool imuMsgOk;
+//    double angleX, angleY;
+//    if(m_useIMU) {
+//      ros::Time imuStamp;
+//      imuMsgOk = getImuMsg(msg->header.stamp, imuStamp, angleX, angleY);
+//    } else {
+//      tf::Stamped<tf::Pose> lastOdomPose;
+//      if(m_motionModel->lookupOdomPose(msg->header.stamp, lastOdomPose)) {
+//        double dropyaw;
+//        lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
+//        imuMsgOk = true;
+//      }
+//    }
+//
+//    if(imuMsgOk) {
+//      if (!m_motionModel->lookupPoseHeight(msg->header.stamp, poseHeight)) {
+//        ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
+//      } else {
+//        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, poseHeight);
+//      }
+//    }
+//
+//    m_observationModel->integratePointCloudMeasurement(m_particles, torsoToLaser, msg, sensorToBaseFootprint);
+//    integration_happend = true;
+//
+//    m_mapModel->verifyPoses(m_particles);
+//
+//    // normalize weights and transform back from log:
+//    normalizeWeights();
+//    //### Particles back in regular form now
+//
+//    double nEffParticles = nEff();
+//
+//    std_msgs::Float32 nEffMsg;
+//    nEffMsg.data = nEffParticles;
+//    m_nEffPub.publish(nEffMsg);
+//
+//    if (nEffParticles <= m_nEffFactor*m_particles.size()){ // selective resampling
+//      ROS_INFO("Resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
+//      resample();
+//    } else {
+//      ROS_INFO("Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
+//    }
+//
+//    m_firstLaserReceived = true;
+//    m_rotationSinceScan = 0.0;
+//    m_translationSinceScan = 0.0;
+//    m_headYawRotationLastScan = headYaw;
+//    m_headPitchRotationLastScan = headPitch;
+//
+//  } else{ // no observation necessary: propagate particles forward by full interval
+//    m_motionModel->applyOdomTransform(m_particles, odomTransform);
+//  }
+//
+//  m_motionModel->storeOdomPose(odomPose);
+//  publishPoseEstimate(msg->header.stamp,integration_happend);
+//  m_lastLaserTime = msg->header.stamp;
 }
 
 void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){
@@ -869,7 +869,6 @@ void HumanoidLocalization::normalizeWeights() {
   if (scale < 0.0){
     ROS_WARN("normalizeWeights: scale is %f < 0, dw=%f, dn=%f", scale, dw, dn );
   }
-  //assert(scale >= 0.0);
   double offset = -wmax*scale;
   double weights_sum = 0.0;
 

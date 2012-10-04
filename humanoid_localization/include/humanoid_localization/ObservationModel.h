@@ -76,14 +76,11 @@ public:
    */
   virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser) = 0;
 
-
-  virtual void integratePointCloudMeasurement(Particles& particles, const tf::StampedTransform& torsoToSensor, const sensor_msgs::PointCloud2ConstPtr& msg, const tf::StampedTransform & sensorToBaseFootprint) = 0;
-
-
-  virtual void integratePoseMeasurement(Particles& particles, double roll, double pitch, double poseHeight);
+  virtual void integratePoseMeasurement(Particles& particles, double roll, double pitch, const tf::StampedTransform& footprintToTorso);
 
   virtual void setMap(boost::shared_ptr<octomap::OcTree> map);
 protected:
+  virtual bool getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const = 0;
   boost::shared_ptr<MapModel> m_mapModel;
   EngineT m_rngEngine;
   NormalGeneratorT m_rngNormal;

@@ -58,20 +58,41 @@ void EndpointModel::integrateMeasurement(Particles& particles, const PointCloud&
 
     // iterate over beams:
     for (PointCloud::const_iterator it = pc_transformed.begin(); it != pc_transformed.end(); ++it){
-        // search only for endpoint in tree
-        octomap::point3d endPoint(it->x, it->y, it->z);
-        float dist = m_distanceMap->getDistance(endPoint);
-        if (dist > 0.0){ // endpoint is inside map:
-          //std::cout << dist << " ";
-          particles[i].weight += logLikelihood(dist, m_sigma);
-        } else { //assign weight of max.distance:
-          particles[i].weight += logLikelihood(m_maxObstacleDistance, m_sigma);
-        }
+      // search only for endpoint in tree
+      octomap::point3d endPoint(it->x, it->y, it->z);
+      float dist = m_distanceMap->getDistance(endPoint);
+      if (dist > 0.0){ // endpoint is inside map:
+        //std::cout << dist << " ";
+        particles[i].weight += logLikelihood(dist, m_sigma);
+      } else { //assign weight of max.distance:
+        particles[i].weight += logLikelihood(m_maxObstacleDistance, m_sigma);
+      }
     }
     // TODO: handle max range measurements
     //std::cout << "\n";
   }
 
+}
+
+bool EndpointModel::getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const{
+  tf::Vector3 xyz = p.pose.getOrigin();
+  double poseHeight = xyz.getZ();
+  std::vector<double> heights;
+  m_mapModel->getHeightlist(xyz.getX(), xyz.getY(), 0.6, heights);
+  if (heights.size() == 0)
+    return false;
+
+
+  // find nearest z-level:
+  heightError = std::numeric_limits<double>::max();
+  for (unsigned i = 0; i< heights.size(); i++){
+    double dist = std::abs((heights[i] + poseHeight) - xyz.getZ());
+    if (dist < heightError)
+      heightError = dist;
+
+  }
+
+  return true;
 }
 
 void EndpointModel::setMap(boost::shared_ptr<octomap::OcTree> map){

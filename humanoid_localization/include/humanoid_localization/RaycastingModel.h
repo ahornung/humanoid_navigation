@@ -44,9 +44,8 @@ public:
   virtual ~RaycastingModel();
   virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser);
 
-  virtual void integratePointCloudMeasurement(Particles& particles, const tf::StampedTransform& torsoToSensor, const sensor_msgs::PointCloud2ConstPtr& msg, const tf::StampedTransform & sensorToBaseFootprint);
-
 protected:
+  bool getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const;
   // laser parameters:
   double m_zHit;
   double m_zRand;

@@ -26,6 +26,7 @@
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
 #include <pcl_ros/transforms.h>
+#include <octomap_ros/conversions.h>
 
 namespace humanoid_localization{
 
@@ -125,11 +126,19 @@ void RaycastingModel::integrateMeasurement(Particles& particles, const PointClou
 
 }
 
+bool RaycastingModel::getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const{
 
-void RaycastingModel::integratePointCloudMeasurement(Particles& particles, const tf::StampedTransform& torsoToSensor, const sensor_msgs::PointCloud2ConstPtr& cloud, const tf::StampedTransform & sensorToBaseFootprint) {
-  //TODO: check & clean old code
-  ROS_ERROR("Point cloud measurement integration missing in in RaycastingModel");
+  octomap::point3d direction = octomap::pointTfToOctomap(footprintToBase.inverse().getOrigin());
+  octomap::point3d origin = octomap::pointTfToOctomap(p.pose.getOrigin());
+  octomap::point3d end;
+  // cast ray to bottom:
+  if (!m_map->castRay(origin, direction, end, true, 2*direction.norm()))
+    return false;
 
+  heightError =  std::max(0.0, std::abs((origin-end).z() - p.pose.getOrigin().getZ()) - m_map->getResolution());
+//  ROS_INFO("Height error: %f", heightError);
+
+  return true;
 }
 
 }

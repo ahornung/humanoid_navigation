@@ -47,8 +47,13 @@ public:
   /// lookup the transform from torso to the laser at time t
   bool lookupLaserTransform(const std::string& laserFrameId, const ros::Time& t, tf::StampedTransform& torsoToLaser) const;
 
-  /// lookup the pose height at time t
+  /// lookup the tf between the base and footprint frames
+  bool lookupFootprintTf(const ros::Time& t, tf::StampedTransform& footprintToTorso) const;
+
+  /// lookup the height of the torso, based on tf between the base and footprint frames
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
+
+
 
   /// apply odomTransform to all particles (noisy)
   void applyOdomTransform(Particles& particles, const tf::Transform& odomTransform);

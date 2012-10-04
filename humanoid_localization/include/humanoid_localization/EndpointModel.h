@@ -45,14 +45,10 @@ public:
   virtual ~EndpointModel();
   virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser);
 
-  virtual void integratePointCloudMeasurement(Particles& particles, const tf::StampedTransform& torsoToSensor, const sensor_msgs::PointCloud2ConstPtr& msg, const tf::StampedTransform & sensorToBaseFootprint) {
-    //TODO: implement
-    ROS_ERROR("Point cloud measurements are not implemented yet in EndpointModel");
-  };
-
   virtual void setMap(boost::shared_ptr<octomap::OcTree> map);
 
 protected:
+  bool getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const;
   void initDistanceMap();
   double m_sigma;
   double m_maxObstacleDistance;

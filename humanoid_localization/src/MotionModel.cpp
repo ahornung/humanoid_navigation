@@ -217,9 +217,8 @@ bool MotionModel::lookupLaserTransform(const std::string& laserFrameId, const ro
   return true;
 }
 
-bool MotionModel::lookupPoseHeight(const ros::Time& t, double& poseHeight) const
+bool MotionModel::lookupFootprintTf(const ros::Time& t, tf::StampedTransform& footprintToTorso) const
 {
-  tf::StampedTransform footprintToTorso;
   try {
     m_tfListener->lookupTransform(m_footprintFrameId, m_baseFrameId, t, footprintToTorso);
   } catch (const tf::TransformException& e) {
@@ -227,10 +226,16 @@ bool MotionModel::lookupPoseHeight(const ros::Time& t, double& poseHeight) const
     return false;
   }
 
-  poseHeight = footprintToTorso.getOrigin().z();
-
   return true;
+}
 
+bool MotionModel::lookupPoseHeight(const ros::Time& t, double& poseHeight) const{
+  tf::StampedTransform tf;
+  if (lookupFootprintTf(t, tf)){
+    poseHeight = tf.getOrigin().getZ();
+    return true;
+  } else
+    return false;
 }
 
 bool MotionModel::getLastOdomPose(tf::Stamped<tf::Pose>& lastOdomPose) const{

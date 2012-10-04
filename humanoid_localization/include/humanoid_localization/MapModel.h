@@ -62,7 +62,7 @@ public:
    *
    * @param x
    * @param y
-   * @param totalHeight
+   * @param totalHeight clearance of the robot required to be free
    * @param[out] heights list of valid heights, return by ref.
    */
   void getHeightlist(double x, double y, double totalHeight, std::vector<double>& heights);

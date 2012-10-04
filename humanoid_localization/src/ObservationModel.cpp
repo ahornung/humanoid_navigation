@@ -53,8 +53,11 @@ ObservationModel::ObservationModel(ros::NodeHandle* nh, boost::shared_ptr<MapMod
 ObservationModel::~ObservationModel() {
 }
 
-void ObservationModel::integratePoseMeasurement(Particles& particles, double poseRoll, double posePitch, double poseHeight){
+void ObservationModel::integratePoseMeasurement(Particles& particles, double poseRoll, double posePitch, const tf::StampedTransform& footprintToTorso){
+  double poseHeight = footprintToTorso.getOrigin().getZ();
+  ROS_INFO("Pose measurement z=%f R=%f P=%f", poseHeight, poseRoll, posePitch);
   // TODO cluster xy of particles => speedup
+  // TODO OMP, parallel:
   for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
     // integrate IMU meas.:
     double roll, pitch, yaw;
@@ -63,24 +66,11 @@ void ObservationModel::integratePoseMeasurement(Particles& particles, double pos
     it->weight += m_weightPitch * logLikelihood(posePitch - pitch, m_sigmaPitch);
 
     // integrate height measurement (z)
-    tf::Vector3 xyz = it->pose.getOrigin();
+    double heightError;
+    if (getHeightError(*it,footprintToTorso, heightError))
+      it->weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
 
-    std::vector<double> heights;
-    m_mapModel->getHeightlist(xyz.getX(), xyz.getY(), 0.6, heights);
-    if (heights.size() > 0){
-      // find nearest z-level:
-      double minDist = std::numeric_limits<double>::max();
-      for (unsigned i = 0; i< heights.size(); i++){
-        double dist = std::abs((heights[i] + poseHeight) - xyz.getZ());
-        if (dist < minDist)
-          minDist = dist;
 
-      }
-
-      //double dist = pose.getOrigin().getZ() - it->pose.getOrigin().getZ();
-      it->weight += m_weightZ * logLikelihood(minDist, m_sigmaZ);
-      //it->weight += -1*( LOG_SQRT_2_PI) - log(m_sigmaZ) - ((minDist * minDist) / (2* m_sigmaZ * m_sigmaZ));
-    }
   }
 
 }

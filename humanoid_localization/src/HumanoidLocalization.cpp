@@ -45,7 +45,7 @@ m_firstLaserReceived(false), m_initialized(false), m_initGlobal(false), m_paused
 m_syncedTruepose(false),
 m_observationThresholdTrans(0.1), m_observationThresholdRot(M_PI/6),
 m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
-m_temporalSamplingRange(0.1),
+m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
 m_translationSinceScan(0.0), m_rotationSinceScan(0.0),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false)
@@ -69,19 +69,19 @@ m_useIMU(false)
   m_privateNh.param("neff_factor", m_nEffFactor, m_nEffFactor);
   m_privateNh.param("min_particle_weight", m_minParticleWeight, m_minParticleWeight);
 
-  m_privateNh.param("initial_pose_x", m_initPose(0), 0.0);
-  m_privateNh.param("initial_pose_y", m_initPose(1), 0.0);
-  m_privateNh.param("initial_pose_z", m_initPose(2), 0.32); // hip height when standing
-  m_privateNh.param("initial_pose_roll", m_initPose(3), 0.0);
-  m_privateNh.param("initial_pose_pitch", m_initPose(4), 0.0);
-  m_privateNh.param("initial_pose_yaw", m_initPose(5), 0.0);
+  m_privateNh.param("initial_pose/x", m_initPose(0), 0.0);
+  m_privateNh.param("initial_pose/y", m_initPose(1), 0.0);
+  m_privateNh.param("initial_pose/z", m_initPose(2), 0.32); // hip height when standing
+  m_privateNh.param("initial_pose/roll", m_initPose(3), 0.0);
+  m_privateNh.param("initial_pose/pitch", m_initPose(4), 0.0);
+  m_privateNh.param("initial_pose/yaw", m_initPose(5), 0.0);
   m_privateNh.param("initial_pose_real_zrp", m_initPoseRealZRP, false);
 
-  m_privateNh.param("initial_std_x", m_initNoiseStd(0), 0.1); // 0.1
-  m_privateNh.param("initial_std_y", m_initNoiseStd(1), 0.1); // 0.1
-  m_privateNh.param("initial_std_z", m_initNoiseStd(2), 0.02); // 0.02
-  m_privateNh.param("initial_std_roll", m_initNoiseStd(3), 0.04); // 0.04
-  m_privateNh.param("initial_std_pitch", m_initNoiseStd(4), 0.04); // 0.04
+  m_privateNh.param("initial_std/x", m_initNoiseStd(0), 0.1); // 0.1
+  m_privateNh.param("initial_std/y", m_initNoiseStd(1), 0.1); // 0.1
+  m_privateNh.param("initial_std/z", m_initNoiseStd(2), 0.02); // 0.02
+  m_privateNh.param("initial_std/roll", m_initNoiseStd(3), 0.04); // 0.04
+  m_privateNh.param("initial_std/pitch", m_initNoiseStd(4), 0.04); // 0.04
   m_privateNh.param("initial_std_yaw", m_initNoiseStd(5), M_PI/12); // M_PI/12
 
   // laser observation model parameters:
@@ -90,11 +90,12 @@ m_useIMU(false)
   m_privateNh.param("min_range", m_filterMinRange, 0.05);
   ROS_DEBUG("Using a range filter of %f to %f", m_filterMinRange, m_filterMaxRange);
 
-  m_privateNh.param("laser_thres_trans", m_observationThresholdTrans, m_observationThresholdTrans);
-  m_privateNh.param("laser_thres_rot", m_observationThresholdRot, m_observationThresholdRot);
-  m_privateNh.param("head_thres_rot_yaw", m_observationThresholdHeadYawRot, m_observationThresholdHeadYawRot);
-  m_privateNh.param("head_thres_rot_pitch", m_observationThresholdHeadPitchRot, m_observationThresholdHeadPitchRot);
+  m_privateNh.param("update_min_trans", m_observationThresholdTrans, m_observationThresholdTrans);
+  m_privateNh.param("update_min_rot", m_observationThresholdRot, m_observationThresholdRot);
+  m_privateNh.param("update_min_head_yaw", m_observationThresholdHeadYawRot, m_observationThresholdHeadYawRot);
+  m_privateNh.param("update_min_head_pitch", m_observationThresholdHeadPitchRot, m_observationThresholdHeadPitchRot);
   m_privateNh.param("temporal_sampling_range", m_temporalSamplingRange, m_temporalSamplingRange);
+  m_privateNh.param("transform_tolerance", m_transformTolerance, m_transformTolerance);
 
   m_privateNh.param("use_imu", m_useIMU, m_useIMU);
 
@@ -474,157 +475,7 @@ unsigned HumanoidLocalization::computeBeamStep(unsigned numBeams) const{
 }
 
 void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
-  //ROS_INFO("received point cloud. organized: %d dense: %d size %zu", (msg->isOrganized()) ? 1 : 0, (msg->is_dense) ? 1 : 0, msg->size());
-  //it's organized and NOT dense, hence it might contains points with a value of NaN or Inf
-
-  //tf::StampedTransform torsoToLaser;
-  //m_observationModel->integratePointCloudMeasurement(m_particles, torsoToLaser, msg);
-
-  // TODO: needs to be rewritten / fixed
-//  if (!m_motionModel || !m_observationModel){
-//    ROS_ERROR("MotionModel or ObservationModel is NULL in localization!");
-//    return;
-//  }
-//
-//  if (!m_initialized){
-//    ROS_WARN("Loclization not initialized yet, skipping point cloud callback.");
-//    return;
-//  }
-//
-//  ros::Duration timediff = msg->header.stamp - m_lastLaserTime;
-//  if (m_firstLaserReceived && timediff < ros::Duration(0.0)){
-//    ROS_WARN("Ignoring received laser data that is %f s older than previous data!", timediff.toSec());
-//    return;
-//  }
-//
-//  // compute current odometry transform first, see if it would trigger the
-//  // integration of observations
-//  tf::Transform odomTransform;
-//  if (!m_motionModel->lookupOdomTransform(msg->header.stamp, odomTransform))
-//    return;
-//
-//  // TODO: another lookup, not needed (combine w. above)?
-//  tf::Stamped<tf::Pose> odomPose;
-//  m_motionModel->lookupOdomPose(msg->header.stamp, odomPose);
-//
-//  float length = odomTransform.getOrigin().length();
-//  if (length > 0.1){
-//    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
-//  }
-//
-//  m_translationSinceScan += length;
-//  double yaw, pitch, roll;
-//  odomTransform.getBasis().getRPY(roll, pitch, yaw);
-//  if (std::abs(yaw) > 0.15){
-//    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
-//  }
-//  m_rotationSinceScan += std::abs(yaw);
-//
-//  // transformation from torso frame to laser
-//  // TODO: this takes the latest tf, assumes it did not change over temp. sampling!
-//  double headYaw, headPitch, headRoll;
-//  tf::StampedTransform torsoToLaser;
-//  if (!m_motionModel->lookupLaserTransform(msg->header.frame_id, msg->header.stamp, torsoToLaser))
-//    return; //TODO: should we apply applyOdomTransformTemporal, before returning
-//
-//  // lookup Transfrom Sensor to BaseFootprint
-//  tf::StampedTransform sensorToBaseFootprint;
-//  try{
-//    m_tfListener.waitForTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, ros::Duration(0.2));
-//    m_tfListener.lookupTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, sensorToBaseFootprint);
-//
-//
-//  }catch(tf::TransformException& ex){
-//    ROS_ERROR_STREAM( "Transform error for pointCloudCallback: " << ex.what() << ", quitting callback.\n");
-//    return;
-//  }
-//
-//
-//
-//  torsoToLaser.getBasis().getRPY(headRoll, headPitch, headYaw);
-//  double headYawRotationSinceScan = std::abs(headYaw - m_headYawRotationLastScan);
-//  double headPitchRotationSinceScan = std::abs(headPitch - m_headPitchRotationLastScan);
-//
-//  //ROS_INFO("%f %f %f", headYawRotationSinceScan, yaw, m_headYawRotationLastScan);
-//
-//  /*ROS_INFO("%d %d %d %d %d", m_translationSinceScan >= m_observationThresholdTrans, m_rotationSinceScan >= m_observationThresholdRot,
-//         headYawRotationSinceScan>= m_observationThresholdHeadYawRot, headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot
-//         , !m_firstLaserReceived);
-//   */
-//  bool integration_happend = false;
-//  if (!m_paused
-//      && (m_translationSinceScan >= m_observationThresholdTrans || m_rotationSinceScan >= m_observationThresholdRot ||
-//          headYawRotationSinceScan>= m_observationThresholdHeadYawRot || headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot
-//          || !m_firstLaserReceived))
-//  {
-//    ROS_INFO("integrating new measurement");
-//
-//    // apply motion model with temporal sampling:
-//    m_motionModel->applyOdomTransformTemporal(m_particles, msg->header.stamp, m_temporalSamplingRange);
-//
-//
-//    //### Particles in log-form from here...
-//    toLogForm();
-//
-//    // integrated pose (z, roll, pitch) meas. only if data OK:
-//    double poseHeight;
-//    bool imuMsgOk;
-//    double angleX, angleY;
-//    if(m_useIMU) {
-//      ros::Time imuStamp;
-//      imuMsgOk = getImuMsg(msg->header.stamp, imuStamp, angleX, angleY);
-//    } else {
-//      tf::Stamped<tf::Pose> lastOdomPose;
-//      if(m_motionModel->lookupOdomPose(msg->header.stamp, lastOdomPose)) {
-//        double dropyaw;
-//        lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
-//        imuMsgOk = true;
-//      }
-//    }
-//
-//    if(imuMsgOk) {
-//      if (!m_motionModel->lookupPoseHeight(msg->header.stamp, poseHeight)) {
-//        ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
-//      } else {
-//        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, poseHeight);
-//      }
-//    }
-//
-//    m_observationModel->integratePointCloudMeasurement(m_particles, torsoToLaser, msg, sensorToBaseFootprint);
-//    integration_happend = true;
-//
-//    m_mapModel->verifyPoses(m_particles);
-//
-//    // normalize weights and transform back from log:
-//    normalizeWeights();
-//    //### Particles back in regular form now
-//
-//    double nEffParticles = nEff();
-//
-//    std_msgs::Float32 nEffMsg;
-//    nEffMsg.data = nEffParticles;
-//    m_nEffPub.publish(nEffMsg);
-//
-//    if (nEffParticles <= m_nEffFactor*m_particles.size()){ // selective resampling
-//      ROS_INFO("Resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
-//      resample();
-//    } else {
-//      ROS_INFO("Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
-//    }
-//
-//    m_firstLaserReceived = true;
-//    m_rotationSinceScan = 0.0;
-//    m_translationSinceScan = 0.0;
-//    m_headYawRotationLastScan = headYaw;
-//    m_headPitchRotationLastScan = headPitch;
-//
-//  } else{ // no observation necessary: propagate particles forward by full interval
-//    m_motionModel->applyOdomTransform(m_particles, odomTransform);
-//  }
-//
-//  m_motionModel->storeOdomPose(odomPose);
-//  publishPoseEstimate(msg->header.stamp,integration_happend);
-//  m_lastLaserTime = msg->header.stamp;
+  ROS_ERROR("Point cloud callback still needs to be integrated.");
 }
 
 void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){
@@ -1062,8 +913,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   // tolerance time so that odom can be used
   // see ROS amcl_node
 
-  // TODO: param
-  ros::Duration transformTolerance(0.1);
+  ros::Duration transformTolerance(m_transformTolerance);
   ros::Time transformExpiration = (time + transformTolerance);
 
   tf::StampedTransform tmp_tf_stamped(latestTF.inverse(),	transformExpiration, m_globalFrameId, m_odomFrameId);
@@ -1111,7 +961,7 @@ tf::Pose HumanoidLocalization::getMeanParticlePose() const{
   // TODO: only rough estimate of mean rotation, asserts normalized weights!
   meanPose.getBasis() = meanPose.getBasis().scaled(btVector3(1.0/m_numParticles, 1.0/m_numParticles, 1.0/m_numParticles));
 
-  // TODO: Why do we have to normalize the quaternion here?
+  // Apparently we need to normalize again
   meanPose.setRotation(meanPose.getRotation().normalized());
 
   return meanPose;

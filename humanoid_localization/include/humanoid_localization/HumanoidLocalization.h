@@ -218,6 +218,7 @@ protected:
   double m_observationThresholdHeadYawRot;
   double m_observationThresholdHeadPitchRot;
   double m_temporalSamplingRange;
+  double m_transformTolerance;
   ros::Time m_lastLaserTime;
 
   /// absolute, summed translation (3D) since last laser integration

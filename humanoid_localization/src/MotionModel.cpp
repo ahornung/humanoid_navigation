@@ -48,9 +48,9 @@ MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformL
   nh->param("motion_noise/x", xx, 0.01);
   nh->param("motion_noise/y", yy, 0.01);
   nh->param("motion_noise/z", zz, 0.01);
-  nh->param("motion_noise/R", RR, 0.05);
-  nh->param("motion_noise/P", PP, 0.1);
-  nh->param("motion_noise/Y", YY, 0.5);
+  nh->param("motion_noise/roll", RR, 0.05);
+  nh->param("motion_noise/pitch", PP, 0.1);
+  nh->param("motion_noise/yaw", YY, 0.5);
   m_motionNoise(0) = xx; // x
   m_motionNoise(1) = yy; // y
   m_motionNoise(2) = zz; // z

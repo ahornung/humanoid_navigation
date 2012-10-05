@@ -55,20 +55,20 @@ ObservationModel::~ObservationModel() {
 
 void ObservationModel::integratePoseMeasurement(Particles& particles, double poseRoll, double posePitch, const tf::StampedTransform& footprintToTorso){
   double poseHeight = footprintToTorso.getOrigin().getZ();
-  ROS_INFO("Pose measurement z=%f R=%f P=%f", poseHeight, poseRoll, posePitch);
+  ROS_DEBUG("Pose measurement z=%f R=%f P=%f", poseHeight, poseRoll, posePitch);
   // TODO cluster xy of particles => speedup
-  // TODO OMP, parallel:
-  for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
+#pragma omp parallel for
+  for (unsigned i=0; i < particles.size(); ++i){
     // integrate IMU meas.:
     double roll, pitch, yaw;
-    it->pose.getBasis().getRPY(roll, pitch, yaw);
-    it->weight += m_weightRoll * logLikelihood(poseRoll - roll, m_sigmaRoll);
-    it->weight += m_weightPitch * logLikelihood(posePitch - pitch, m_sigmaPitch);
+    particles[i].pose.getBasis().getRPY(roll, pitch, yaw);
+    particles[i].weight += m_weightRoll * logLikelihood(poseRoll - roll, m_sigmaRoll);
+    particles[i].weight += m_weightPitch * logLikelihood(posePitch - pitch, m_sigmaPitch);
 
     // integrate height measurement (z)
     double heightError;
-    if (getHeightError(*it,footprintToTorso, heightError))
-      it->weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
+    if (getHeightError(particles[i],footprintToTorso, heightError))
+      particles[i].weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
 
 
   }

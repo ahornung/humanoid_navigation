@@ -34,12 +34,12 @@ RaycastingModel::RaycastingModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel
 : ObservationModel(nh, mapModel, rngEngine)
 {
   // params:
-  nh->param("laser_z_hit", m_zHit, 0.8);
-  nh->param("laser_z_short", m_zShort, 0.1);
-  nh->param("laser_z_max", m_zMax, 0.05);
-  nh->param("laser_z_rand", m_zRand, 0.05);
-  nh->param("laser_sigma_hit", m_sigmaHit, 0.05);
-  nh->param("laser_lambda_short", m_lambdaShort, 0.1);
+  nh->param("raycasting/z_hit", m_zHit, 0.8);
+  nh->param("raycasting/z_short", m_zShort, 0.1);
+  nh->param("raycasting/z_max", m_zMax, 0.05);
+  nh->param("raycasting/z_rand", m_zRand, 0.05);
+  nh->param("raycasting/sigma_hit", m_sigmaHit, 0.05);
+  nh->param("raycasting/lambda_short", m_lambdaShort, 0.1);
 
   // TODO: move to main localization code for point cloud handling
 //  nh->param("filter_ground", m_filterPointCloudGround, true);

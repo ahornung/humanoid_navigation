@@ -30,8 +30,8 @@ EndpointModel::EndpointModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel> ma
 {
   ROS_INFO("Using Endpoint observation model");
 
-  nh->param("laser_endp_sigma", m_sigma, m_sigma);
-  nh->param("max_obstacle_distance", m_maxObstacleDistance, m_maxObstacleDistance);
+  nh->param("endpoint/sigma", m_sigma, m_sigma);
+  nh->param("endpoint/max_obstacle_distance", m_maxObstacleDistance, m_maxObstacleDistance);
 
   if (m_sigma <= 0.0){
     ROS_ERROR("Sigma (std.dev) needs to be > 0 in EndpointModel");

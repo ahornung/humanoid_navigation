@@ -6,7 +6,7 @@
      Ray casting and an end point model (lookup in the distance map).
 
   </description>
-  <author>Armin Hornung, Stefan Osswald, Armin Hornung</author>
+  <author>Armin Hornung, Stefan Osswald, Daniel Maier</author>
   <license>GPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/humanoid_localization</url>

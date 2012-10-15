@@ -159,7 +159,7 @@ bool MotionModel::lookupOdomTransform(const ros::Time& t, tf::Transform& odomTra
   if (m_firstOdometryReceived){
     odomTransform = m_lastOdomPose.inverse() * odomPose;
   } else{
-    odomTransform = tf::Transform(tf::createIdentityQuaternion(), btVector3(0,0,0));
+    odomTransform = tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0));
   }
 
 
@@ -201,7 +201,9 @@ bool MotionModel::lookupOdomPose(const ros::Time& t, tf::Stamped<tf::Pose>& odom
   return true;
 }
 
-bool MotionModel::lookupLaserTransform(const std::string& laserFrameId, const ros::Time& t,
+
+// TODO: same as lookupFootprint, replace (and invert)
+bool MotionModel::lookupLocalTransform(const std::string& laserFrameId, const ros::Time& t,
                                        tf::StampedTransform& torsoToLaser) const
 {
   try
@@ -210,7 +212,7 @@ bool MotionModel::lookupLaserTransform(const std::string& laserFrameId, const ro
   }
   catch(tf::TransformException& e)
   {
-    ROS_WARN("Failed to lookup laser transform, skipping scan (%s)", e.what());
+    ROS_WARN("Failed to lookup local transform (%s)", e.what());
     return false;
   }
 

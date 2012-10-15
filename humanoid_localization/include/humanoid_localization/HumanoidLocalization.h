@@ -151,6 +151,10 @@ protected:
    *
    */
   void prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const;
+  
+  void prepareOdometry(const ros::Time& time, tf::Transform& odomTransform, tf::Stamped<tf::Pose>& odomPose);
+  
+  bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);
 
   unsigned computeBeamStep(unsigned numBeams) const;
 

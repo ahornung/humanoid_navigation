@@ -44,8 +44,8 @@ public:
   /// odomTransform is an identity TF when there is no previous TF available
   bool lookupOdomTransform(const ros::Time& t, tf::Transform& odomTransform) const;
 
-  /// lookup the transform from torso to the laser at time t
-  bool lookupLaserTransform(const std::string& laserFrameId, const ros::Time& t, tf::StampedTransform& torsoToLaser) const;
+  /// lookup the transform from base frame to another frame (sensor)
+  bool lookupLocalTransform(const std::string& laserFrameId, const ros::Time& t, tf::StampedTransform& torsoToLaser) const;
 
   /// lookup the tf between the base and footprint frames
   bool lookupFootprintTf(const ros::Time& t, tf::StampedTransform& footprintToTorso) const;

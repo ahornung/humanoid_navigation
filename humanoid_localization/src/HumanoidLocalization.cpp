@@ -302,9 +302,11 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   tf::Transform odomTransform;
   /// absolute, current odom pose
   tf::Stamped<tf::Pose> odomPose;
-  // compute odom transforms, store incremental changes
-  prepareOdometry(msg->header.stamp,odomTransform, odomPose);
-  
+
+  // check if odometry available, skip scan if not.
+  if (!prepareOdometry(msg->header.stamp,odomTransform, odomPose))
+    return;
+
 
   bool sensor_integrated = false;
   if (!m_paused
@@ -410,12 +412,12 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
     return true;  
 }
 
-void HumanoidLocalization::prepareOdometry(const ros::Time& time, tf::Transform& odomTransform, tf::Stamped<tf::Pose>& odomPose){
+bool HumanoidLocalization::prepareOdometry(const ros::Time& time, tf::Transform& odomTransform, tf::Stamped<tf::Pose>& odomPose){
   // compute current odometry transform first, see if it would trigger the
   // integration of observations
 
   if (!m_motionModel->lookupOdomPose(time, odomPose))
-    return;
+    return false;
   
   odomTransform = m_motionModel->computeOdomTransform(odomPose);
 
@@ -433,6 +435,7 @@ void HumanoidLocalization::prepareOdometry(const ros::Time& time, tf::Transform&
     //return;
   }
   m_rotationSinceScan += std::abs(yaw);
+  return true;
 }
 
 void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const{
@@ -870,6 +873,13 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   tf::poseTFToMsg(bestParticlePose, bestPose.poses[0]);
   m_bestPosePub.publish(bestPose);
 
+//  // send incremental odom pose (synced to localization)
+//  tf::Stamped<tf::Pose> lastOdomPose;
+//  if (m_motionModel->getLastOdomPose(lastOdomPose)){
+//    geometry_msgs::PoseStamped odomPoseMsg;
+//    tf::poseStampedTFToMsg(lastOdomPose, odomPoseMsg);
+//    m_poseOdomPub.publish(odomPoseMsg);
+//  }
 
   // TODO: move to own node (eval)
   /**
@@ -877,13 +887,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   // Send poses for evaluation synced to localization
   ///////////////////////////////////////////////////////
 
-  // send incremental odom pose (synced to localization)
-  tf::Stamped<tf::Pose> lastOdomPose;
-  if (m_motionModel->getLastOdomPose(lastOdomPose)){
-    geometry_msgs::PoseStamped odomPoseMsg;
-    tf::poseStampedTFToMsg(lastOdomPose, odomPoseMsg);
-    m_poseOdomPub.publish(odomPoseMsg);
-  }
+
 
 
   // send truepose when available (and enabled)

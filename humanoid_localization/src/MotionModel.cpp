@@ -33,14 +33,10 @@ MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformL
 : m_tfListener(tf),
   m_rngNormal(*rngEngine, NormalDistributionT(0.0, 1.0)),
   m_rngUniform(*rngEngine, UniformDistributionT(0.0, 1.0)),
-  m_odomFrameId("odom"), m_baseFrameId("torso"),
-  m_footprintFrameId("base_footprint"),
+  m_odomFrameId(odomFrameId), m_baseFrameId(baseFrameId),
   m_firstOdometryReceived(false)
 
 {
-
-  nh->param("odom_frame_id", m_odomFrameId, m_odomFrameId);
-  nh->param("base_frame_id", m_baseFrameId, m_baseFrameId);
 
   // motion model noise parameters:
   // covariance matrix, contains squared std.devs on diagonal

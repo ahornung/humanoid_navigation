@@ -41,7 +41,7 @@ m_maxOdomInterval(7.0),
 m_nEffFactor(1.0), m_minParticleWeight(0.0),
 m_bestParticleIdx(-1), m_lastIMUMsgBuffer(5),
 m_bestParticleAsMean(true),
-m_firstLaserReceived(false), m_initialized(false), m_initGlobal(false), m_paused(false),
+m_receivedSensorData(false), m_initialized(false), m_initGlobal(false), m_paused(false),
 m_syncedTruepose(false),
 m_observationThresholdTrans(0.1), m_observationThresholdRot(M_PI/6),
 m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
@@ -53,8 +53,6 @@ m_useIMU(false)
 
   // raycasting or endpoint model?
   m_privateNh.param("use_raycasting", m_useRaycasting, m_useRaycasting);
-
-  m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(&m_privateNh, &m_rngEngine, &m_tfListener));
 
   m_privateNh.param("odom_frame_id", m_odomFrameId, m_odomFrameId);
   m_privateNh.param("base_frame_id", m_baseFrameId, m_baseFrameId);
@@ -98,6 +96,8 @@ m_useIMU(false)
   m_privateNh.param("transform_tolerance", m_transformTolerance, m_transformTolerance);
 
   m_privateNh.param("use_imu", m_useIMU, m_useIMU);
+
+  m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(&m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFootprintId));
 
   if (m_useRaycasting){
     m_mapModel = boost::shared_ptr<MapModel>(new OccupancyMap(&m_privateNh));
@@ -238,7 +238,7 @@ void HumanoidLocalization::reset(){
         tf::Stamped<tf::Pose> lastOdomPose;
         double poseHeight;
         if(m_motionModel->getLastOdomPose(lastOdomPose) &&
-            m_motionModel->lookupPoseHeight(lastOdomPose.stamp_, poseHeight)) {
+            lookupPoseHeight(lastOdomPose.stamp_, poseHeight)) {
           posePtr->pose.pose.position.z = poseHeight;
         } else {
           ROS_WARN("Could not determine current pose height, falling back to init_pose_z");
@@ -293,13 +293,14 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   }
 
   double timediff = (msg->header.stamp - m_lastLaserTime).toSec();
-  if (m_firstLaserReceived && timediff < timediff){
+  if (m_receivedSensorData && timediff < timediff){
     ROS_WARN("Ignoring received laser data that is %f s older than previous data!", timediff);
     return;
   }
   
   // TODO: need only one, convert later as needed
   tf::Transform odomTransform;
+  /// absolute, current odom pose
   tf::Stamped<tf::Pose> odomPose;
   // compute odom transforms, store incremental changes
   prepareOdometry(msg->header.stamp,odomTransform, odomPose);
@@ -309,7 +310,7 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   if (!m_paused
       && (m_translationSinceScan >= m_observationThresholdTrans 
           || m_rotationSinceScan >= m_observationThresholdRot
-          || !m_firstLaserReceived))
+          || !m_receivedSensorData))
   {
     
     // convert laser to point cloud first:
@@ -337,10 +338,13 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   
   // transformation from torso frame to laser
   // TODO: this takes the latest tf, assumes it did not change over temp. sampling!
-  tf::StampedTransform torsoToLaser;
-  if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, torsoToLaser))
+  tf::Transform torsoToLaser;
+  tf::StampedTransform localLaserFrame;
+  if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, localLaserFrame))
     return false;
   
+  torsoToLaser = localLaserFrame.inverse();
+
   
 //### Particles in log-form from here...
     toLogForm();
@@ -362,7 +366,7 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
     
     tf::StampedTransform footprintToTorso;
     if(imuMsgOk) {
-      if (!m_motionModel->lookupFootprintTf(t, footprintToTorso)) {
+      if (!m_motionModel->lookupLocalTransform(m_baseFootprintId, t, footprintToTorso)) {
         ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
       } else {
         m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, footprintToTorso);
@@ -395,7 +399,7 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
       ROS_INFO("Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
     }
     
-    m_firstLaserReceived = true;
+    m_receivedSensorData = true;
     m_rotationSinceScan = 0.0;
     m_translationSinceScan = 0.0;
     
@@ -409,26 +413,26 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
 void HumanoidLocalization::prepareOdometry(const ros::Time& time, tf::Transform& odomTransform, tf::Stamped<tf::Pose>& odomPose){
   // compute current odometry transform first, see if it would trigger the
   // integration of observations
-  if (!m_motionModel->lookupOdomTransform(time, odomTransform))
+
+  if (!m_motionModel->lookupOdomPose(time, odomPose))
     return;
   
-  // TODO: another lookup, not needed (combine w. above)?
-    m_motionModel->lookupOdomPose(time, odomPose);
-    
-    float length = odomTransform.getOrigin().length();
-    if (length > 0.1){
-      ROS_WARN("Length of odometry change unexpectedly high: %f", length);
-      //return;
-    }
-    
-    m_translationSinceScan += length;
-    double yaw, pitch, roll;
-    odomTransform.getBasis().getRPY(roll, pitch, yaw);
-    if (std::abs(yaw) > 0.15){
-      ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
-      //return;
-    }
-    m_rotationSinceScan += std::abs(yaw); 
+  odomTransform = m_motionModel->computeOdomTransform(odomPose);
+
+  float length = odomTransform.getOrigin().length();
+  if (length > 0.1){
+    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
+    //return;
+  }
+
+  m_translationSinceScan += length;
+  double yaw, pitch, roll;
+  odomTransform.getBasis().getRPY(roll, pitch, yaw);
+  if (std::abs(yaw) > 0.15){
+    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
+    //return;
+  }
+  m_rotationSinceScan += std::abs(yaw);
 }
 
 void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const{
@@ -567,7 +571,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
         m_motionModel->getLastOdomPose(lastOdomPose);
         stamp = lastOdomPose.stamp_;
       }
-      poseHeightOk = m_motionModel->lookupPoseHeight(stamp, poseHeight);
+      poseHeightOk = lookupPoseHeight(stamp, poseHeight);
       if(!poseHeightOk) {
         ROS_WARN("Could not determine current pose height, falling back to init_pose_z");
       }
@@ -682,7 +686,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
   m_motionModel->reset();
   m_translationSinceScan = 0.0;
   m_rotationSinceScan = 0.0;
-  m_firstLaserReceived = false;
+  m_receivedSensorData = false;
   m_initialized = true;
 
   publishPoseEstimate(msg->header.stamp, false);
@@ -817,7 +821,7 @@ void HumanoidLocalization::initGlobal(){
   m_motionModel->reset();
   m_translationSinceScan = 0.0;
   m_rotationSinceScan = 0.0;
-  m_firstLaserReceived = false;
+  m_receivedSensorData = false;
   m_initialized = true;
 
   publishPoseEstimate(ros::Time::now(), false);
@@ -1012,7 +1016,7 @@ void HumanoidLocalization::pauseLocalizationCallback(const std_msgs::BoolConstPt
       m_paused = false;
       ROS_INFO("Localization resumed");
       // force laser integration:
-      m_firstLaserReceived = false;
+      m_receivedSensorData = false;
     } else {
       ROS_WARN("Received a msg to resume localization, is not paused.");
     }
@@ -1039,12 +1043,21 @@ bool HumanoidLocalization::resumeLocalizationSrvCallback(std_srvs::Empty::Reques
     m_paused = false;
     ROS_INFO("Localization resumed");
     // force next laser integration:
-    m_firstLaserReceived = false;
+    m_receivedSensorData = false;
   } else {
     ROS_WARN("Received a request to resume localization, but is not paused.");
   }
 
   return true;
+}
+
+bool HumanoidLocalization::lookupPoseHeight(const ros::Time& t, double& poseHeight) const{
+  tf::StampedTransform tf;
+  if (m_motionModel->lookupLocalTransform(m_baseFootprintId, t, tf)){
+    poseHeight = tf.getOrigin().getZ();
+    return true;
+  } else
+    return false;
 }
 
 }

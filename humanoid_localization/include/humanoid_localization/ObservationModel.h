@@ -74,7 +74,7 @@ public:
    * Integrate a measurement in particle set, update weights accordingly
    * Particle weights should be in log scale before, weights are added.
    */
-  virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser) = 0;
+  virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::Transform& baseToSensor) = 0;
 
   virtual void integratePoseMeasurement(Particles& particles, double roll, double pitch, const tf::StampedTransform& footprintToTorso);
 

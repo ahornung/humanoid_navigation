@@ -28,7 +28,8 @@ using namespace std;
 
 namespace humanoid_localization{
 
-MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformListener* tf)
+MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformListener* tf,
+                         const std::string& odomFrameId, const std::string& baseFrameId)
 : m_tfListener(tf),
   m_rngNormal(*rngEngine, NormalDistributionT(0.0, 1.0)),
   m_rngUniform(*rngEngine, UniformDistributionT(0.0, 1.0)),
@@ -79,6 +80,8 @@ void MotionModel::transformPose(tf::Pose& particlePose, const tf::Transform& odo
   // about ~ 0.01 / 0.02 m
   double dTrans = odomTransform.getOrigin().length();
 
+  // TODO: this needs to be single-thread (critical, rng access)
+  // the rest could be parallelized?
   Vector6f poseNoise = m_motionNoise;
   for (unsigned i = 0; i < 6; ++i){
     poseNoise(i) *= dTrans * m_rngNormal();
@@ -115,13 +118,13 @@ void MotionModel::applyOdomTransform(Particles& particles, const tf::Transform& 
 
 bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Time& t, double dt){
 
-  // the actual, non time-sampled transform:
+  // first see if default time is available
   tf::Transform odomTransform;
   if (!lookupOdomTransform(t, odomTransform))
     return false;
 
 
-  tf::Stamped<tf::Pose> timeSampledTransform;
+  tf::Transform timeSampledTransform;
   ros::Time maxTime;
   std::string errorString;
   m_tfListener->getLatestCommonTime(m_odomFrameId, m_baseFrameId, maxTime, &errorString);
@@ -134,12 +137,12 @@ bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Tim
         duration = maxDuration;
 
       lookupOdomTransform(t + duration, timeSampledTransform);
+      transformPose(it->pose, timeSampledTransform);
     } else{
-      lookupOdomTransform(t, timeSampledTransform);
+      transformPose(it->pose, odomTransform);
 
     }
 
-    transformPose(it->pose, timeSampledTransform);
   }
 
   return true;
@@ -156,14 +159,19 @@ bool MotionModel::lookupOdomTransform(const ros::Time& t, tf::Transform& odomTra
   if (!lookupOdomPose(t, odomPose))
     return false;
 
-  if (m_firstOdometryReceived){
-    odomTransform = m_lastOdomPose.inverse() * odomPose;
-  } else{
-    odomTransform = tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0));
-  }
+ odomTransform = computeOdomTransform(odomPose);
 
 
   return true;
+}
+
+tf::Transform MotionModel::computeOdomTransform(const tf::Transform currentPose) const{
+  if (m_firstOdometryReceived){
+    return m_lastOdomPose.inverse() * currentPose;
+  } else{
+    return tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0));
+  }
+
 }
 
 void MotionModel::storeOdomPose(const tf::Stamped<tf::Pose>& odomPose){
@@ -202,13 +210,12 @@ bool MotionModel::lookupOdomPose(const ros::Time& t, tf::Stamped<tf::Pose>& odom
 }
 
 
-// TODO: same as lookupFootprint, replace (and invert)
-bool MotionModel::lookupLocalTransform(const std::string& laserFrameId, const ros::Time& t,
-                                       tf::StampedTransform& torsoToLaser) const
+bool MotionModel::lookupLocalTransform(const std::string& targetFrame, const ros::Time& t,
+                                       tf::StampedTransform& localTransform) const
 {
   try
   {
-    m_tfListener->lookupTransform(m_baseFrameId, laserFrameId, t, torsoToLaser);
+    m_tfListener->lookupTransform(targetFrame, m_baseFrameId, t, localTransform);
   }
   catch(tf::TransformException& e)
   {
@@ -217,27 +224,6 @@ bool MotionModel::lookupLocalTransform(const std::string& laserFrameId, const ro
   }
 
   return true;
-}
-
-bool MotionModel::lookupFootprintTf(const ros::Time& t, tf::StampedTransform& footprintToTorso) const
-{
-  try {
-    m_tfListener->lookupTransform(m_footprintFrameId, m_baseFrameId, t, footprintToTorso);
-  } catch (const tf::TransformException& e) {
-    ROS_WARN("Failed to lookup pose height, skipping scan (%s)", e.what());
-    return false;
-  }
-
-  return true;
-}
-
-bool MotionModel::lookupPoseHeight(const ros::Time& t, double& poseHeight) const{
-  tf::StampedTransform tf;
-  if (lookupFootprintTf(t, tf)){
-    poseHeight = tf.getOrigin().getZ();
-    return true;
-  } else
-    return false;
 }
 
 bool MotionModel::getLastOdomPose(tf::Stamped<tf::Pose>& lastOdomPose) const{

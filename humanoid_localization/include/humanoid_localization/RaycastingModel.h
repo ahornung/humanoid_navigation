@@ -42,7 +42,7 @@ class RaycastingModel : public ObservationModel {
 public:
   RaycastingModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel, EngineT * rngEngine);
   virtual ~RaycastingModel();
-  virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser);
+  virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::Transform& baseToSensor);
 
 protected:
   bool getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const;

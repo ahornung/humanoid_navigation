@@ -57,7 +57,7 @@ RaycastingModel::~RaycastingModel(){
 
 }
 
-void RaycastingModel::integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& base_to_laser){
+void RaycastingModel::integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::Transform& base_to_laser){
 
   if (!m_map){
     ROS_ERROR("Map file is not set in raycasting");

@@ -46,13 +46,13 @@ EndpointModel::~EndpointModel(){
 
 }
 
-void EndpointModel::integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser){
+void EndpointModel::integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::Transform& baseToSensor){
 
     // iterate over samples, multithreaded:
 #pragma omp parallel for
   for (unsigned i=0; i < particles.size(); ++i){
     Eigen::Matrix4f globalLaserOrigin;
-    pcl_ros::transformAsMatrix(particles[i].pose * baseToLaser, globalLaserOrigin);
+    pcl_ros::transformAsMatrix(particles[i].pose * baseToSensor, globalLaserOrigin);
     PointCloud pc_transformed;
     pcl::transformPointCloud(pc, pc_transformed, globalLaserOrigin);
 

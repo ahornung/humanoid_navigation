@@ -158,6 +158,8 @@ protected:
 
   unsigned computeBeamStep(unsigned numBeams) const;
 
+  bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
+
   EngineT m_rngEngine;
   NormalGeneratorT m_rngNormal;
   UniformGeneratorT m_rngUniform;
@@ -211,7 +213,7 @@ protected:
   boost::circular_buffer<sensor_msgs::Imu> m_lastIMUMsgBuffer;
 
   bool m_bestParticleAsMean;
-  bool m_firstLaserReceived;
+  bool m_receivedSensorData;
   bool m_initialized;
   bool m_initGlobal;
   bool m_paused;

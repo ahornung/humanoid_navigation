@@ -43,7 +43,7 @@ class EndpointModel : public ObservationModel {
 public:
   EndpointModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel, EngineT * rngEngine);
   virtual ~EndpointModel();
-  virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::StampedTransform& baseToLaser);
+  virtual void integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::Transform& baseToSensor);
 
   virtual void setMap(boost::shared_ptr<octomap::OcTree> map);
 

@@ -34,34 +34,35 @@
 namespace humanoid_localization{
 class MotionModel {
 public:
-  MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformListener* tf);
+  MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformListener* tf, const std::string& odomFrameId, const std::string& baseFrameId);
   virtual ~MotionModel();
   void reset();
   /// look up the odom pose at a certain time through tf
   bool lookupOdomPose(const ros::Time& t, tf::Stamped<tf::Pose>& odomPose) const;
 
-  /// computes the transform from the last odom pose to the one at time t
-  /// odomTransform is an identity TF when there is no previous TF available
+    /// looks up the odometry pose at time t and then calls computeOdomTransform()
   bool lookupOdomTransform(const ros::Time& t, tf::Transform& odomTransform) const;
 
-  /// lookup the transform from base frame to another frame (sensor)
-  bool lookupLocalTransform(const std::string& laserFrameId, const ros::Time& t, tf::StampedTransform& torsoToLaser) const;
+  /// computes the odometry transform from m_lastOdomPose to currentPose as relative
+  /// 6D rigid body transform (=identity if m_lastOdomPose not available)
+  tf::Transform computeOdomTransform(const tf::Transform currentPose) const;
 
-  /// lookup the tf between the base and footprint frames
-  bool lookupFootprintTf(const ros::Time& t, tf::StampedTransform& footprintToTorso) const;
+  /// lookup the local target frame in the base frame (local transform)
+  bool lookupLocalTransform(const std::string& targetFrame, const ros::Time& t, tf::StampedTransform& localTransform) const;
 
   /// lookup the height of the torso, based on tf between the base and footprint frames
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
 
 
 
-  /// apply odomTransform to all particles (noisy)
+  /// apply odomTransform to all particles (with random noise)
   void applyOdomTransform(Particles& particles, const tf::Transform& odomTransform);
 
   /// apply odomTransform to all particles (noisy), with temporal sampling over the range of dt.
   /// Times are sampled in an interval +-dt/2 around t, iff dt > 0.0.
   bool applyOdomTransformTemporal(Particles& particles, const ros::Time& t, double dt);
 
+  /// store odomPose as m_lastOdomPose to compute future odom transforms
   void storeOdomPose(const tf::Stamped<tf::Pose>& odomPose);
 
   /// get the last stored odomPose
@@ -73,6 +74,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 protected:
+  /// Transform a particle's pose with the relative odomTransform with added random noise
   void transformPose(tf::Pose& particlePose, const tf::Transform& odomTransform);
 
   tf::TransformListener* m_tfListener;

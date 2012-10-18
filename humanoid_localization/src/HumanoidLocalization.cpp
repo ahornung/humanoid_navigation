@@ -872,12 +872,12 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   m_bestPosePub.publish(bestPose);
 
 //  // send incremental odom pose (synced to localization)
-//  tf::Stamped<tf::Pose> lastOdomPose;
-//  if (m_motionModel->getLastOdomPose(lastOdomPose)){
-//    geometry_msgs::PoseStamped odomPoseMsg;
-//    tf::poseStampedTFToMsg(lastOdomPose, odomPoseMsg);
-//    m_poseOdomPub.publish(odomPoseMsg);
-//  }
+  tf::Stamped<tf::Pose> lastOdomPose;
+  if (m_motionModel->getLastOdomPose(lastOdomPose)){
+    geometry_msgs::PoseStamped odomPoseMsg;
+    tf::poseStampedTFToMsg(lastOdomPose, odomPoseMsg);
+    m_poseOdomPub.publish(odomPoseMsg);
+  }
 
   // TODO: move to own node (eval)
   /**
@@ -932,7 +932,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   ros::Duration transformTolerance(m_transformTolerance);
   ros::Time transformExpiration = (time + transformTolerance);
 
-  tf::StampedTransform tmp_tlstTF.inverse(),	transformExpiration, m_globalFrameId, m_odomFrameId);
+  tf::StampedTransform tmp_tf_stamped(latestTF.inverse(), transformExpiration, m_globalFrameId, m_odomFrameId);
 
   m_tfBroadcaster.sendTransform(tmp_tf_stamped);
 

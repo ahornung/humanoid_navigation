@@ -72,7 +72,7 @@ namespace footstep_planner
 
         nh_private.param("feedback_frequency", ivFeedbackFrequency, 5.0);
 
-        nh_private.param("protective_execution", ivSafeExecution, true);
+        nh_private.param("safe_execution", ivSafeExecution, true);
 
         // check if each footstep can be performed by the NAO robot
         XmlRpc::XmlRpcValue footsteps_x;

@@ -13,7 +13,7 @@ import geometry_msgs.msg as geo_msgs
 
 def callback(pose, pub):
     newpose = pose
-    newpose.pose.pose.position.z += 0.303
+    #newpose.pose.pose.position.z += 0.303
     pub.publish(newpose)
 
 def listener():

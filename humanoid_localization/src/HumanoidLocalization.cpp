@@ -34,7 +34,7 @@ m_rngEngine(randomSeed),
 m_rngNormal(m_rngEngine, NormalDistributionT(0.0, 1.0)),
 m_rngUniform(m_rngEngine, UniformDistributionT(0.0, 1.0)),
 m_nh(),m_privateNh("~"),
-m_odomFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("/base_footprint"), m_globalFrameId("/map"),
+m_odomFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("/map"),
 m_useRaycasting(true), m_initFromTruepose(false), m_numParticles(500),
 m_numSensorBeams(48),
 m_maxOdomInterval(7.0),
@@ -97,7 +97,7 @@ m_useIMU(false)
 
   m_privateNh.param("use_imu", m_useIMU, m_useIMU);
 
-  m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(&m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFootprintId));
+  m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(&m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFrameId));
 
   if (m_useRaycasting){
     m_mapModel = boost::shared_ptr<MapModel>(new OccupancyMap(&m_privateNh));
@@ -339,14 +339,12 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   m_motionModel->applyOdomTransformTemporal(m_particles, t, m_temporalSamplingRange);
   
   // transformation from torso frame to laser
-  // TODO: this takes the latest tf, assumes it did not change over temp. sampling!
-  tf::Transform torsoToLaser;
+  // this takes the latest tf, assumes that torso to laser did not change over temp. sampling!
   tf::StampedTransform localLaserFrame;
   if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, localLaserFrame))
     return false;
-  
-  torsoToLaser = localLaserFrame.inverse();
 
+  tf::Transform torsoToLaser(localLaserFrame.inverse());
   
 //### Particles in log-form from here...
     toLogForm();
@@ -407,7 +405,7 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
     
     double dt = (ros::WallTime::now() - startTime).toSec();
     ROS_INFO_STREAM("Observations for "<< m_numParticles << " particles took "
-    << dt << "s (="<<dt/m_numParticles<<"s/particle)");
+        << dt << "s (="<<dt/m_numParticles<<"s/particle)");
     
     return true;  
 }
@@ -921,7 +919,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
     tf::Stamped<tf::Pose> baseToMapTF(bestParticlePose.inverse(),time, m_baseFrameId);
     m_tfListener.transformPose(m_odomFrameId, baseToMapTF, odomToMapTF);
   } catch (const tf::TransformException& e){
-    ROS_WARN("Failed to subtract base to odom transform: %s", e.what());
+    ROS_WARN("Failed to subtract base to odom transform, will not publish pose estimate: %s", e.what());
     return;
   }
 
@@ -934,7 +932,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   ros::Duration transformTolerance(m_transformTolerance);
   ros::Time transformExpiration = (time + transformTolerance);
 
-  tf::StampedTransform tmp_tf_stamped(latestTF.inverse(),	transformExpiration, m_globalFrameId, m_odomFrameId);
+  tf::StampedTransform tmp_tlstTF.inverse(),	transformExpiration, m_globalFrameId, m_odomFrameId);
 
   m_tfBroadcaster.sendTransform(tmp_tf_stamped);
 

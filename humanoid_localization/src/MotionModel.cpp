@@ -132,8 +132,12 @@ bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Tim
       if (duration > maxDuration)
         duration = maxDuration;
 
-      lookupOdomTransform(t + duration, timeSampledTransform);
-      transformPose(it->pose, timeSampledTransform);
+      if (lookupOdomTransform(t + duration, timeSampledTransform))
+        transformPose(it->pose, timeSampledTransform);
+      else{
+        ROS_WARN("Could not lookup temporal odomTransform");
+        transformPose(it->pose, odomTransform);
+      }
     } else{
       transformPose(it->pose, odomTransform);
 

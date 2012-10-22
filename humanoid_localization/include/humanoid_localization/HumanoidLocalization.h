@@ -152,7 +152,7 @@ protected:
    */
   void prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const;
   
-  bool prepareOdometry(const ros::Time& time, tf::Transform& odomTransform, tf::Stamped<tf::Pose>& odomPose);
+  bool isAboveMotionThreshold(const tf::Transform& odomTransform);
   
   bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);
 

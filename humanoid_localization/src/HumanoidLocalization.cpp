@@ -183,46 +183,35 @@ void HumanoidLocalization::reset(){
   if (m_initGlobal){
     this->initGlobal();
   } else {
-    geometry_msgs::PoseWithCovarianceStampedPtr posePtr;
+    geometry_msgs::PoseWithCovarianceStampedPtr posePtr(new geometry_msgs::PoseWithCovarianceStamped());
 
-    if (m_initFromTruepose){
-    	ROS_ERROR("Init from Truepose service call not implemented\n");
+    if (m_initFromTruepose){ // useful for evaluation, when ground truth available:
+      geometry_msgs::PoseStamped truePose;
+      tf::Stamped<tf::Pose> truePoseTF;
+      tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(), btVector3(0,0,0)), ros::Time::now(), "/torso_real"); // TODO: param
 
-      // TODO: fix below: instead of service lookup!
-      //		geometry_msgs::PoseStamped truePose;
-      //		tf::Stamped<tf::Pose> truePoseTF;
-      //		tf::Stamped<tf::Pose> ident (btTransform(tf::createIdentityQuaternion(), btVector3(0,0,0)), time, "true_torso_Link");
-      //
-      //		if (! m_tfListener.waitForTransform(m_globalFrameId, time, "true_torso_Link", 1.0))
-      //			ROS_WARN("Waiting for Truepose transform failed, trying again...");
-      //
-      //		m_tfListener.transformPose(m_globalFrameId, ident, truePoseTF);
-      //		tf::poseStampedTFToMsg(truePoseTF, truePose);
-      //		m_poseTruePub.publish(truePose);
+      ros::Time lookupTime = ros::Time::now();
+      while(m_nh.ok() && !m_tfListener.waitForTransform(m_globalFrameId, ident.frame_id_, lookupTime, ros::Duration(1.0))){
+        ROS_WARN("Waiting for Truepose transform for initialization failed, trying again...");
+        lookupTime = ros::Time::now();
+      }
+      ident.stamp_ = lookupTime;
+
+      m_tfListener.transformPose(m_globalFrameId, ident, truePoseTF);
+      tf::poseStampedTFToMsg(truePoseTF, truePose);
+      tf::poseTFToMsg(truePoseTF, posePtr->pose.pose);
+      posePtr->header = truePose.header;
 
 
-
-//      const static std::string servname = "simulator_truepose";
-//      ROS_INFO("Requesting truepose from %s...", m_nh.resolveName(servname).c_str());
-//      nao_msgs::GetTruepose::Request req;
-//      nao_msgs::GetTruepose::Response resp;
-//
-//      while(m_nh.ok() && !ros::service::call(servname, req, resp))
-//      {
-//        ROS_WARN("Truepose for initialization request to %s failed; trying again...", m_nh.resolveName(servname).c_str());
-//        usleep(1000000);
-//      }
-//
-//      posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped(resp.pose));
-//      // initial covariance acc. to params (Truepose has cov. 0)
-//      for(int j=0; j < 6; ++j){
-//        for (int i = 0; i < 6; ++i){
-//          if (i == j)
-//            posePtr->pose.covariance.at(i*6 +j) = m_initNoiseStd(i) * m_initNoiseStd(i);
-//          else
-//            posePtr->pose.covariance.at(i*6 +j) = 0.0;
-//        }
-//      }
+      // initial covariance acc. to params
+      for(int j=0; j < 6; ++j){
+        for (int i = 0; i < 6; ++i){
+          if (i == j)
+            posePtr->pose.covariance.at(i*6 +j) = m_initNoiseStd(i) * m_initNoiseStd(i);
+          else
+            posePtr->pose.covariance.at(i*6 +j) = 0.0;
+        }
+      }
 
     } else{
       posePtr.reset(new geometry_msgs::PoseWithCovarianceStamped());
@@ -298,22 +287,18 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
     return;
   }
   
-  // TODO: need only one, convert later as needed
-  tf::Transform odomTransform;
+
   /// absolute, current odom pose
   tf::Stamped<tf::Pose> odomPose;
-
   // check if odometry available, skip scan if not.
-  if (!prepareOdometry(msg->header.stamp,odomTransform, odomPose))
+  if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
     return;
 
+  // relative odom transform to last odomPose
+  tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
 
   bool sensor_integrated = false;
-  if (!m_paused
-      && (m_translationSinceScan >= m_observationThresholdTrans 
-          || m_rotationSinceScan >= m_observationThresholdRot
-          || !m_receivedSensorData))
-  {
+  if (!m_paused && (!m_receivedSensorData || isAboveMotionThreshold(odomTransform))) {
     
     // convert laser to point cloud first:
     PointCloud pc_filtered;
@@ -332,6 +317,25 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   m_lastLaserTime = msg->header.stamp;
 }
 
+bool HumanoidLocalization::isAboveMotionThreshold(const tf::Transform& odomTransform){
+  float length = odomTransform.getOrigin().length();
+  if (length > 0.1){
+    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
+  }
+
+  m_translationSinceScan += length;
+  double yaw, pitch, roll;
+  odomTransform.getBasis().getRPY(roll, pitch, yaw);
+  if (std::abs(yaw) > 0.15){
+    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
+  }
+  m_rotationSinceScan += std::abs(yaw);
+
+
+  return (m_translationSinceScan >= m_observationThresholdTrans
+      || m_rotationSinceScan >= m_observationThresholdRot);
+}
+
 bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range){
   ros::WallTime startTime = ros::WallTime::now();
   ros::Time t = pc_filtered.header.stamp;
@@ -340,99 +344,73 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   
   // transformation from torso frame to laser
   // this takes the latest tf, assumes that torso to laser did not change over temp. sampling!
-  tf::StampedTransform localLaserFrame;
-  if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, localLaserFrame))
+  tf::StampedTransform localSensorFrame;
+  if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, localSensorFrame))
     return false;
 
-  tf::Transform torsoToLaser(localLaserFrame.inverse());
+  tf::Transform torsoToSensor(localSensorFrame.inverse());
   
 //### Particles in log-form from here...
-    toLogForm();
-    
-    // integrated pose (z, roll, pitch) meas. only if data OK:
-    bool imuMsgOk = false;
-    double angleX, angleY;
-    if(m_useIMU) {
-      ros::Time imuStamp;
-      imuMsgOk = getImuMsg(t, imuStamp, angleX, angleY);
-    } else {
-      tf::Stamped<tf::Pose> lastOdomPose;
-      if(m_motionModel->lookupOdomPose(t, lastOdomPose)) {
-        double dropyaw;
-        lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
-        imuMsgOk = true;
-      }
-    }
-    
-    tf::StampedTransform footprintToTorso;
-    if(imuMsgOk) {
-      if (!m_motionModel->lookupLocalTransform(m_baseFootprintId, t, footprintToTorso)) {
-        ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
-      } else {
-        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, footprintToTorso);
-      }
-    } else {
-      ROS_WARN("Could not obtain roll and pitch measurement, skipping Pose integration");
-    }
-    
-    m_filteredPointCloudPub.publish(pc_filtered);
-    
-    m_observationModel->integrateMeasurement(m_particles, pc_filtered, ranges, max_range, torsoToLaser);
-    
-    // TODO: verify poses before measurements, ignore particles then
-    m_mapModel->verifyPoses(m_particles);
-    
-    // normalize weights and transform back from log:
-    normalizeWeights();
-//### Particles back in regular form now
-    
-    double nEffParticles = nEff();
-    
-    std_msgs::Float32 nEffMsg;
-    nEffMsg.data = nEffParticles;
-    m_nEffPub.publish(nEffMsg);
-    
-    if (nEffParticles <= m_nEffFactor*m_particles.size()){ // selective resampling
-      ROS_INFO("Resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
-      resample();
-    } else {
-      ROS_INFO("Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
-    }
-    
-    m_receivedSensorData = true;
-    m_rotationSinceScan = 0.0;
-    m_translationSinceScan = 0.0;
-    
-    double dt = (ros::WallTime::now() - startTime).toSec();
-    ROS_INFO_STREAM("Observations for "<< m_numParticles << " particles took "
-        << dt << "s (="<<dt/m_numParticles<<"s/particle)");
-    
-    return true;  
-}
+  toLogForm();
 
-bool HumanoidLocalization::prepareOdometry(const ros::Time& time, tf::Transform& odomTransform, tf::Stamped<tf::Pose>& odomPose){
-  // compute current odometry transform first, see if it would trigger the
-  // integration of observations
-
-  if (!m_motionModel->lookupOdomPose(time, odomPose))
-    return false;
-  
-  odomTransform = m_motionModel->computeOdomTransform(odomPose);
-
-  float length = odomTransform.getOrigin().length();
-  if (length > 0.1){
-    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
-    //return;
+  // integrated pose (z, roll, pitch) meas. only if data OK:
+  bool imuMsgOk = false;
+  double angleX, angleY;
+  if(m_useIMU) {
+    ros::Time imuStamp;
+    imuMsgOk = getImuMsg(t, imuStamp, angleX, angleY);
+  } else {
+    tf::Stamped<tf::Pose> lastOdomPose;
+    if(m_motionModel->lookupOdomPose(t, lastOdomPose)) {
+      double dropyaw;
+      lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
+      imuMsgOk = true;
+    }
   }
 
-  m_translationSinceScan += length;
-  double yaw, pitch, roll;
-  odomTransform.getBasis().getRPY(roll, pitch, yaw);
-  if (std::abs(yaw) > 0.15){
-    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
-    //return;
+  tf::StampedTransform footprintToTorso;
+  if(imuMsgOk) {
+    if (!m_motionModel->lookupLocalTransform(m_baseFootprintId, t, footprintToTorso)) {
+      ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
+    } else {
+      m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, footprintToTorso);
+    }
+  } else {
+    ROS_WARN("Could not obtain roll and pitch measurement, skipping Pose integration");
   }
-  m_rotationSinceScan += std::abs(yaw);
+
+  m_filteredPointCloudPub.publish(pc_filtered);
+
+  m_observationModel->integrateMeasurement(m_particles, pc_filtered, ranges, max_range, torsoToSensor);
+
+  // TODO: verify poses before measurements, ignore particles then
+  m_mapModel->verifyPoses(m_particles);
+
+  // normalize weights and transform back from log:
+  normalizeWeights();
+  //### Particles back in regular form now
+
+  double nEffParticles = nEff();
+
+  std_msgs::Float32 nEffMsg;
+  nEffMsg.data = nEffParticles;
+  m_nEffPub.publish(nEffMsg);
+
+  if (nEffParticles <= m_nEffFactor*m_particles.size()){ // selective resampling
+    ROS_INFO("Resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
+    resample();
+  } else {
+    ROS_INFO("Skipped resampling, nEff=%f, numParticles=%zd", nEffParticles, m_particles.size());
+  }
+
+  m_receivedSensorData = true;
+  m_rotationSinceScan = 0.0;
+  m_translationSinceScan = 0.0;
+
+  double dt = (ros::WallTime::now() - startTime).toSec();
+  ROS_INFO_STREAM("Observations for "<< m_numParticles << " particles took "
+                  << dt << "s (="<<dt/m_numParticles<<"s/particle)");
+
   return true;
 }
 
@@ -831,9 +809,9 @@ void HumanoidLocalization::initGlobal(){
 
 void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publish_eval){
 
-  //
+  ////
   // send all hypotheses as arrows:
-  //
+  ////
 
   m_poseArray.header.stamp = time;
 
@@ -846,9 +824,9 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
 
   m_poseArrayPub.publish(m_poseArray);
 
-  //
+  ////
   // send best particle as pose and one array:
-  //
+  ////
   geometry_msgs::PoseWithCovarianceStamped p;
   p.header.stamp = time;
   p.header.frame_id = m_globalFrameId;
@@ -862,8 +840,9 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   tf::poseTFToMsg(bestParticlePose,p.pose.pose);
   m_posePub.publish(p);
 
-  if (publish_eval)
+  if (publish_eval){
     m_poseEvalPub.publish(p);
+  }
 
   geometry_msgs::PoseArray bestPose;
   bestPose.header = p.header;
@@ -871,7 +850,9 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   tf::poseTFToMsg(bestParticlePose, bestPose.poses[0]);
   m_bestPosePub.publish(bestPose);
 
-//  // send incremental odom pose (synced to localization)
+  ////
+  // send incremental odom pose (synced to localization)
+  ////
   tf::Stamped<tf::Pose> lastOdomPose;
   if (m_motionModel->getLastOdomPose(lastOdomPose)){
     geometry_msgs::PoseStamped odomPoseMsg;
@@ -879,41 +860,10 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
     m_poseOdomPub.publish(odomPoseMsg);
   }
 
-  // TODO: move to own node (eval)
-  /**
-  ///////////////////////////////////////////////////////
-  // Send poses for evaluation synced to localization
-  ///////////////////////////////////////////////////////
 
-
-
-
-  // send truepose when available (and enabled)
-  if (m_syncedTruepose){
-    geometry_msgs::PoseStamped truePose;
-    tf::Stamped<tf::Pose> truePoseTF;
-#if ROS_VERSION_MINIMUM(1, 8, 7) // fuerte
-    tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), time, "true_torso_Link");
-#else
-    tf::Stamped<tf::Pose> ident (btTransform(tf::createIdentityQuaternion(), btVector3(0,0,0)), time, "true_torso_Link");
-#endif
-
-    try {
-      m_tfListener.waitForTransform(m_globalFrameId, "true_torso_Link", time, ros::Duration(0.1));
-      m_tfListener.transformPose(m_globalFrameId, ident, truePoseTF);
-      tf::poseStampedTFToMsg(truePoseTF, truePose);
-      m_poseTruePub.publish(truePose);
-
-    } catch (const tf::TransformException& e) {
-      ROS_WARN("Failed to obtain truepose from tf (%s)", e.what());
-    }
-  }
-
-  **/
-
-  //
-  // transform to odom frame in global map frame:
-  //
+  ////
+  // Send tf odom->map
+  ////
   tf::Stamped<tf::Pose> odomToMapTF;
   try{
     tf::Stamped<tf::Pose> baseToMapTF(bestParticlePose.inverse(),time, m_baseFrameId);

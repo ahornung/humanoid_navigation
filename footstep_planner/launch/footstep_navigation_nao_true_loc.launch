@@ -1,7 +1,6 @@
 <launch>
-  # naoqi should be running right now
+  # webots+naoqi should be running right now
 
-  <include file="$(find nao_driver)/launch/nao_driver_sim.launch" />
   <include file="$(find nao_driver)/launch/nao_footsteps.launch" />
 
   <include file="$(find nao_remote)/launch/nao_remote.launch" />

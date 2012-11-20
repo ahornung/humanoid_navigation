@@ -126,6 +126,10 @@ public:
    */
   bool setStart(const State& left_foot, const State& right_foot);
 
+  /**
+   * @brief Updates the map in the planning environment. Initializes a
+   * replanning if necessary (i.e. it existed a path in the old map).
+   */
   void updateMap(const gridmap_2d::GridMap2DPtr& map);
 
   void setMarkerNamespace(const std::string& ns)

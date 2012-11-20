@@ -211,7 +211,7 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
   PlanningState* new_state = new PlanningState(s);
 
   int state_id = ivStateId2State.size();
-  assert(state_id < numeric_limits<int>::max());
+  assert(state_id < std::numeric_limits<int>::max());
 
   // insert the ID of the new state into the corresponding map
   new_state->setId(state_id);

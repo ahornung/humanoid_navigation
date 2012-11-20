@@ -7,10 +7,10 @@
   <param name="footstep_planner/heuristic_type" value="EuclideanHeuristic"/>
   <param name="footstep_planner/planner_type" value="RSTARPlanner"/>
   <param name="footstep_planner/forward_search" value="True"/>
-  <param name="footstep_planner/allocated_time" value="10"/>
+  <param name="footstep_planner/allocated_time" value="5"/>
   <param name="footstep_planner/initial_epsilon" value="10"/>
-  <param name="footstep_planner/num_random_nodes" value="10"/>
-  <param name="footstep_planner/random_node_dist" value="1.0"/>
+  <param name="footstep_planner/num_random_nodes" value="20"/>
+  <param name="footstep_planner/random_node_dist" value="1.5"/>
   
 
 </launch>

@@ -188,7 +188,9 @@ namespace footstep_planner
         tf::TransformListener ivTransformListener;
 
         boost::mutex ivRobotPoseUpdateMutex;
+        boost::thread* ivpFootstepExecutionThread;
 
+        // TODO: check if really no longer needed
         ros::Time ivLastRobotTime;
 
         std::string ivIdFootRight;

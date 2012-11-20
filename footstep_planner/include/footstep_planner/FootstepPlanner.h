@@ -127,10 +127,13 @@ public:
   bool setStart(const State& left_foot, const State& right_foot);
 
   /**
-   * @brief Updates the map in the planning environment. Initializes a
-   * replanning if necessary (i.e. it existed a path in the old map).
+   * @brief Updates the map in the planning environment. Starts a replanning if
+   * necessary (i.e. it existed a path in the old map).
+   *
+   * @return True if the replanning was successful. False if no replanning was
+   * necessary or the replanning failed.
    */
-  void updateMap(const gridmap_2d::GridMap2DPtr& map);
+  bool updateMap(const gridmap_2d::GridMap2DPtr& map);
 
   void setMarkerNamespace(const std::string& ns)
   {

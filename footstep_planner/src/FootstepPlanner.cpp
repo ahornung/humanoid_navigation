@@ -275,10 +275,12 @@ bool
 FootstepPlanner::run()
 {
   // Workaround for R*: need to reinit. everything
-  if (ivPlannerType == "RSTARPlanner"){
+  if (ivPlannerType == "RSTARPlanner")
+  {
     ROS_INFO("R* planner reset");
     reset();
   }
+  ivPathExists = false;
 
   // commit start/goal poses to the environment
   ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
@@ -332,6 +334,7 @@ FootstepPlanner::run()
       ROS_INFO("Path cost: %f (%i)\n", ivPathCost, path_cost);
 
       ivPlanningStatesIds = solution_state_ids;
+      ivPathExists = true;
 
       broadcastExpandedNodesVis();
       broadcastRandomNodesVis();
@@ -362,30 +365,8 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
 {
   ivPath.clear();
 
-  State first, second;
-  if (!ivPlannerEnvironmentPtr->getState(0, &first))
-  {
-    ivPath.clear();
-    return false;
-  }
-  if (!ivPlannerEnvironmentPtr->getState(1, &second))
-  {
-    ivPath.clear();
-    return false;
-  }
-
-  // check if the planner used both start feet; only the last one is
-  // necessary to generate a footstep path
-  unsigned int i = 2;
-  if (first == ivStartFootLeft && second == ivStartFootRight)
-    ivPath.push_back(second);
-  else if (first == ivStartFootRight && second == ivStartFootLeft)
-    ivPath.push_back(second);
-  else
-    i = 0;
-
   State s;
-  for(; i < state_ids.size(); ++i)
+  for(unsigned int i = 0; i < state_ids.size(); ++i)
   {
     if (!ivPlannerEnvironmentPtr->getState(state_ids[i], &s))
     {
@@ -660,10 +641,10 @@ FootstepPlanner::setStart(float x, float y, float theta)
 }
 
 
-void
+bool
 FootstepPlanner::updateMap(const GridMap2DPtr& map)
 {
-  bool map_exists = ivMapPtr;
+  bool map_existed = ivMapPtr;
   // store old map locally
   GridMap2DPtr old_map = ivMapPtr;
   // store new map
@@ -673,17 +654,24 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
   ivPlannerEnvironmentPtr->updateMap(map);
 
   // initialize a replanning with updated map information
-  if (map_exists && ivPathExists)
+  if (map_existed && ivPathExists)
   {
     updateEnvironment(old_map);
-    replan(); // plan new path
+    // replan and return success of the planning
+    return replan();
   }
+  // if there is no replanning necessary return false
+  return false;
 }
 
 
 void
 FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
 {
+  ROS_INFO("Reset old information in new planning task");
+  // reset planner
+  reset();
+
   // Replanning based on old planning info currently disabled
   //        // TODO: handle size changes of the map; currently the planning
   //        // information is reseted
@@ -785,12 +773,6 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
   //            setPlanner();
   //            //ivPlannerPtr->force_planning_from_scratch();
   //        }
-
-  ROS_INFO("Reset old information in new planning task");
-  // reset planner
-  ivPlannerEnvironmentPtr->reset();
-  setPlanner();
-  //ivPlannerPtr->force_planning_from_scratch();
 }
 
 

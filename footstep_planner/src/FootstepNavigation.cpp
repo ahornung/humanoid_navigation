@@ -27,7 +27,8 @@
 namespace footstep_planner
 {
 	FootstepNavigation::FootstepNavigation()
-        : ivLastRobotTime(0),
+        : ivpFootstepExecutionThread(NULL),
+          ivLastRobotTime(0),
           ivIdFootRight("/r_sole"),
           ivIdFootLeft("/l_sole"),
           ivIdMapFrame("map"),
@@ -116,11 +117,8 @@ namespace footstep_planner
                     performable_step.response.step.pose.theta)) >
                         FLOAT_CMP_THR)
             {
-                ROS_ERROR("Step (%f, %f, %f) (%f, %f, %f) cannot be performed by the NAO "
-                          "robot. Exit!", x, y, theta,
-                          performable_step.response.step.pose.x,
-                          performable_step.response.step.pose.y,
-                          performable_step.response.step.pose.theta);
+                ROS_ERROR("Step (%f, %f, %f) cannot be performed by the NAO "
+                          "robot. Exit!", x, y, theta);
                 exit(2);
             }
         }
@@ -128,7 +126,10 @@ namespace footstep_planner
 
 
 	FootstepNavigation::~FootstepNavigation()
-    {}
+    {
+		delete ivpFootstepExecutionThread;
+		ivpFootstepExecutionThread = NULL;
+    }
 
 
 	void
@@ -139,9 +140,15 @@ namespace footstep_planner
 		// calculate path
         if (ivPlanner.plan())
             if (ivSafeExecution)
-                // execution thread
-                boost::thread footstepExecutionThread(
-                        &FootstepNavigation::executeFootsteps, this);
+            {
+            	if (ivpFootstepExecutionThread != NULL)
+            	{
+            		delete ivpFootstepExecutionThread;
+                    ivpFootstepExecutionThread = NULL;
+            	}
+				ivpFootstepExecutionThread = new boost::thread(
+					boost::bind(&FootstepNavigation::executeFootsteps, this));
+            }
             else
                 // ALTERNATIVE:
                 executeFootstepsFast();
@@ -179,6 +186,16 @@ namespace footstep_planner
     	to_planned++;
     	while (to_planned != ivPlanner.getPathEnd())
     	{
+    		try
+    		{
+    			boost::this_thread::interruption_point();
+    		}
+    		catch (const boost::thread_interrupted&)
+    		{
+                // leave this thread
+    			return;
+    		}
+
     		if (to_planned->getLeg() == LEFT)
     			support_foot_id = ivIdFootRight;
     		else // support_foot = LLEG
@@ -205,8 +222,10 @@ namespace footstep_planner
                     if (ivPlanner.replan())
                     {
                         // start new execution thread
-                        boost::thread footstepExecutionThread(
-                                &FootstepNavigation::executeFootsteps, this);
+                    	delete ivpFootstepExecutionThread;
+        				ivpFootstepExecutionThread = new boost::thread(
+        					boost::bind(&FootstepNavigation::executeFootsteps,
+        							    this));
                     }
                     else
                     {
@@ -437,9 +456,40 @@ namespace footstep_planner
     FootstepNavigation::mapCallback(
             const nav_msgs::OccupancyGridConstPtr& occupancy_map)
     {
-	gridmap_2d::GridMap2DPtr map(new gridmap_2d::GridMap2D(occupancy_map));
+		// stop execution if an execution was performed
+		if (ivExecutingFootsteps)
+		{
+			if (ivSafeExecution)
+				ivpFootstepExecutionThread->interrupt();
+			else
+				ivFootstepsExecution.cancelAllGoals();
+
+			updateStart();
+		}
+
+		gridmap_2d::GridMap2DPtr map(new gridmap_2d::GridMap2D(occupancy_map));
         ivIdMapFrame = map->getFrameID();
-        ivPlanner.updateMap(map);
+
+        // updates the map and starts replanning if necessary
+        if (ivPlanner.updateMap(map))
+        {
+        	ROS_INFO("Replanning successful, start execution");
+
+        	// start the execution if there was a successful replanning
+            if (ivSafeExecution)
+            {
+            	if (ivpFootstepExecutionThread != NULL)
+            	{
+            		delete ivpFootstepExecutionThread;
+                    ivpFootstepExecutionThread = NULL;
+            	}
+				ivpFootstepExecutionThread = new boost::thread(
+					boost::bind(&FootstepNavigation::executeFootsteps, this));
+            }
+            else
+                // ALTERNATIVE:
+                executeFootstepsFast();
+        }
     }
 
 
@@ -467,9 +517,9 @@ namespace footstep_planner
         {
             boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
             // get real placement of the feet
-            getFootTransform(ivIdFootLeft, ivIdMapFrame, ivLastRobotTime,
+            getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
                              foot_left);
-            getFootTransform(ivIdFootRight, ivIdMapFrame, ivLastRobotTime,
+            getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time::now(),
                              foot_right);
         }
         State left(foot_left.getOrigin().x(), foot_left.getOrigin().y(),
@@ -503,7 +553,29 @@ namespace footstep_planner
         humanoid_nav_msgs::ClipFootstep footstep_clip;
         footstep_clip.request.step = footstep;
         ivClipFootstepSrv.call(footstep_clip);
-        return performanceValid(footstep_clip);
+
+//		ROS_INFO("unclipped (%f, %f, %f), clipped (%f, %f, %f)",
+//				 footstep_clip.request.step.pose.x,
+//				 footstep_clip.request.step.pose.y,
+//				 footstep_clip.request.step.pose.theta,
+//				 footstep_clip.response.step.pose.x,
+//				 footstep_clip.response.step.pose.y,
+//				 footstep_clip.response.step.pose.theta);
+//        return fabs(footstep_clip.request.step.pose.x - footstep_clip.response.step.pose.x) < 0.001 &&
+//        	   fabs(footstep_clip.request.step.pose.y - footstep_clip.response.step.pose.y) < 0.001 &&
+//        	   fabs(angles::shortest_angular_distance(footstep_clip.request.step.pose.theta, footstep_clip.response.step.pose.theta)) < 0.05;
+
+        if (performanceValid(footstep_clip))
+        {
+        	footstep.pose.x = footstep_clip.response.step.pose.x;
+        	footstep.pose.y = footstep_clip.response.step.pose.y;
+        	footstep.pose.theta = footstep_clip.response.step.pose.theta;
+        	return true;
+        }
+        else
+        {
+        	return false;
+        }
     }
 
 

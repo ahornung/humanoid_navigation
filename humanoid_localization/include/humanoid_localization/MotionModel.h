@@ -82,7 +82,7 @@ protected:
   NormalGeneratorT m_rngNormal; // standard normal-distributed noise
   UniformGeneratorT m_rngUniform;
   // parameters:
-  Matrix6f m_motionNoiseL;
+  //Matrix6f m_motionNoiseL;
   Vector6f m_motionNoise;
   //NoiseParams m_motionNoise;
 

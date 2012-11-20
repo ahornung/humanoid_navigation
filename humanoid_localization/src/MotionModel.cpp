@@ -55,13 +55,14 @@ MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformL
   m_motionNoise(4) = PP; // pitch
   m_motionNoise(5) = YY; // yaw
 
-  motionNoise.diagonal() = m_motionNoise.cwiseProduct( m_motionNoise);
+  // not used right now:
+//  motionNoise.diagonal() = m_motionNoise.cwiseProduct( m_motionNoise);
 
-  if (motionNoise.isZero()){
-    m_motionNoiseL = Matrix6f::Zero();
-  } else{
-    m_motionNoiseL = motionNoise.llt().matrixL();
-  }
+//  if (motionNoise.isZero()){
+//    m_motionNoiseL = Matrix6f::Zero();
+//  } else{
+//    m_motionNoiseL = motionNoise.llt().matrixL();
+//  }
 
   reset();
 
@@ -82,6 +83,7 @@ void MotionModel::transformPose(tf::Pose& particlePose, const tf::Transform& odo
   for (unsigned i = 0; i < 6; ++i){
     poseNoise(i) *= dTrans * m_rngNormal();
   }
+
   //Vector6f poseCovNoise = m_motionNoiseL * poseNoise;
 
 
@@ -92,12 +94,12 @@ void MotionModel::transformPose(tf::Pose& particlePose, const tf::Transform& odo
   particlePose *= odomTransform * odomTransformNoise;
 
   // HACK for testing: fix roll & pitch at 0:
-  //	double roll, pitch, yaw;
-  //	btMatrix3x3 basis = particlePose.getBasis();
-  //	basis.getRPY(roll, pitch, yaw);
-  //	basis.setRPY(0.0, 0.0, yaw);
-  //	particlePose.setBasis(basis);
-  //
+//  	double roll, pitch, yaw;
+//  	tf::Matrix3x3 basis = particlePose.getBasis();
+//  	basis.getRPY(roll, pitch, yaw);
+//  	basis.setRPY(0.0, 0.0, yaw);
+//  	particlePose.setBasis(basis);
+
 
 }
 
@@ -109,7 +111,6 @@ void MotionModel::applyOdomTransform(Particles& particles, const tf::Transform& 
   for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
     transformPose(it->pose, odomTransform);
   }
-
 }
 
 bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Time& t, double dt){
@@ -125,13 +126,13 @@ bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Tim
   std::string errorString;
   m_tfListener->getLatestCommonTime(m_odomFrameId, m_baseFrameId, maxTime, &errorString);
   ros::Duration maxDuration = maxTime - t;
+
   for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
     if (dt > 0.0){
       ros::Duration duration(m_rngUniform()*dt -dt/2.0);
       // TODO: time t is time of first measurement in scan!
       if (duration > maxDuration)
         duration = maxDuration;
-
       if (lookupOdomTransform(t + duration, timeSampledTransform))
         transformPose(it->pose, timeSampledTransform);
       else{
@@ -140,10 +141,9 @@ bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Tim
       }
     } else{
       transformPose(it->pose, odomTransform);
-
     }
-
   }
+
 
   return true;
 }
@@ -159,9 +159,7 @@ bool MotionModel::lookupOdomTransform(const ros::Time& t, tf::Transform& odomTra
   if (!lookupOdomPose(t, odomPose))
     return false;
 
- odomTransform = computeOdomTransform(odomPose);
-
-
+  odomTransform = computeOdomTransform(odomPose);
   return true;
 }
 
@@ -187,14 +185,8 @@ void MotionModel::storeOdomPose(const tf::Stamped<tf::Pose>& odomPose){
 
 bool MotionModel::lookupOdomPose(const ros::Time& t, tf::Stamped<tf::Pose>& odomPose) const
 {
-#if ROS_VERSION_MINIMUM(1, 8, 7) // fuerte
   tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(),
                                              tf::Vector3(0,0,0)), t, m_baseFrameId);
-#else // electric or older
-  tf::Stamped<tf::Pose> ident (btTransform(tf::createIdentityQuaternion(),
-                                           btVector3(0,0,0)), t, m_baseFrameId);
-#endif
-
 
   try
   {

@@ -156,6 +156,8 @@ protected:
   
   bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);
 
+  void constrainMotion(const tf::Pose& odomPose);
+
   unsigned computeBeamStep(unsigned numBeams) const;
 
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
@@ -237,6 +239,8 @@ protected:
   double m_headPitchRotationLastScan;
 
   bool m_useIMU;  ///< True = use IMU for initialization and observation models, false = use orientation from odometry
+  bool m_constrainMotionZ; /// < True = do not estimate height, directly use odometry pose
+  bool m_constrainMotionRP; /// < True = do not estimate roll and pitch, directly use odometry pose
 };
 }
 

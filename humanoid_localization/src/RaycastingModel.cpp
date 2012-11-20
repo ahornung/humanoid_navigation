@@ -90,8 +90,10 @@ void RaycastingModel::integrateMeasurement(Particles& particles, const PointClou
         octomap::point3d direction(pc_it->x , pc_it->y, pc_it->z);
         direction = direction - originP;
 
+        // TODO: check first if endpoint is within map?
         octomap::point3d end;
         if(m_map->castRay(originP,direction, end, true, max_range)){
+          assert(m_map->isNodeOccupied(m_map->search(end)));
           // TODO: use squared distances?
           float raycastRange = (originP - end).norm();
           float z = raycastRange - *ranges_it;
@@ -111,7 +113,6 @@ void RaycastingModel::integrateMeasurement(Particles& particles, const PointClou
 
       } else{ // maximum range
         p = m_zMax;
-
       }
 
       // add log-likelihood

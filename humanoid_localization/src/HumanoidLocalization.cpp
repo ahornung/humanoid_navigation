@@ -23,6 +23,7 @@
 
 #include <humanoid_localization/HumanoidLocalization.h>
 #include <iostream>
+#include <pcl/keypoints/uniform_sampling.h>
 
 // simple timing benchmark output
 #define _BENCH_TIME 0
@@ -48,7 +49,8 @@ m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
 m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
 m_translationSinceScan(0.0), m_rotationSinceScan(0.0),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
-m_useIMU(false)
+m_useIMU(false),
+m_constrainMotionZ (false), m_constrainMotionRP(false)
 {
 
   // raycasting or endpoint model?
@@ -61,7 +63,6 @@ m_useIMU(false)
   m_privateNh.param("init_from_truepose", m_initFromTruepose, m_initFromTruepose);
   m_privateNh.param("init_global", m_initGlobal, m_initGlobal);
   m_privateNh.param("best_particle_as_mean", m_bestParticleAsMean, m_bestParticleAsMean);
-  m_privateNh.param("sync_truepose", m_syncedTruepose, m_syncedTruepose);
   m_privateNh.param("num_particles", m_numParticles, m_numParticles);
   m_privateNh.param("max_odom_interval", m_maxOdomInterval, m_maxOdomInterval);
   m_privateNh.param("neff_factor", m_nEffFactor, m_nEffFactor);
@@ -96,6 +97,8 @@ m_useIMU(false)
   m_privateNh.param("transform_tolerance", m_transformTolerance, m_transformTolerance);
 
   m_privateNh.param("use_imu", m_useIMU, m_useIMU);
+  m_privateNh.param("constrain_motion_z", m_constrainMotionZ, m_constrainMotionZ);
+  m_privateNh.param("constrain_motion_rp", m_constrainMotionRP, m_constrainMotionRP);
 
   m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(&m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFrameId));
 
@@ -192,7 +195,7 @@ void HumanoidLocalization::reset(){
 
       ros::Time lookupTime = ros::Time::now();
       while(m_nh.ok() && !m_tfListener.waitForTransform(m_globalFrameId, ident.frame_id_, lookupTime, ros::Duration(1.0))){
-        ROS_WARN("Waiting for Truepose transform for initialization failed, trying again...");
+        ROS_WARN("Waiting for transform %s --> %s for ground truth initialization failed, trying again...", m_globalFrameId.c_str(), ident.frame_id_.c_str());
         lookupTime = ros::Time::now();
       }
       ident.stamp_ = lookupTime;
@@ -310,11 +313,41 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   } else{ // no observation necessary: propagate particles forward by full interval
 
     m_motionModel->applyOdomTransform(m_particles, odomTransform);
+    constrainMotion(odomPose);
   }
 
   m_motionModel->storeOdomPose(odomPose);
   publishPoseEstimate(msg->header.stamp, sensor_integrated);
   m_lastLaserTime = msg->header.stamp;
+}
+
+void HumanoidLocalization::constrainMotion(const tf::Pose& odomPose){
+  // skip if nothing to do:
+  if (!m_constrainMotionZ && !m_constrainMotionRP)
+    return;
+
+  // reset z according to current odomPose:
+  double z = odomPose.getOrigin().getZ();
+  double odomRoll, odomPitch, uselessYaw;
+  odomPose.getBasis().getRPY(odomRoll, odomPitch, uselessYaw);
+
+#pragma omp parallel for
+  for (unsigned i=0; i < m_particles.size(); ++i){
+    if (m_constrainMotionZ){
+      tf::Vector3 pos = m_particles[i].pose.getOrigin();
+      // TODO: check height in map model, add offset
+      pos.setZ(z);
+      m_particles[i].pose.setOrigin(pos);
+    }
+
+    if (m_constrainMotionRP){
+      double yaw =  tf::getYaw(m_particles[i].pose.getRotation());
+      m_particles[i].pose.setRotation(tf::createQuaternionFromRPY(odomRoll, odomPitch, yaw));
+
+    }
+
+  }
+
 }
 
 bool HumanoidLocalization::isAboveMotionThreshold(const tf::Transform& odomTransform){
@@ -342,6 +375,11 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   // apply motion model with temporal sampling:
   m_motionModel->applyOdomTransformTemporal(m_particles, t, m_temporalSamplingRange);
   
+  // constrain to ground plane, if desired:
+  tf::Stamped<tf::Transform> odomPose;
+  assert(m_motionModel->lookupOdomPose(t, odomPose));
+  constrainMotion(odomPose);
+
   // transformation from torso frame to laser
   // this takes the latest tf, assumes that torso to laser did not change over temp. sampling!
   tf::StampedTransform localSensorFrame;
@@ -415,6 +453,13 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
 }
 
 void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const{
+
+  // uniform sampling:
+//  pcl::UniformSampling uniformSampling;
+//  uniformSampling.setRadiusSearch(0.1);
+
+
+
   // prepare laser message:
   unsigned numBeams = laser->ranges.size();
   unsigned step = computeBeamStep(numBeams);
@@ -624,7 +669,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
     }
   }
 
-  // sample from intial pose covariance:
+  // sample from initial pose covariance:
   Matrix6d initCovL = initCov.llt().matrixL();
   tf::Transform transformNoise; // transformation on original pose from noise
   unsigned idx = 0;

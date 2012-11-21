@@ -145,8 +145,8 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_laserFilter->registerCallback(boost::bind(&HumanoidLocalization::laserCallback, this, _1));
 
   // subscription on point cloud, tf message filter
-  m_pointCloudSub = new message_filters::Subscriber<sensor_msgs::PointCloud2 >(m_nh, "point_cloud", 100);
-  m_pointCloudFilter = new tf::MessageFilter<sensor_msgs::PointCloud2 >(*m_pointCloudSub, m_tfListener, m_odomFrameId, 100);
+  m_pointCloudSub = new message_filters::Subscriber<PointCloud>(m_nh, "point_cloud", 100);
+  m_pointCloudFilter = new tf::MessageFilter< PointCloud >(*m_pointCloudSub, m_tfListener, m_odomFrameId, 100);
   m_pointCloudFilter->registerCallback(boost::bind(&HumanoidLocalization::pointCloudCallback, this, _1));
 
   // subscription on init pose, tf message filter
@@ -380,8 +380,8 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   assert(m_motionModel->lookupOdomPose(t, odomPose));
   constrainMotion(odomPose);
 
-  // transformation from torso frame to laser
-  // this takes the latest tf, assumes that torso to laser did not change over temp. sampling!
+  // transformation from torso frame to sensor
+  // this takes the latest tf, assumes that torso to sensor did not change over temp. sampling!
   tf::StampedTransform localSensorFrame;
   if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, localSensorFrame))
     return false;
@@ -498,6 +498,198 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
   ROS_INFO("%u/%zu laser beams skipped (out of valid range)", numBeamsSkipped, ranges.size());
 }
 
+int HumanoidLocalization::filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const{
+  int numPoints = static_cast<int>(cloud_in.size() );
+  numSamples = std::min( numSamples, numPoints);
+  std::vector<unsigned int> indices;
+  indices.reserve( numPoints );
+  for (int i=0; i<numPoints; ++i)
+    indices.push_back(i);
+  random_shuffle ( indices.begin(), indices.end());
+
+  cloud_out.reserve( cloud_out.size() + numSamples );
+  for ( int i = 0; i < numSamples; ++i)
+  {
+    cloud_out.push_back( cloud_in.at(indices[i]));
+  }
+  return numSamples;
+}
+
+
+
+void HumanoidLocalization::filterGroundPlane(const PointCloud& pc, PointCloud& ground, PointCloud& nonground, double groundFilterDistance, double groundFilterAngle, double groundFilterPlaneDistance){
+   ground.header = pc.header;
+   nonground.header = pc.header;
+
+   if (pc.size() < 50){
+      ROS_WARN("Pointcloud in OctomapServer too small, skipping ground plane extraction");
+      nonground = pc;
+   } else {
+      // plane detection for ground plane removal:
+      pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+      pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+
+      // Create the segmentation object and set up:
+      pcl::SACSegmentation<pcl::PointXYZ> seg;
+      seg.setOptimizeCoefficients (true);
+      // TODO: maybe a filtering based on the surface normals might be more robust / accurate?
+      seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
+      seg.setMethodType(pcl::SAC_RANSAC);
+      seg.setMaxIterations(200);
+      seg.setDistanceThreshold (groundFilterDistance);
+      seg.setAxis(Eigen::Vector3f(0,0,1));
+      seg.setEpsAngle(groundFilterAngle);
+
+
+      PointCloud cloud_filtered(pc);
+      // Create the filtering object
+      pcl::ExtractIndices<pcl::PointXYZ> extract;
+      bool groundPlaneFound = false;
+
+      while(cloud_filtered.size() > 10 && !groundPlaneFound){
+         seg.setInputCloud(cloud_filtered.makeShared());
+         seg.segment (*inliers, *coefficients);
+         if (inliers->indices.size () == 0){
+            ROS_INFO("PCL segmentation did not find any plane.");
+
+            break;
+         }
+
+         extract.setInputCloud(cloud_filtered.makeShared());
+         extract.setIndices(inliers);
+
+         if (std::abs(coefficients->values.at(3)) < groundFilterPlaneDistance){
+            ROS_DEBUG("Ground plane found: %zu/%zu inliers. Coeff: %f %f %f %f", inliers->indices.size(), cloud_filtered.size(),
+                  coefficients->values.at(0), coefficients->values.at(1), coefficients->values.at(2), coefficients->values.at(3));
+            extract.setNegative (false);
+            extract.filter (ground);
+
+            // remove ground points from full pointcloud:
+            // workaround for PCL bug:
+            if(inliers->indices.size() != cloud_filtered.size()){
+               extract.setNegative(true);
+               PointCloud cloud_out;
+               extract.filter(cloud_out);
+               nonground += cloud_out;
+               cloud_filtered = cloud_out;
+            }
+
+            groundPlaneFound = true;
+         } else{
+            ROS_DEBUG("Horizontal plane (not ground) found: %zu/%zu inliers. Coeff: %f %f %f %f", inliers->indices.size(), cloud_filtered.size(),
+                  coefficients->values.at(0), coefficients->values.at(1), coefficients->values.at(2), coefficients->values.at(3));
+            pcl::PointCloud<pcl::PointXYZ> cloud_out;
+            extract.setNegative (false);
+            extract.filter(cloud_out);
+            nonground +=cloud_out;
+            // debug
+            //            pcl::PCDWriter writer;
+            //            writer.write<pcl::PointXYZ>("nonground_plane.pcd",cloud_out, false);
+
+            // remove current plane from scan for next iteration:
+            // workaround for PCL bug:
+            if(inliers->indices.size() != cloud_filtered.size()){
+               extract.setNegative(true);
+               cloud_out.points.clear();
+               extract.filter(cloud_out);
+               cloud_filtered = cloud_out;
+            } else{
+               cloud_filtered.points.clear();
+            }
+         }
+
+      }
+      // TODO: also do this if overall starting pointcloud too small?
+      if (!groundPlaneFound){ // no plane found or remaining points too small
+         ROS_WARN("No ground plane found in scan");
+
+         // do a rough fitlering on height to prevent spurious obstacles
+         pcl::PassThrough<pcl::PointXYZ> second_pass;
+         second_pass.setFilterFieldName("z");
+         second_pass.setFilterLimits(-groundFilterPlaneDistance, groundFilterPlaneDistance);
+         second_pass.setInputCloud(pc.makeShared());
+         second_pass.filter(ground);
+
+         second_pass.setFilterLimitsNegative (true);
+         second_pass.filter(nonground);
+      }
+
+      // debug:
+      //        pcl::PCDWriter writer;
+      //        if (pc_ground.size() > 0)
+      //          writer.write<pcl::PointXYZ>("ground.pcd",pc_ground, false);
+      //        if (pc_nonground.size() > 0)
+      //          writer.write<pcl::PointXYZ>("nonground.pcd",pc_nonground, false);
+   }
+}
+
+
+
+void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const{
+
+    pc.clear();
+    // lookup Transfrom Sensor to BaseFootprint
+    tf::StampedTransform sensorToBaseFootprint;
+    try{
+      m_tfListener.waitForTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, ros::Duration(0.2));
+      m_tfListener.lookupTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, sensorToBaseFootprint);
+
+
+    }catch(tf::TransformException& ex){
+      ROS_ERROR_STREAM( "Transform error for pointCloudCallback: " << ex.what() << ", quitting callback.\n");
+      return;
+    }
+
+    /*** filter PointCloud and fill pc and ranges ***/
+
+    // pass-through filter to get rid of near and far ranges
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setInputCloud (msg);
+    pass.setFilterFieldName ("z");
+    pass.setFilterLimits (m_filterMinRange, m_filterMaxRange);
+    pass.filter (pc);
+
+    // identify ground plane
+    PointCloud ground, nonground;
+    double m_groundFilterDistance = 0.04; // TODO: Parameter
+    double m_groundFilterAngle = 0.15; // TODO: Parameter
+    double m_groundFilterPlaneDistance = 0.07; // TODO: Parameter
+    bool m_filteredPointCloud = true; // TODO: Parameter
+    int m_numFloorPoints = 20; // TODO: Parameter
+    int m_numNonFloorPoints = 80; // TODO: Parameter
+
+    if (m_filteredPointCloud)
+    {
+        Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
+        pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
+        pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
+        // TODO: This is stupid! Why transform the point cloud and not just the normal vector?
+        pcl::transformPointCloud(pc, pc, matSensorToBaseFootprint );
+        filterGroundPlane(pc, ground, nonground, m_groundFilterDistance, m_groundFilterAngle, m_groundFilterPlaneDistance);
+        // transform clouds back to sensor for integration
+        pcl::transformPointCloud(ground, ground, matBaseFootprintToSensor);
+        pcl::transformPointCloud(nonground, nonground, matBaseFootprintToSensor);
+        pc.clear(); // clear pc again and refill it
+        int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
+        int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
+        ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
+    }
+    else
+    {
+        ROS_ERROR("No ground filtering is not implemented yet!");
+        return;
+    }
+    // create sparse ranges..
+    ranges.resize(pc.size());
+    for (unsigned int i=0; i<pc.size(); ++i)
+    {
+        pcl::PointXYZ p = pc.at(i);
+        ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+    }
+
+}
+
+
 unsigned HumanoidLocalization::computeBeamStep(unsigned numBeams) const{
   unsigned step = 1;
   if (m_numSensorBeams > 1){
@@ -512,8 +704,77 @@ unsigned HumanoidLocalization::computeBeamStep(unsigned numBeams) const{
   return step;
 }
 
-void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
-  ROS_ERROR("Point cloud callback still needs to be integrated.");
+void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) {
+  ROS_DEBUG("PointCloud received (time: %f)", msg->header.stamp.toSec());
+
+  if (!m_initialized){
+    ROS_WARN("Loclization not initialized yet, skipping PointCloud callback.");
+    return;
+  }
+
+  double timediff = (msg->header.stamp - m_lastPointCloudTime).toSec();
+  if (m_receivedSensorData && timediff < timediff){
+    ROS_WARN("Ignoring received PointCloud data that is %f s older than previous data!", timediff);
+    return;
+  }
+
+
+  /// absolute, current odom pose
+  tf::Stamped<tf::Pose> odomPose;
+  // check if odometry available, skip scan if not.
+  if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
+    return;
+
+  // relative odom transform to last odomPose
+  tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
+
+  bool sensor_integrated = false;
+
+
+  // TODO #1: Make this nicer: head rotations for integration check
+  // TODO #2: Initialization of m_headYawRotationLastScan, etc needs to be set correctly
+  bool isAboveHeadMotionThreshold = false;
+  double headYaw, headPitch, headRoll;
+  tf::StampedTransform torsoToSensor;
+  if (!m_motionModel->lookupLocalTransform(msg->header.frame_id, msg->header.stamp, torsoToSensor))
+      return; //TODO: should we apply applyOdomTransformTemporal, before returning
+
+  // TODO #3: Invert transform?: tf::Transform torsoToSensor(localSensorFrame.inverse());
+
+  torsoToSensor.getBasis().getRPY(headRoll, headPitch, headYaw);
+  double headYawRotationSinceScan = std::abs(headYaw - m_headYawRotationLastScan);
+  double headPitchRotationSinceScan = std::abs(headPitch - m_headPitchRotationLastScan);
+
+  if (headYawRotationSinceScan>= m_observationThresholdHeadYawRot || headPitchRotationSinceScan >= m_observationThresholdHeadPitchRot)
+      isAboveHeadMotionThreshold = true;
+  // end #1
+
+  if (!m_paused && (!m_receivedSensorData || isAboveHeadMotionThreshold || isAboveMotionThreshold(odomTransform))) {
+
+    // convert laser to point cloud first:
+    PointCloud pc_filtered;
+    std::vector<float> rangesSparse;
+    prepareGeneralPointCloud(msg, pc_filtered, rangesSparse);
+
+    double maxRange = 10.0; // TODO #4: What is a maxRange for pointClouds? NaN? maxRange is expected to be a double and integrateMeasurement checks rangesSparse[i] > maxRange
+    ROS_DEBUG("Updating Pose Estimate from a PointCloud with %zu points and %zu ranges", pc_filtered.size(), rangesSparse.size());
+    sensor_integrated = localizeWithMeasurement(pc_filtered, rangesSparse, maxRange);
+
+  } else{ // no observation necessary: propagate particles forward by full interval
+
+    m_motionModel->applyOdomTransform(m_particles, odomTransform);
+  }
+
+  // TODO #1
+  if (sensor_integrated){
+      m_headYawRotationLastScan = headYaw;
+      m_headPitchRotationLastScan = headPitch;
+  }
+
+  m_motionModel->storeOdomPose(odomPose);
+  publishPoseEstimate(msg->header.stamp, sensor_integrated);
+  m_lastPointCloudTime = msg->header.stamp;
+  ROS_DEBUG("PointCloud callback complete.");
 }
 
 void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){

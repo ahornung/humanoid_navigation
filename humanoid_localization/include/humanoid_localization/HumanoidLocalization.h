@@ -38,8 +38,19 @@
 #include <std_srvs/Empty.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/ros/conversions.h>
+#include <pcl_ros/transforms.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/passthrough.h>
+
+
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovariance.h>
@@ -69,10 +80,14 @@ static inline void getRPY(const geometry_msgs::Quaternion& msg_q, double& roll, 
 
 class HumanoidLocalization {
 public:
+    // some typedefs
+    //typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+
+public:
   HumanoidLocalization(unsigned randomSeed);
   virtual ~HumanoidLocalization();
   virtual void laserCallback(const sensor_msgs::LaserScanConstPtr& msg);
-  virtual void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg);
+  virtual void pointCloudCallback(const PointCloud::ConstPtr& msg);
   void initPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
   bool globalLocalizationCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   void pauseLocalizationCallback(const std_msgs::BoolConstPtr& msg);
@@ -100,6 +115,9 @@ public:
 
   /// function call for global initialization (called by globalLocalizationCallback)
   void initGlobal();
+
+  // needed for pointcloud callback (from OctomapServer)
+  static void filterGroundPlane(const PointCloud& pc, PointCloud& ground, PointCloud& nonground, double groundFilterDistance, double groundFilterAngle, double groundFilterPlaneDistance);
 
 protected:
   /**
@@ -151,6 +169,14 @@ protected:
    *
    */
   void prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const;
+
+  /**
+   * Prepares a PointCloud msg to be integrated into the observations model. Filters
+   * near range, floor and subsamples a sparse point cloud (out of m_numSensorBeams points)
+   *
+   */
+  void prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const;
+  int filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const;
   
   bool isAboveMotionThreshold(const tf::Transform& odomTransform);
   
@@ -174,8 +200,8 @@ protected:
 
   message_filters::Subscriber<sensor_msgs::LaserScan>* m_laserSub;
   tf::MessageFilter<sensor_msgs::LaserScan>* m_laserFilter;
-  message_filters::Subscriber<sensor_msgs::PointCloud2 >* m_pointCloudSub;
-  tf::MessageFilter<sensor_msgs::PointCloud2  >* m_pointCloudFilter;
+  message_filters::Subscriber< PointCloud >* m_pointCloudSub;
+  tf::MessageFilter< PointCloud  >* m_pointCloudFilter;
   message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseSub;
   tf::MessageFilter<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseFilter;
 
@@ -228,6 +254,8 @@ protected:
   double m_temporalSamplingRange;
   double m_transformTolerance;
   ros::Time m_lastLaserTime;
+  ros::Time m_lastPointCloudTime;
+
 
   /// absolute, summed translation (3D) since last laser integration
   double m_translationSinceScan;

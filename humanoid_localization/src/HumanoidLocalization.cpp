@@ -345,9 +345,7 @@ void HumanoidLocalization::constrainMotion(const tf::Pose& odomPose){
       m_particles[i].pose.setRotation(tf::createQuaternionFromRPY(odomRoll, odomPitch, yaw));
 
     }
-
   }
-
 }
 
 bool HumanoidLocalization::isAboveMotionThreshold(const tf::Transform& odomTransform){

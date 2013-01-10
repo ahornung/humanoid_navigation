@@ -20,6 +20,8 @@
   <depend stack="ros_comm" /> <!-- rospy, roscpp -->
   <depend stack="perception_pcl" />
   <depend stack="octomap_msgs" /> 
+  <depend stack="octomap_ros" />
+  <depend stack="robot_model" /> <!-- kdl_parser-->
   
   <depends>octomap</depends>
   <depends>sbpl</depends>

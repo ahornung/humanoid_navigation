@@ -1,9 +1,8 @@
 <stack>
   <description brief="Various packages for humanoid (biped) navigation.">
-        <p>This stack will contain packages for humanoid (biped) navigation, 
+        <p>This stack contains packages for humanoid (biped) navigation,
         developed at the <a href="http://hrl.informatik.uni-freiburg.de/">Humanoid Robots Lab</a> 
-    at the Albert-Ludwigs-Universität in Freiburg, Germany. The main code is currently 
-    in the <a href="http://www.ros.org/wiki/footstep_planner">footstep_planner</a> package.
+    at the Albert-Ludwigs-Universität in Freiburg, Germany.
    </p>
    
   </description>
@@ -23,6 +22,8 @@
   <depend stack="octomap_msgs" /> 
   
   <depends>octomap</depends>
+  <depends>sbpl</depends>
+  <depends>opencv2</depends>
   
 
 </stack>

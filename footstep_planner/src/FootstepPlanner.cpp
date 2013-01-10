@@ -261,8 +261,9 @@ FootstepPlanner::setPlanner()
     RSTARPlanner* p = new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
                                        ivForwardSearch);
     // new options, require patched SBPL
-    //          p->set_local_expand_thres(500);
-    //          p->set_eps_step(1.0);
+//              p->set_local_expand_thres(500);
+//              p->set_eps_step(1.0);
+
     ivPlannerPtr.reset(p);
   }
   //        else if (ivPlannerType == "ANAPlanner")

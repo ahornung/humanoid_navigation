@@ -744,6 +744,8 @@ FootstepPlannerEnvironment::GetSuccsTo(int SourceStateID, int goalStateId,
                                        std::vector<int> *SuccIDV,
                                        std::vector<int> *CostV)
 {
+  //return GetSuccs(SourceStateID, SuccIDV, CostV);
+
   SuccIDV->clear();
   CostV->clear();
 
@@ -787,36 +789,36 @@ FootstepPlannerEnvironment::GetSuccsTo(int SourceStateID, int goalStateId,
   }
 
   // intermediate goal reachable (R*)?
-      assert(goalStateId >= 0 && unsigned(goalStateId) < ivStateId2State.size());
-      const PlanningState* randomGoal = ivStateId2State[goalStateId];
-      if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
-        int cost = stepCost(*current, *randomGoal);
-        SuccIDV->push_back(goalStateId);
-        CostV->push_back(cost);
-        //       		ROS_INFO("%d %d", goalStateId, cost);
+  assert(goalStateId >= 0 && unsigned(goalStateId) < ivStateId2State.size());
+  const PlanningState* randomGoal = ivStateId2State[goalStateId];
+  if (randomGoal->getLeg() != current->getLeg() && reachable(*current, *randomGoal)){
+    int cost = stepCost(*current, *randomGoal);
+    SuccIDV->push_back(goalStateId);
+    CostV->push_back(cost);
+    //       		ROS_INFO("%d %d", goalStateId, cost);
 
-        //       		return;
-      }
+    //       		return;
+  }
 
 
-      SuccIDV->reserve(ivFootstepSet.size());
-      CostV->reserve(ivFootstepSet.size());
-      std::vector<Footstep>::const_iterator footstep_set_iter;
-      for(footstep_set_iter = ivFootstepSet.begin();
-          footstep_set_iter != ivFootstepSet.end();
-          footstep_set_iter++)
-      {
-        PlanningState successor =
-            footstep_set_iter->performMeOnThisState(*current);
-        if (occupied(successor))
-          continue;
+  SuccIDV->reserve(ivFootstepSet.size());
+  CostV->reserve(ivFootstepSet.size());
+  std::vector<Footstep>::const_iterator footstep_set_iter;
+  for(footstep_set_iter = ivFootstepSet.begin();
+      footstep_set_iter != ivFootstepSet.end();
+      footstep_set_iter++)
+  {
+    PlanningState successor =
+        footstep_set_iter->performMeOnThisState(*current);
+    if (occupied(successor))
+      continue;
 
-        const PlanningState* successor_hash = createHashEntryIfNotExists(successor);
+    const PlanningState* successor_hash = createHashEntryIfNotExists(successor);
 
-        int cost = stepCost(*current, *successor_hash);
-        SuccIDV->push_back(successor_hash->getId());
-        CostV->push_back(cost);
-      }
+    int cost = stepCost(*current, *successor_hash);
+    SuccIDV->push_back(successor_hash->getId());
+    CostV->push_back(cost);
+  }
 }
 
 

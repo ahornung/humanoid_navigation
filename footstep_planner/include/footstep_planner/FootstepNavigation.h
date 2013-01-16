@@ -87,14 +87,19 @@ namespace footstep_planner
 
     protected:
         /**
-         * @brief Starts the planning task (from scratch) via
-         * FootstepPlanner::plan().
+         * @brief Starts the planning task. First FootstepPlanner::replan() is
+         * called to use planning information from previous tasks. If this fails
+         * FootstepPlanner::plan() is called to plan from scratch. Otherwise
+         * the planning task is unsuccessful.
+         *
+         * @return Success of the planning.
          */
-        void run();
+        bool replan();
 
-        /**
-         * @brief Obtains the pose of the robot's foot from tf.
-         */
+        /// @brief Starts the execution of the calculated path.
+        void startExecution();
+
+        /// @brief Obtains the pose of the robot's foot from tf.
         void getFootTransform(const std::string& foot_id,
 		                      const std::string& world_frame_id,
 		                      const ros::Time& time,
@@ -188,7 +193,7 @@ namespace footstep_planner
         tf::TransformListener ivTransformListener;
 
         boost::mutex ivRobotPoseUpdateMutex;
-        boost::thread* ivpFootstepExecutionThread;
+        boost::shared_ptr<boost::thread> ivFootstepExecutionThreadPtr;
 
         // TODO: check if really no longer needed
         ros::Time ivLastRobotTime;
@@ -202,8 +207,10 @@ namespace footstep_planner
         double ivAccuracyTheta;
         double ivCellSize;
         int    ivNumAngleBins;
+
         /// Used to lock the calculation and execution of footsteps.
-        bool   ivExecutingFootsteps;
+        bool ivExecutingFootsteps;
+
         /// The rate the action server sends its feedback.
         double ivFeedbackFrequency;
 

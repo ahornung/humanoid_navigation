@@ -27,8 +27,7 @@
 namespace footstep_planner
 {
 	FootstepNavigation::FootstepNavigation()
-        : ivpFootstepExecutionThread(NULL),
-          ivLastRobotTime(0),
+        : ivLastRobotTime(0),
           ivIdFootRight("/r_sole"),
           ivIdFootLeft("/l_sole"),
           ivIdMapFrame("map"),
@@ -126,35 +125,51 @@ namespace footstep_planner
 
 
 	FootstepNavigation::~FootstepNavigation()
-    {
-		delete ivpFootstepExecutionThread;
-		ivpFootstepExecutionThread = NULL;
-    }
+    {}
+
+
+	bool
+	FootstepNavigation::replan()
+	{
+        if (!updateStart())
+        {
+            ROS_ERROR("Start pose not accessible: check your odometry");
+            return false;
+        }
+
+		// calculate path by replanning
+        if (ivPlanner.replan())
+        {
+            startExecution();
+            return true;
+        }
+        // calculate path from scratch
+        else if (ivPlanner.plan())
+        {
+            startExecution();
+            return true;
+        }
+        // path planning unsuccessful
+        return false;
+	}
 
 
 	void
-	FootstepNavigation::run()
+	FootstepNavigation::startExecution()
 	{
-		// lock the planning and execution process
-		ivExecutingFootsteps = true;
-		// calculate path
-        if (ivPlanner.plan())
-            if (ivSafeExecution)
-            {
-            	if (ivpFootstepExecutionThread != NULL)
-            	{
-            		delete ivpFootstepExecutionThread;
-                    ivpFootstepExecutionThread = NULL;
-            	}
-				ivpFootstepExecutionThread = new boost::thread(
-					boost::bind(&FootstepNavigation::executeFootsteps, this));
-            }
-            else
-                // ALTERNATIVE:
-                executeFootstepsFast();
+        if (ivSafeExecution)
+        {
+            if (ivFootstepExecutionThreadPtr)
+                ivFootstepExecutionThreadPtr->interrupt();
+            ivFootstepExecutionThreadPtr.reset(
+                new boost::thread(
+                    boost::bind(&FootstepNavigation::executeFootsteps, this)));
+        }
         else
-        	// free the lock if the planning failed
-        	ivExecutingFootsteps = false;
+        {
+            // ALTERNATIVE:
+            executeFootstepsFast();
+        }
 	}
 
 
@@ -218,32 +233,13 @@ namespace footstep_planner
     		{
     			ROS_INFO("Footstep cannot be performed. Replanning necessary");
 
-    			if (updateStart())
-                    if (ivPlanner.replan())
-                    {
-                        // start new execution thread
-                    	delete ivpFootstepExecutionThread;
-        				ivpFootstepExecutionThread = new boost::thread(
-        					boost::bind(&FootstepNavigation::executeFootsteps,
-        							    this));
-                    }
-                    else
-                    {
-                        ROS_INFO("Replanning not possible. Trying planning from"
-                                 " the scratch.");
-                        run();
-                    }
-    	        else
-    	            ROS_ERROR("Start pose not accessible. Robot navigation "
-    	                      "not possible.");
-
-                // leave this thread
-                return;
+    			replan();
+    			// leave the thread
+    			return;
     		}
 
     		to_planned++;
     	}
-
     	ROS_INFO("Succeeded walking to the goal.\n");
 
     	// free the lock
@@ -256,6 +252,9 @@ namespace footstep_planner
     {
     	if (ivPlanner.getPathSize() <= 1)
     		return;
+
+        // lock the planning and execution process
+        ivExecutingFootsteps = true;
 
     	// make sure the action client is connected to the action server
     	ivFootstepsExecution.waitForServer();
@@ -379,23 +378,7 @@ namespace footstep_planner
     	    // a new path
     	    else
     	    {
-                ROS_INFO("Footstep cannot be performed. Replanning necessary");
-
-                if (updateStart())
-                    if (ivPlanner.replan())
-                    {
-                        // start new execution
-                        executeFootstepsFast();
-                    }
-                    else
-                    {
-                        ROS_INFO("Replanning not possible. Trying planning from"
-                                 " the scratch.");
-                        run();
-                    }
-                else
-                    ROS_ERROR("Start pose not accessible. Robot navigation "
-                              "not possible.");
+    	        replan();
     	    }
 
     	    return;
@@ -435,10 +418,7 @@ namespace footstep_planner
 
     	if (setGoal(goal_pose))
     	{
-    		if (updateStart())
-    			run();
-    		else
-    			ROS_ERROR("Start pose not accessible: check your odometry");
+    	    replan();
     	}
     }
 
@@ -460,11 +440,9 @@ namespace footstep_planner
 		if (ivExecutingFootsteps)
 		{
 			if (ivSafeExecution)
-				ivpFootstepExecutionThread->interrupt();
+				ivFootstepExecutionThreadPtr->interrupt();
 			else
 				ivFootstepsExecution.cancelAllGoals();
-
-			updateStart();
 		}
 
 		gridmap_2d::GridMap2DPtr map(new gridmap_2d::GridMap2D(occupancy_map));
@@ -473,22 +451,14 @@ namespace footstep_planner
         // updates the map and starts replanning if necessary
         if (ivPlanner.updateMap(map))
         {
-        	ROS_INFO("Replanning successful, start execution");
+            // NOTE: instead of planning from scratch and deleting all previously
+            // collected information one could think of updating the states affected
+            // from the map change, update these states and start a replanning.
 
-        	// start the execution if there was a successful replanning
-            if (ivSafeExecution)
-            {
-            	if (ivpFootstepExecutionThread != NULL)
-            	{
-            		delete ivpFootstepExecutionThread;
-                    ivpFootstepExecutionThread = NULL;
-            	}
-				ivpFootstepExecutionThread = new boost::thread(
-					boost::bind(&FootstepNavigation::executeFootsteps, this));
-            }
-            else
-                // ALTERNATIVE:
-                executeFootstepsFast();
+            // reset the planner
+            ivPlanner.reset();
+            // calculate a new path
+            replan();
         }
     }
 

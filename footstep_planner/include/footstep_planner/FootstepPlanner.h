@@ -127,11 +127,10 @@ public:
   bool setStart(const State& left_foot, const State& right_foot);
 
   /**
-   * @brief Updates the map in the planning environment. Starts a replanning if
-   * necessary (i.e. it existed a path in the old map).
+   * @brief Updates the map in the planning environment.
    *
-   * @return True if the replanning was successful. False if no replanning was
-   * necessary or the replanning failed.
+   * @return True if a replanning is necessary, i.e. the old path is not valid
+   * any more.
    */
   bool updateMap(const gridmap_2d::GridMap2DPtr& map);
 
@@ -203,6 +202,9 @@ public:
   State getStartFootLeft() { return ivStartFootLeft; };
   State getStartFootRight() { return ivStartFootRight; };
 
+  /// @brief Reset the previous planning information.
+  void reset();
+
 protected:
   void broadcastExpandedNodesVis();
   void broadcastRandomNodesVis();
@@ -221,8 +223,6 @@ protected:
   /// @brief Generates a visualization msgs for a foot pose.
   void footPoseToMarker(const State& footstep,
                         visualization_msgs::Marker* marker);
-
-  void reset();
 
   /// @brief Starts the planning task in the underlying SBPL.
   bool run();

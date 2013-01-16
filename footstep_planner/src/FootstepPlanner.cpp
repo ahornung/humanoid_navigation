@@ -261,9 +261,8 @@ FootstepPlanner::setPlanner()
     RSTARPlanner* p = new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
                                        ivForwardSearch);
     // new options, require patched SBPL
-//              p->set_local_expand_thres(500);
-//              p->set_eps_step(1.0);
-
+    //          p->set_local_expand_thres(500);
+    //          p->set_eps_step(1.0);
     ivPlannerPtr.reset(p);
   }
   //        else if (ivPlannerType == "ANAPlanner")
@@ -411,7 +410,7 @@ FootstepPlanner::plan()
   if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
   {
     ROS_ERROR("FootstepPlanner has not set the start and/or goal pose "
-        "yet.");
+              "yet.");
     return false;
   }
 
@@ -538,7 +537,17 @@ FootstepPlanner::mapCallback(
     const nav_msgs::OccupancyGridConstPtr& occupancy_map)
 {
   GridMap2DPtr map(new GridMap2D(occupancy_map));
-  updateMap(map);
+
+  // new map: update the map information
+  if (updateMap(map))
+  {
+    // NOTE: instead of planning from scratch and deleting all previously
+    // collected information one could think of updating the states affected
+    // from the map change, update these states and start a replanning.
+
+    // calculate a new path from the scratch
+    plan();
+  }
 }
 
 
@@ -645,7 +654,6 @@ FootstepPlanner::setStart(float x, float y, float theta)
 bool
 FootstepPlanner::updateMap(const GridMap2DPtr& map)
 {
-  bool map_existed = ivMapPtr;
   // store old map locally
   GridMap2DPtr old_map = ivMapPtr;
   // store new map
@@ -654,15 +662,18 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
   // update map of planning environment
   ivPlannerEnvironmentPtr->updateMap(map);
 
-  // initialize a replanning with updated map information
-  if (map_existed && ivPathExists)
+  if (old_map && ivPathExists)
   {
-    updateEnvironment(old_map);
-    // replan and return success of the planning
-    return replan();
+    // updating the environment currently means resetting all previous planning
+    // information
+    updateEnvironment(map);
+
+    return true;
   }
-  // if there is no replanning necessary return false
-  return false;
+  else
+  {
+    return false;
+  }
 }
 
 

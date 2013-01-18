@@ -2,7 +2,8 @@
   <description brief="Footstep planning for humanoid robots">
 
      <p>A footstep planner for humanoid / biped robots. The planner builds on SBPL and has anytime as well as dynamic replanning capabilities. The supported planners are: ARA*, AD*, R*.</p>
-     <p>Details can be found in the following publications:<p><em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
+     <p>Details can be found in the following publications:</p>
+     <p><em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
      by J. Garimort, A. Hornung, and M. Bennewitz; published in 
      Proc. of the IEEE International Conference on Robotics &amp; Automation (ICRA), 2011</p>
      <p><em>Anytime Search-Based Footstep Planning with Suboptimality Bounds</em>

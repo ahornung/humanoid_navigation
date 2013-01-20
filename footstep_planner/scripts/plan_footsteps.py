@@ -17,10 +17,12 @@
 import roslib
 roslib.load_manifest('footstep_planner')
 import rospy
-import sys
 
 from humanoid_nav_msgs.srv import *
 from geometry_msgs.msg import Pose2D
+
+import sys
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 7:

@@ -24,20 +24,19 @@
 #ifndef FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
 #define FOOTSTEP_PLANNER_FOOTSTEPPLANNERENVIRONMENT_H_
 
-#include <tr1/unordered_set>
-#include <tr1/hashtable.h>
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
 #include <footstep_planner/Heuristic.h>
 #include <footstep_planner/Footstep.h>
 #include <footstep_planner/PlanningState.h>
 #include <footstep_planner/State.h>
+#include <humanoid_nav_msgs/ClipFootstep.h>
 #include <sbpl/headers.h>
 
-
-#include <humanoid_nav_msgs/ClipFootstep.h>
-
+#include <math.h>
 #include <vector>
+#include <tr1/unordered_set>
+#include <tr1/hashtable.h>
 
 
 namespace footstep_planner
@@ -119,6 +118,7 @@ public:
       double cell_size,
       int    num_angle_bins,
       bool   forward_search,
+      double max_step_width,
       int num_random_nodes,
       double random_node_distance,
       double heuristic_scale);
@@ -413,12 +413,17 @@ protected:
   /// Whether to use forward search (1) or backward search (0).
   const bool ivForwardSearch;
 
+  double ivMaxStepWidth;
+
   /// number of random neighbors for R*
   const int ivNumRandomNodes;
   /// distance of random neighbors for R* (discretized in cells)
   const int ivRandomNodeDist;
 
-  /// Scaling factor of heuristic, in case it underestimates by a constant factor.
+  /**
+   * Scaling factor of heuristic, in case it underestimates by a constant
+   * factor.
+   */
   double ivHeuristicScale;
 
   bool ivHeuristicExpired;
@@ -427,7 +432,7 @@ protected:
   boost::shared_ptr<gridmap_2d::GridMap2D> ivMapPtr;
 
   exp_states_2d_t ivExpandedStates;
-  exp_states_t ivRandomStates; ///< random intermediate states for R*
+  exp_states_t ivRandomStates;  ///< random intermediate states for R*
   size_t ivNumExpandedStates;
 };
 }

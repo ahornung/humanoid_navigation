@@ -89,7 +89,6 @@ FootstepPlanner::FootstepPlanner()
   nh_private.param("random_node_dist", random_node_dist, 1.0);
 
   // - footstep settings
-  // TODO: update the footstep settings
   nh_private.param("foot/size/x", ivFootsizeX, 0.16);
   nh_private.param("foot/size/y", ivFootsizeY, 0.06);
   nh_private.param("foot/size/z", ivFootsizeZ, 0.015);
@@ -215,6 +214,7 @@ FootstepPlanner::FootstepPlanner()
                                      ivCellSize,
                                      ivNumAngleBins,
                                      ivForwardSearch,
+                                     max_step_width * 2.0,
                                      num_random_nodes,
                                      random_node_dist,
                                      heuristic_scale));
@@ -280,6 +280,7 @@ FootstepPlanner::run()
     ROS_INFO("R* planner reset");
     reset();
   }
+
   ivPathExists = false;
 
   // commit start/goal poses to the environment
@@ -319,7 +320,7 @@ FootstepPlanner::run()
   ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;
 
   if (ret && solution_state_ids.size() > 0 &&
-      calculatedNewPath(solution_state_ids))
+      pathIsNew(solution_state_ids))
   {
     ROS_INFO("Solution of size %zu found after %f s",
              solution_state_ids.size(),
@@ -430,8 +431,7 @@ FootstepPlanner::replan()
   }
   if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
   {
-    ROS_ERROR("FootstepPlanner has not set start and/or goal pose "
-        "yet.");
+    ROS_ERROR("FootstepPlanner has not set start and/or goal pose yet.");
     return false;
   }
 
@@ -541,12 +541,9 @@ FootstepPlanner::mapCallback(
   // new map: update the map information
   if (updateMap(map))
   {
-    // NOTE: instead of planning from scratch and deleting all previously
-    // collected information one could think of updating the states affected
-    // from the map change, update these states and start a replanning.
-
-    // calculate a new path from the scratch
-    plan();
+    // NOTE: update map currently simply resets the planner, i.e. replanning
+    // here is in fact a planning from the scratch
+    replan();
   }
 }
 
@@ -578,6 +575,7 @@ FootstepPlanner::setGoal(float x, float y, float theta)
       ivPlannerEnvironmentPtr->occupied(foot_right))
   {
     ROS_ERROR("Goal pose at (%f %f %f) not accessible.", x, y, theta);
+    ivGoalPoseSetUp = false;
     return false;
   }
   ivGoalFootLeft = foot_left;
@@ -606,6 +604,7 @@ FootstepPlanner::setStart(const State& left_foot, const State& right_foot)
   if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
       ivPlannerEnvironmentPtr->occupied(right_foot))
   {
+    ivStartPoseSetUp = false;
     return false;
   }
   ivStartFootLeft = left_foot;
@@ -666,7 +665,7 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
   {
     // updating the environment currently means resetting all previous planning
     // information
-    updateEnvironment(map);
+    updateEnvironment(old_map);
 
     return true;
   }
@@ -806,7 +805,7 @@ FootstepPlanner::getFootPose(const State& robot, Leg leg)
 
 
 bool
-FootstepPlanner::calculatedNewPath(const std::vector<int>& new_path)
+FootstepPlanner::pathIsNew(const std::vector<int>& new_path)
 {
   if (new_path.size() != ivPlanningStatesIds.size())
     return true;

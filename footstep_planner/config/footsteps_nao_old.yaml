@@ -15,6 +15,6 @@ foot:
   separation: 0.095
   origin_shift: {x: 0.02, y: 0.006}
   max:
-    step: {x: 0.06, y: 0.16, theta: 0.3}
+    step: {x: 0.06, y: 0.14, theta: 0.3}
     inverse:
       step: {x: -0.04, y: 0.088, theta: 0.0}

@@ -205,6 +205,9 @@ public:
   /// @brief Reset the previous planning information.
   void reset();
 
+  /// @return True if for the current start and goal pose a path exists.
+  bool pathExists() { return ivPathExists; };
+
 protected:
   void broadcastExpandedNodesVis();
   void broadcastRandomNodesVis();
@@ -212,7 +215,11 @@ protected:
   void broadcastHeuristicPathVis();
   void broadcastPathVis();
 
-  bool calculatedNewPath(const std::vector<int>& new_path);
+  /**
+   * @return True if the newly calculated path is different from the existing
+   * one (if one exists).
+   */
+  bool pathIsNew(const std::vector<int>& new_path);
 
   /**
    * @brief Extracts the path (list of foot poses) from a list of state

@@ -35,8 +35,7 @@ namespace footstep_planner
           ivFootstepsExecution("footsteps_execution", true),
           ivExecutionShift(2),
           ivControlStepIdx(-1),
-          ivResetStepIdx(0),
-          ivSafeExecution(true)
+          ivResetStepIdx(0)
     {
         // private NodeHandle for parameters and private messages (debug / info)
         ros::NodeHandle nh_private("~");
@@ -137,17 +136,21 @@ namespace footstep_planner
             return false;
         }
 
-		// calculate path by replanning
+		// calculate path by replanning (if no planning information exists
+        // this call is equal to ivPlanner.plan())
         if (ivPlanner.replan())
         {
             startExecution();
             return true;
         }
-        // calculate path from scratch
-        else if (ivPlanner.plan())
+        // calculate path from scratch (if necessary, i.e. a path existed)
+        else if (ivPlanner.pathExists())
         {
-            startExecution();
-            return true;
+            if (ivPlanner.plan())
+            {
+                startExecution();
+                return true;
+            }
         }
         // path planning unsuccessful
         return false;
@@ -216,7 +219,7 @@ namespace footstep_planner
     		else // support_foot = LLEG
     			support_foot_id = ivIdFootLeft;
     		{
-    			boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
+    			boost::mutex::scoped_lock lock(ivRobotPoseUpdate);
     			// get real placement of the support foot
     			getFootTransform(support_foot_id, ivIdMapFrame,
     			                 ros::Time::now(), from);
@@ -283,6 +286,8 @@ namespace footstep_planner
     	{
     	    // free the lock
     	    ivExecutingFootsteps = false;
+
+    	    replan();
     	}
     }
 
@@ -302,12 +307,11 @@ namespace footstep_planner
     		const actionlib::SimpleClientGoalState& state,
     		const humanoid_nav_msgs::ExecFootstepsResultConstPtr& result)
     {
-    	// TODO: check if goal pose is the requested pose?
     	if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
     		ROS_INFO("Succeeded walking to the goal.");
     	else if (state == actionlib::SimpleClientGoalState::PREEMPTED)
     		ROS_INFO("Preempted walking to the goal.");
-    	// TODO: distinct between further states
+    	// TODO: distinct between further states??
     	else
     		ROS_INFO("Failed walking to the goal.");
 
@@ -427,7 +431,7 @@ namespace footstep_planner
     FootstepNavigation::robotPoseCallback(
             const geometry_msgs::PoseWithCovarianceStampedConstPtr& robot_pose)
     {
-    	boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
+    	boost::mutex::scoped_lock lock(ivRobotPoseUpdate);
     	ivLastRobotTime = robot_pose->header.stamp;
     }
 
@@ -485,7 +489,7 @@ namespace footstep_planner
     {
         tf::Transform foot_left, foot_right;
         {
-            boost::mutex::scoped_lock lock(ivRobotPoseUpdateMutex);
+            boost::mutex::scoped_lock lock(ivRobotPoseUpdate);
             // get real placement of the feet
             getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
                              foot_left);
@@ -524,17 +528,6 @@ namespace footstep_planner
         footstep_clip.request.step = footstep;
         ivClipFootstepSrv.call(footstep_clip);
 
-//		ROS_INFO("unclipped (%f, %f, %f), clipped (%f, %f, %f)",
-//				 footstep_clip.request.step.pose.x,
-//				 footstep_clip.request.step.pose.y,
-//				 footstep_clip.request.step.pose.theta,
-//				 footstep_clip.response.step.pose.x,
-//				 footstep_clip.response.step.pose.y,
-//				 footstep_clip.response.step.pose.theta);
-//        return fabs(footstep_clip.request.step.pose.x - footstep_clip.response.step.pose.x) < 0.001 &&
-//        	   fabs(footstep_clip.request.step.pose.y - footstep_clip.response.step.pose.y) < 0.001 &&
-//        	   fabs(angles::shortest_angular_distance(footstep_clip.request.step.pose.theta, footstep_clip.response.step.pose.theta)) < 0.05;
-
         if (performanceValid(footstep_clip))
         {
         	footstep.pose.x = footstep_clip.response.step.pose.x;
@@ -544,7 +537,7 @@ namespace footstep_planner
         }
         else
         {
-        	return false;
+              return false;
         }
     }
 
@@ -563,9 +556,6 @@ namespace footstep_planner
                       0.0));
     	for (; current != ivPlanner.getPathEnd(); current++)
     	{
-//    		ROS_INFO("(%f, %f, %f, %i)",
-//			         current->x, current->y, current->theta, current->leg);
-
     		if (getFootstep(last, *current, footstep))
     		{
     		    footsteps.push_back(footstep);

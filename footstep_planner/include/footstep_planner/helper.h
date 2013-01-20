@@ -94,7 +94,7 @@ inline double grid_cost(int x1, int y1, int x2, int y2, float cell_size)
 /// @brief Discretize a (continuous) angle into a bin.
 inline int angle_state_2_cell(double angle, int angle_bin_num)
 {
-  double bin_size_half = TWO_PI / angle_bin_num / 2.0;
+  double bin_size_half = M_PI / angle_bin_num;
   return int(angles::normalize_angle_positive(angle + bin_size_half) /
              TWO_PI * angle_bin_num);
 }
@@ -112,9 +112,9 @@ inline double angle_cell_2_state(int angle, int angle_bin_num)
  * @brief Discretize a (continuous) state value into a cell. (Should be
  * used to discretize a State to a PlanningState.)
  */
-inline int state_2_cell(double value, double cell_size)
+inline int state_2_cell(float value, float cell_size)
 {
-  return int(floor(value / cell_size));
+  return value >= 0 ? int(value / cell_size) : int(value / cell_size) - 1;
 }
 
 

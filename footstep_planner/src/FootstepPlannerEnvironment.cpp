@@ -45,6 +45,7 @@ FootstepPlannerEnvironment::FootstepPlannerEnvironment(
     double cell_size,
     int    num_angle_bins,
     bool   forward_search,
+    double max_step_width,
     int num_random_nodes,
     double random_node_distance,
     double heuristic_scale)
@@ -54,32 +55,33 @@ FootstepPlannerEnvironment::FootstepPlannerEnvironment(
   ivIdGoalFootLeft(-1),
   ivIdGoalFootRight(-1),
   ivpStateHash2State(
-      new std::vector<const PlanningState*>[hash_table_size]),
-      ivFootstepSet(footstep_set),
-      ivHeuristicConstPtr(heuristic),
-      ivFootsizeX(footsize_x),
-      ivFootsizeY(footsize_y),
-      ivOriginFootShiftX(origin_foot_shift_x),
-      ivOriginFootShiftY(origin_foot_shift_y),
-      ivMaxFootstepX(disc_val(max_footstep_x, cell_size)),
-      ivMaxFootstepY(disc_val(max_footstep_y, cell_size)),
-      ivMaxFootstepTheta(
-          angle_state_2_cell(max_footstep_theta, num_angle_bins)),
-          ivMaxInvFootstepX(disc_val(max_inverse_footstep_x, cell_size)),
-          ivMaxInvFootstepY(disc_val(max_inverse_footstep_y, cell_size)),
-          ivMaxInvFootstepTheta(
-              angle_state_2_cell(max_inverse_footstep_theta, num_angle_bins)),
-              ivStepCost(cvMmScale * step_cost),
-              ivCollisionCheckAccuracy(collision_check_accuracy),
-              ivHashTableSize(hash_table_size),
-              ivCellSize(cell_size),
-              ivNumAngleBins(num_angle_bins),
-              ivForwardSearch(forward_search),
-              ivNumRandomNodes(num_random_nodes),
-              ivRandomNodeDist(random_node_distance / ivCellSize),
-              ivHeuristicScale(heuristic_scale),
-              ivHeuristicExpired(true),
-              ivNumExpandedStates(0)
+    new std::vector<const PlanningState*>[hash_table_size]),
+  ivFootstepSet(footstep_set),
+  ivHeuristicConstPtr(heuristic),
+  ivFootsizeX(footsize_x),
+  ivFootsizeY(footsize_y),
+  ivOriginFootShiftX(origin_foot_shift_x),
+  ivOriginFootShiftY(origin_foot_shift_y),
+  ivMaxFootstepX(disc_val(max_footstep_x, cell_size)),
+  ivMaxFootstepY(disc_val(max_footstep_y, cell_size)),
+  ivMaxFootstepTheta(
+    angle_state_2_cell(max_footstep_theta, num_angle_bins)),
+  ivMaxInvFootstepX(disc_val(max_inverse_footstep_x, cell_size)),
+  ivMaxInvFootstepY(disc_val(max_inverse_footstep_y, cell_size)),
+  ivMaxInvFootstepTheta(
+    angle_state_2_cell(max_inverse_footstep_theta, num_angle_bins)),
+  ivStepCost(cvMmScale * step_cost),
+  ivCollisionCheckAccuracy(collision_check_accuracy),
+  ivHashTableSize(hash_table_size),
+  ivCellSize(cell_size),
+  ivNumAngleBins(num_angle_bins),
+  ivForwardSearch(forward_search),
+  ivMaxStepWidth(double(disc_val(max_step_width, cell_size))),
+  ivNumRandomNodes(num_random_nodes),
+  ivRandomNodeDist(random_node_distance / ivCellSize),
+  ivHeuristicScale(heuristic_scale),
+  ivHeuristicExpired(true),
+  ivNumExpandedStates(0)
 {
   int num_angle_bins_half = ivNumAngleBins / 2;
   if (ivMaxFootstepTheta >= num_angle_bins_half)
@@ -226,6 +228,8 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
   {
     StateID2IndexMapping[state_id][i] = -1;
   }
+
+  assert(StateID2IndexMapping.size()-1 == state_id);
 
   return new_state;
 }
@@ -398,7 +402,6 @@ FootstepPlannerEnvironment::reset()
     if (ivStateId2State[i])
     {
       delete ivStateId2State[i];
-      ivStateId2State[i] = NULL;
     }
   }
   ivStateId2State.clear();
@@ -414,7 +417,6 @@ FootstepPlannerEnvironment::reset()
     if (StateID2IndexMapping[i])
     {
       delete[] StateID2IndexMapping[i];
-      StateID2IndexMapping[i] = NULL;
     }
   }
   StateID2IndexMapping.clear();
@@ -462,22 +464,30 @@ bool
 FootstepPlannerEnvironment::reachable(const PlanningState& from,
                                       const PlanningState& to)
 {
-  // get the (continuous) orientation of state 'from'
-  double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
-  double orient_cos = cos(orient);
-  double orient_sin = sin(orient);
+  if (euclidean_distance(from.getX(), from.getY(), to.getX(), to.getY()) >
+      ivMaxStepWidth)
+  {
+      return false;
+  }
 
-  // calculate the footstep shift and rotate it into the 'from'-view
-  int footstep_x = to.getX() - from.getX();
-  int footstep_y = to.getY() - from.getY();
-  double shift_x = footstep_x * orient_cos - footstep_y * orient_sin;
-  double shift_y = footstep_x * orient_sin + footstep_y * orient_cos;
-  footstep_x = round(shift_x);
-  footstep_y = round(shift_y);
+  tf::Transform step =
+    tf::Pose(
+      tf::createQuaternionFromYaw(
+        angle_cell_2_state(from.getTheta(), ivNumAngleBins)),
+      tf::Point(cell_2_state(from.getX(), ivCellSize),
+                cell_2_state(from.getY(), ivCellSize),
+                0.0)).inverse() *
+    tf::Pose(
+      tf::createQuaternionFromYaw(
+        angle_cell_2_state(from.getTheta(), ivNumAngleBins)),
+      tf::Point(cell_2_state(to.getX(), ivCellSize),
+                cell_2_state(to.getY(), ivCellSize),
+                0.0));
+  int footstep_x = disc_val(step.getOrigin().x(), ivCellSize);
+  int footstep_y = disc_val(step.getOrigin().y(), ivCellSize);
 
   // calculate the footstep rotation
   int footstep_theta = to.getTheta() - from.getTheta();
-
   // transform the value into [-ivNumAngleBins/2..ivNumAngleBins/2)
   int num_angle_bins_half = ivNumAngleBins / 2;
   if (footstep_theta >= num_angle_bins_half)
@@ -491,12 +501,51 @@ FootstepPlannerEnvironment::reachable(const PlanningState& from,
     footstep_y = -footstep_y;
     footstep_theta = -footstep_theta;
   }
+
   return (footstep_x <= ivMaxFootstepX &&
-      footstep_x >= ivMaxInvFootstepX &&
-      footstep_y <= ivMaxFootstepY &&
-      footstep_y >= ivMaxInvFootstepY &&
-      footstep_theta <= ivMaxFootstepTheta &&
-      footstep_theta >= ivMaxInvFootstepTheta);
+          footstep_x >= ivMaxInvFootstepX &&
+          footstep_y <= ivMaxFootstepY &&
+          footstep_y >= ivMaxInvFootstepY &&
+          footstep_theta <= ivMaxFootstepTheta &&
+          footstep_theta >= ivMaxInvFootstepTheta);
+
+
+//  // get the (continuous) orientation of state 'from'
+//  double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
+//  double orient_cos = cos(orient);
+//  double orient_sin = sin(orient);
+//
+//  // calculate the footstep shift and rotate it into the 'from'-view
+//  int footstep_x = to.getX() - from.getX();
+//  int footstep_y = to.getY() - from.getY();
+//  double shift_x = footstep_x * orient_cos - footstep_y * orient_sin;
+//  double shift_y = footstep_x * orient_sin + footstep_y * orient_cos;
+//  footstep_x = round(shift_x);
+//  footstep_y = round(shift_y);
+//
+//  // calculate the footstep rotation
+//  int footstep_theta = to.getTheta() - from.getTheta();
+//
+//  // transform the value into [-ivNumAngleBins/2..ivNumAngleBins/2)
+//  int num_angle_bins_half = ivNumAngleBins / 2;
+//  if (footstep_theta >= num_angle_bins_half)
+//    footstep_theta -= ivNumAngleBins;
+//  else if (footstep_theta < -num_angle_bins_half)
+//    footstep_theta += ivNumAngleBins;
+//
+//  // adjust for the left foot
+//  if (from.getLeg() == LEFT)
+//  {
+//    footstep_y = -footstep_y;
+//    footstep_theta = -footstep_theta;
+//  }
+//
+//  return (footstep_x <= ivMaxFootstepX &&
+//          footstep_x >= ivMaxInvFootstepX &&
+//          footstep_y <= ivMaxFootstepY &&
+//          footstep_y >= ivMaxInvFootstepY &&
+//          footstep_theta <= ivMaxFootstepTheta &&
+//          footstep_theta >= ivMaxInvFootstepTheta);
 }
 
 
@@ -588,7 +637,7 @@ FootstepPlannerEnvironment::GetFromToHeuristic(const PlanningState& from,
                                                const PlanningState& to)
 {
   return cvMmScale * ivHeuristicScale *
-      ivHeuristicConstPtr->getHValue(from, to);
+    ivHeuristicConstPtr->getHValue(from, to);
 }
 
 
@@ -685,7 +734,9 @@ FootstepPlannerEnvironment::GetSuccs(int SourceStateID,
 
   // make goal state absorbing (only left!)
   if (SourceStateID == ivIdGoalFootLeft)
+  {
     return;
+  }
 
   const PlanningState* current = ivStateId2State[SourceStateID];
 

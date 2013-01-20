@@ -59,13 +59,11 @@ Footstep::init()
 
   for (int a = 0; a < ivNumAngleBins; ++a)
   {
-    backward_angle = calculateForwardStep(RIGHT, a,
-                                          &footstep_x, &footstep_y);
+    backward_angle = calculateForwardStep(RIGHT, a, &footstep_x, &footstep_y);
     ivDiscSuccessorRight[a] = footstep_xy(footstep_x, footstep_y);
     ivDiscPredecessorLeft[backward_angle] = footstep_xy(-footstep_x,
                                                         -footstep_y);
-    backward_angle = calculateForwardStep(LEFT, a,
-                                          &footstep_x, &footstep_y);
+    backward_angle = calculateForwardStep(LEFT, a, &footstep_x, &footstep_y);
     ivDiscSuccessorLeft[a] = footstep_xy(footstep_x, footstep_y);
     ivDiscPredecessorRight[backward_angle] = footstep_xy(-footstep_x,
                                                          -footstep_y);
@@ -92,13 +90,13 @@ const
     leg = LEFT;
   }
   else // leg == LEFT
-      {
+  {
     footstep_xy xy = ivDiscSuccessorLeft[theta];
     x += xy.first;
     y += xy.second;
     theta -= ivTheta;
     leg = RIGHT;
-      }
+  }
 
   // theta has to be in [0..ivNumAngleBins)
   if (theta < 0)
@@ -129,13 +127,13 @@ const
     leg = RIGHT;
   }
   else // leg == RIGHT
-      {
+  {
     footstep_xy xy = ivDiscPredecessorRight[theta];
     x += xy.first;
     y += xy.second;
     theta += ivTheta;
     leg = LEFT;
-      }
+  }
   // theta has to be in [0..ivNumAngleBins)
   if (theta < 0)
     theta += ivNumAngleBins;

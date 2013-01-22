@@ -87,6 +87,14 @@ public:
 
 protected:
   /**
+   * @brief Starts the planning task from scratch discarding previous planning
+   * information.
+   *
+   * @return Success of the planning.
+   */
+  bool plan();
+
+  /**
    * @brief Starts the planning task. First FootstepPlanner::replan() is
    * called to use planning information from previous tasks. If this fails
    * FootstepPlanner::plan() is called to plan from scratch. Otherwise
@@ -209,6 +217,9 @@ protected:
   double ivCellSize;
   int    ivNumAngleBins;
 
+  /// Search direction.
+  bool ivForwardSearch;
+
   /// Used to lock the calculation and execution of footsteps.
   bool ivExecutingFootsteps;
 
@@ -217,7 +228,7 @@ protected:
 
   /// Simple action client to control a footstep execution.
   actionlib::SimpleActionClient<
-  humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
+      humanoid_nav_msgs::ExecFootstepsAction> ivFootstepsExecution;
 
   /// Fixed delay (=2) of the incoming footsteps.
   const int ivExecutionShift;

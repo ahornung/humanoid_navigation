@@ -68,8 +68,9 @@ FootstepNavigation::FootstepNavigation()
   nh_private.param("accuracy/cell_size", ivCellSize, 0.005);
   nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 128);
 
-  nh_private.param("feedback_frequency", ivFeedbackFrequency, 5.0);
+  nh_private.param("forward_search", ivForwardSearch, false);
 
+  nh_private.param("feedback_frequency", ivFeedbackFrequency, 5.0);
   nh_private.param("safe_execution", ivSafeExecution, true);
 
   // check if each footstep can be performed by the NAO robot
@@ -126,6 +127,25 @@ FootstepNavigation::~FootstepNavigation()
 
 
 bool
+FootstepNavigation::plan()
+{
+  if (!updateStart())
+  {
+    ROS_ERROR("Start pose not accessible: check your odometry");
+    return false;
+  }
+
+  if (ivPlanner.plan())
+  {
+    startExecution();
+    return true;
+  }
+  // path planning unsuccessful
+  return false;
+}
+
+
+bool
 FootstepNavigation::replan()
 {
   if (!updateStart())
@@ -134,7 +154,7 @@ FootstepNavigation::replan()
     return false;
   }
 
-// calculate path by replanning (if no planning information exists
+  // calculate path by replanning (if no planning information exists
   // this call is equal to ivPlanner.plan())
   if (ivPlanner.replan())
   {
@@ -409,14 +429,19 @@ FootstepNavigation::goalPoseCallback(
   if (ivExecutingFootsteps)
   {
     ROS_INFO("Already performing a navigation task. Wait until it is "
-       "finished.");
+             "finished.");
     return;
   }
 
-	if (setGoal(goal_pose))
-	{
-    replan();
-	}
+  if (setGoal(goal_pose))
+  {
+    // this check enforces a planning from scratch if necessary (dependent on
+    // planning direction)
+	if (ivForwardSearch)
+	  replan();
+	else
+	  plan();
+  }
 }
 
 

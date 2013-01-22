@@ -430,6 +430,8 @@ FootstepPlanner::replan()
   // Workaround for R* and ARA: need to reinit. everything
   if (ivPlannerType == "RSTARPlanner" || ivPlannerType == "ARAPlanner")
   {
+    ROS_INFO("Reset planning information because planner cannot handle "
+             "replanning.");
     reset();
   }
 

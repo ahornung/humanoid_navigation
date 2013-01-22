@@ -154,6 +154,8 @@ FootstepNavigation::replan()
     return false;
   }
 
+  bool path_existed = ivPlanner.pathExists();
+
   // calculate path by replanning (if no planning information exists
   // this call is equal to ivPlanner.plan())
   if (ivPlanner.replan())
@@ -161,8 +163,7 @@ FootstepNavigation::replan()
     startExecution();
     return true;
   }
-  // calculate path from scratch (if necessary, i.e. a path existed)
-  else if (ivPlanner.pathExists())
+  else if (path_existed)
   {
     if (ivPlanner.plan())
     {

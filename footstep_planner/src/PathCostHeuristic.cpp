@@ -72,11 +72,13 @@ const
                                cell_2_state(to.getY(), ivCellSize),
                                to_x, to_y);
 
-  if (ivGoalX != to_x || ivGoalY != to_y){
-    ROS_ERROR("PathCostHeuristic::getHValue to a different value than precomputed, heuristic values will be wrong. "
-        "You need to call calculateDistances() before!");
-
+  if (ivGoalX != to_x || ivGoalY != to_y)
+  {
+    ROS_ERROR("PathCostHeuristic::getHValue to a different value than "
+              "precomputed, heuristic values will be wrong. You need to call "
+              "calculateDistances() before!");
   }
+  assert(ivGoalX == to_x && ivGoalY == to_y);
 
   double dist = double(ivGridSearchPtr->getlowerboundoncostfromstart_inmm(
       from_x, from_y)) / 1000.0;

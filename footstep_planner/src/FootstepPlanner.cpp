@@ -274,13 +274,6 @@ FootstepPlanner::setPlanner()
 bool
 FootstepPlanner::run()
 {
-  // Workaround for R*: need to reinit. everything
-  if (ivPlannerType == "RSTARPlanner")
-  {
-    ROS_INFO("R* planner reset");
-    reset();
-  }
-
   ivPathExists = false;
 
   // commit start/goal poses to the environment
@@ -434,6 +427,11 @@ FootstepPlanner::replan()
     ROS_ERROR("FootstepPlanner has not set start and/or goal pose yet.");
     return false;
   }
+  // Workaround for R* and ARA: need to reinit. everything
+  if (ivPlannerType == "RSTARPlanner" || ivPlannerType == "ARAPlanner")
+  {
+    reset();
+  }
 
   return run();
 }
@@ -513,7 +511,12 @@ FootstepPlanner::goalPoseCallback(
   if (setGoal(goal_pose))
   {
     if (ivStartPoseSetUp)
-      run();
+    {
+	  if (ivForwardSearch)
+        replan();
+	  else
+        plan();
+    }
   }
 }
 
@@ -527,7 +530,12 @@ FootstepPlanner::startPoseCallback(
                tf::getYaw(start_pose->pose.pose.orientation)))
   {
     if (ivGoalPoseSetUp)
-      run();
+    {
+      if (ivForwardSearch)
+        plan();
+      else
+        replan();
+    }
   }
 }
 

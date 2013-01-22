@@ -456,6 +456,7 @@ FootstepPlannerEnvironment::closeToGoal(const PlanningState& from)
   else
     goal = ivStateId2State[ivIdGoalFootRight];
 
+  // TODO: check step if reachable == True
   return reachable(from, *goal);
 }
 

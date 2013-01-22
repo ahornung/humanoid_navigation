@@ -514,6 +514,8 @@ FootstepPlanner::goalPoseCallback(
   {
     if (ivStartPoseSetUp)
     {
+      // this check enforces a planning from scratch if necessary (dependent on
+      // planning direction)
 	  if (ivForwardSearch)
         replan();
 	  else
@@ -533,6 +535,8 @@ FootstepPlanner::startPoseCallback(
   {
     if (ivGoalPoseSetUp)
     {
+      // this check enforces a planning from scratch if necessary (dependent on
+      // planning direction)
       if (ivForwardSearch)
         plan();
       else

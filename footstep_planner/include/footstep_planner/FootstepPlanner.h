@@ -231,7 +231,12 @@ protected:
   void footPoseToMarker(const State& footstep,
                         visualization_msgs::Marker* marker);
 
-  /// @brief Starts the planning task in the underlying SBPL.
+  /**
+   * @brief Starts the planning task in the underlying SBPL.
+   *
+   * NOTE: Never call this directly. Always use either plan() or replan() to
+   * invoke this method.
+   */
   bool run();
 
   /// @brief Returns the foot pose of a leg for a given robot pose.

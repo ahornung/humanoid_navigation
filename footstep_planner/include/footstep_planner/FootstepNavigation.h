@@ -200,9 +200,9 @@ protected:
 
   tf::TransformListener ivTransformListener;
 
-  boost::mutex ivRobotPoseUpdate;
+  boost::mutex ivExecutionLock;
 
-  boost::shared_ptr<boost::thread> ivFootstepExecutionThreadPtr;
+  boost::shared_ptr<boost::thread> ivFootstepExecutionPtr;
 
   // TODO: check if really needed
   ros::Time ivLastRobotTime;
@@ -222,6 +222,7 @@ protected:
 
   /// Used to lock the calculation and execution of footsteps.
   bool ivExecutingFootsteps;
+  bool ivBla;
 
   /// The rate the action server sends its feedback.
   double ivFeedbackFrequency;

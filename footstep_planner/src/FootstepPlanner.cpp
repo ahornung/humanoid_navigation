@@ -234,6 +234,9 @@ FootstepPlanner::FootstepPlanner()
   y = disc_val(0.15, ivCellSize);
   step_range.push_back(std::pair<int, int>(x, y));
 
+  double max_x = max(0.07, fabs(-0.3));
+  double max_y = max(0.15, 0.09);
+
   // initialize the planner environment
   ivPlannerEnvironmentPtr.reset(
       new FootstepPlannerEnvironment(ivFootstepSet,
@@ -255,7 +258,7 @@ FootstepPlanner::FootstepPlanner()
                                      ivCellSize,
                                      ivNumAngleBins,
                                      ivForwardSearch,
-                                     max_step_width * 2.0,
+                                     sqrt(max_x * max_x + max_y * max_y) * 1.5,
                                      num_random_nodes,
                                      random_node_dist,
                                      heuristic_scale));

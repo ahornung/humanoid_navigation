@@ -119,13 +119,13 @@ PathCostHeuristic::calculateDistances(const PlanningState& start,
                                cell_2_state(goal.getY(), ivCellSize),
                                to_x, to_y);
 
-  if (to_x != ivGoalX || to_y != ivGoalY){
+  if (to_x != ivGoalX || to_y != ivGoalY)
+  {
     ivGoalX = to_x;
     ivGoalY = to_y;
     ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
                             ivGoalX, ivGoalY, start_x, start_y,
                             SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
-
   }
 
   return true;

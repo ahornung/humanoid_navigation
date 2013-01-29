@@ -379,7 +379,7 @@ FootstepPlannerEnvironment::updateHeuristicValues()
   if (!ivHeuristicExpired)
     return;
 
-  ROS_DEBUG("Updating the heuristic values.");
+  ROS_INFO("Updating the heuristic values.");
 
   if (ivHeuristicConstPtr->getHeuristicType() == Heuristic::PATH_COST)
   {
@@ -444,6 +444,8 @@ FootstepPlannerEnvironment::reset()
   ivIdGoalFootRight = -1;
   ivIdStartFootLeft = -1;
   ivIdStartFootRight = -1;
+
+  ivHeuristicExpired = true;
 }
 
 

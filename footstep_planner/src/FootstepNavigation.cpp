@@ -154,6 +154,13 @@ FootstepNavigation::replan()
     return false;
   }
 
+  // lock the planning (NOTE: do not lock before since
+  // FootstepNavigation::updateStart() locks too)
+  // the lock is freed when this methods returns, i.e. shortly after the
+  // planning is finished (the execution itself is started in a new thread
+  // therefore this method returns before the execution is finished)
+  boost::mutex::scoped_lock lock(ivExecutionLock);
+
   bool path_existed = ivPlanner.pathExists();
 
   // calculate path by replanning (if no planning information exists
@@ -181,9 +188,7 @@ FootstepNavigation::startExecution()
 {
   if (ivSafeExecution)
   {
-    if (ivFootstepExecutionThreadPtr)
-        ivFootstepExecutionThreadPtr->interrupt();
-    ivFootstepExecutionThreadPtr.reset(
+    ivFootstepExecutionPtr.reset(
       new boost::thread(
         boost::bind(&FootstepNavigation::executeFootsteps, this)));
   }
@@ -229,7 +234,7 @@ FootstepNavigation::executeFootsteps()
 		}
 		catch (const boost::thread_interrupted&)
 		{
-      // leave this thread
+		    // leave this thread
 			return;
 		}
 
@@ -238,15 +243,18 @@ FootstepNavigation::executeFootsteps()
 		else // support_foot = LLEG
 			support_foot_id = ivIdFootLeft;
 		{
-			boost::mutex::scoped_lock lock(ivRobotPoseUpdate);
+			boost::mutex::scoped_lock lock(ivExecutionLock);
 			// get real placement of the support foot
-			getFootTransform(support_foot_id, ivIdMapFrame, ros::Time::now(), from);
+			getFootTransform(support_foot_id, ivIdMapFrame, ros::Time(0), from);
 		}
 
 		// calculate relative step and check if it can be performed
 		if (getFootstep(from, *to_planned, step))
 		{
-			step_srv.request.step = step;
+		    // TODO: really necessary since thread continues till interruption
+		    // point anyway?!
+		    boost::mutex::scoped_lock lock(ivExecutionLock);
+            step_srv.request.step = step;
 			ivFootstepSrv.call(step_srv);
 		}
 		// ..if it cannot be performed initialize replanning
@@ -426,7 +434,7 @@ void
 FootstepNavigation::goalPoseCallback(
   const geometry_msgs::PoseStampedConstPtr& goal_pose)
 {
-	// check if the execution is locked
+  // check if the execution is locked
   if (ivExecutingFootsteps)
   {
     ROS_INFO("Already performing a navigation task. Wait until it is "
@@ -450,7 +458,7 @@ void
 FootstepNavigation::robotPoseCallback(
   const geometry_msgs::PoseWithCovarianceStampedConstPtr& robot_pose)
 {
-	boost::mutex::scoped_lock lock(ivRobotPoseUpdate);
+	boost::mutex::scoped_lock lock(ivExecutionLock);
 	ivLastRobotTime = robot_pose->header.stamp;
 }
 
@@ -462,10 +470,16 @@ FootstepNavigation::mapCallback(
   // stop execution if an execution was performed
   if (ivExecutingFootsteps)
   {
-  	if (ivSafeExecution)
-  		ivFootstepExecutionThreadPtr->interrupt();
-  	else
+    if (ivSafeExecution)
+    {
+      // interrupt the thread and wait until it has finished its execution
+  	  ivFootstepExecutionPtr->interrupt();
+      ivFootstepExecutionPtr->join();
+    }
+    else
+    {
   		ivFootstepsExecution.cancelAllGoals();
+    }
   }
 
   gridmap_2d::GridMap2DPtr map(new gridmap_2d::GridMap2D(occupancy_map));
@@ -487,8 +501,7 @@ FootstepNavigation::mapCallback(
 
 
 bool
-FootstepNavigation::setGoal(
-  const geometry_msgs::PoseStampedConstPtr& goal_pose)
+FootstepNavigation::setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose)
 {
   return setGoal(goal_pose->pose.position.x,
                  goal_pose->pose.position.y,
@@ -508,12 +521,10 @@ FootstepNavigation::updateStart()
 {
   tf::Transform foot_left, foot_right;
   {
-    boost::mutex::scoped_lock lock(ivRobotPoseUpdate);
+    boost::mutex::scoped_lock lock(ivExecutionLock);
     // get real placement of the feet
-    getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
-                     foot_left);
-    getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time::now(),
-                     foot_right);
+    getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time(0), foot_left);
+    getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time(0), foot_right);
   }
   State left(foot_left.getOrigin().x(), foot_left.getOrigin().y(),
   		       tf::getYaw(foot_left.getRotation()), LEFT);
@@ -563,57 +574,55 @@ FootstepNavigation::getFootstep(const tf::Pose& from, const State& to,
 
 bool
 FootstepNavigation::getFootstepsFromPath(
-		const State& current_support_leg, int starting_step_num,
-		std::vector<humanoid_nav_msgs::StepTarget>& footsteps)
+    const State& current_support_leg, int starting_step_num,
+    std::vector<humanoid_nav_msgs::StepTarget>& footsteps)
 {
-	humanoid_nav_msgs::StepTarget footstep;
+  humanoid_nav_msgs::StepTarget footstep;
 
-	state_iter_t current = ivPlanner.getPathBegin() + starting_step_num;
-	tf::Pose last(
-        tf::createQuaternionFromYaw(current_support_leg.getTheta()),
-        tf::Point(
-          current_support_leg.getX(), current_support_leg.getY(), 0.0));
-	for (; current != ivPlanner.getPathEnd(); current++)
-	{
-		if (getFootstep(last, *current, footstep))
-		{
-	    footsteps.push_back(footstep);
-		}
-		else
-		{
-    	ROS_ERROR("Calculated path cannot be performed!");
-			return false;
-		}
+  state_iter_t current = ivPlanner.getPathBegin() + starting_step_num;
+  tf::Pose last(tf::createQuaternionFromYaw(current_support_leg.getTheta()),
+                tf::Point(current_support_leg.getX(), current_support_leg.getY(),
+                          0.0));
+  for (; current != ivPlanner.getPathEnd(); current++)
+  {
+    if (getFootstep(last, *current, footstep))
+    {
+      footsteps.push_back(footstep);
+    }
+    else
+    {
+      ROS_ERROR("Calculated path cannot be performed!");
+      return false;
+    }
 
-		last = tf::Pose(tf::createQuaternionFromYaw(current->getTheta()),
+    last = tf::Pose(tf::createQuaternionFromYaw(current->getTheta()),
                     tf::Point(current->getX(), current->getY(), 0.0));
-	}
+  }
 
-	return true;
+  return true;
 }
 
 
 void
 FootstepNavigation::getFootTransform(
   const std::string& foot_id, const std::string& world_frame_id,
-	const ros::Time& time, tf::Transform& foot)
+  const ros::Time& time, tf::Transform& foot)
 {
-	tf::StampedTransform stamped_foot_transform;
-	try
-	{
-  	ivTransformListener.waitForTransform(world_frame_id, foot_id, time,
-  	                                     ros::Duration(0.1));
-  	ivTransformListener.lookupTransform(world_frame_id, foot_id,
-  	                                    ros::Time(0),
-  	                                    stamped_foot_transform);
-	}
-	catch (const tf::TransformException& e)
-	{
-		ROS_WARN("Failed to obtain FootTransform from tf (%s)", e.what());
-	}
+  tf::StampedTransform stamped_foot_transform;
+  try
+  {
+    ivTransformListener.waitForTransform(world_frame_id, foot_id, time,
+                                         ros::Duration(0.1));
+    ivTransformListener.lookupTransform(world_frame_id, foot_id, time,
+                                        stamped_foot_transform);
+  }
+  catch (const tf::TransformException& e)
+  {
+    ROS_WARN("Failed to obtain FootTransform from tf (%s)", e.what());
+  }
 
-	foot.setOrigin(stamped_foot_transform.getOrigin());
-	foot.setRotation(stamped_foot_transform.getRotation());
+  foot.setOrigin(stamped_foot_transform.getOrigin());
+  foot.setRotation(stamped_foot_transform.getRotation());
 }
 
 

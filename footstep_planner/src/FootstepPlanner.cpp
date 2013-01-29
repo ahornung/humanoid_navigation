@@ -26,8 +26,10 @@
 
 #include <time.h>
 
+
 using gridmap_2d::GridMap2D;
 using gridmap_2d::GridMap2DPtr;
+
 
 namespace footstep_planner
 {
@@ -70,17 +72,15 @@ FootstepPlanner::FootstepPlanner()
                    std::string("EuclideanHeuristic"));
   nh_private.param("heuristic_scale", heuristic_scale, 1.0);
   nh_private.param("max_hash_size", max_hash_size, 65536);
-  nh_private.param("accuracy/collision_check", ivCollisionCheckAccuracy,
-                   2);
+  nh_private.param("accuracy/collision_check", ivCollisionCheckAccuracy, 2);
   nh_private.param("accuracy/cell_size", ivCellSize, 0.01);
   nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 64);
   nh_private.param("step_cost", step_cost, 0.05);
   nh_private.param("diff_angle_cost", diff_angle_cost, 0.0);
 
-  nh_private.param("planner_type", ivPlannerType,
-                   std::string("ARAPlanner"));
-  nh_private.param("search_until_first_solution",
-                   ivSearchUntilFirstSolution, false);
+  nh_private.param("planner_type", ivPlannerType, std::string("ARAPlanner"));
+  nh_private.param("search_until_first_solution", ivSearchUntilFirstSolution,
+                   false);
   nh_private.param("allocated_time", ivMaxSearchTime, 7.0);
   nh_private.param("forward_search", ivForwardSearch, false);
   nh_private.param("initial_epsilon", ivInitialEpsilon, 3.0);
@@ -95,13 +95,6 @@ FootstepPlanner::FootstepPlanner()
   nh_private.param("foot/separation", ivFootSeparation, 0.1);
   nh_private.param("foot/origin_shift/x", ivOriginFootShiftX, 0.02);
   nh_private.param("foot/origin_shift/y", ivOriginFootShiftY, 0.0);
-  nh_private.param("foot/max/step/x", ivMaxFootstepX, 0.04);
-  nh_private.param("foot/max/step/y", ivMaxFootstepY, 0.04);
-  nh_private.param("foot/max/step/theta", ivMaxFootstepTheta, 0.349);
-  nh_private.param("foot/max/inverse/step/x", ivMaxInvFootstepX, 0.04);
-  nh_private.param("foot/max/inverse/step/y", ivMaxInvFootstepY, 0.01);
-  nh_private.param("foot/max/inverse/step/theta", ivMaxInvFootstepTheta,
-                   0.05);
 
   // for heuristic inflation
   double foot_incircle = std::min(
@@ -181,18 +174,65 @@ FootstepPlanner::FootstepPlanner()
     h.reset(new PathCostHeuristic(ivCellSize, ivNumAngleBins, step_cost,
                                   diff_angle_cost, max_step_width,
                                   foot_incircle));
-    ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance "
-        "with step costs");
+    ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance with step "
+             "costs");
     // keep a local ptr for visualization
     ivPathCostHeuristicPtr = boost::dynamic_pointer_cast<
         PathCostHeuristic>(h);
   }
   else
   {
-    ROS_ERROR_STREAM("Heuristic " << heuristic_type << " not available,"
-                     " exiting.");
+    ROS_ERROR_STREAM("Heuristic " << heuristic_type << " not available, "
+                     "exiting.");
     exit(1);
   }
+
+  // create the polygon that defines the executable range of a single step
+  // this range is valid for all thetas in [-0.3, 0.3]
+  std::vector<std::pair<int, int> > step_range;
+  int x = disc_val(0.0, ivCellSize);
+  int y = disc_val(0.15, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.01, ivCellSize);
+  y = disc_val(0.15, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.02, ivCellSize);
+  y = disc_val(0.15, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.03, ivCellSize);
+  y = disc_val(0.14, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.05, ivCellSize);
+  y = disc_val(0.13, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.06, ivCellSize);
+  y = disc_val(0.13, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.07, ivCellSize);
+  y = disc_val(0.12, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(0.07, ivCellSize);
+  y = disc_val(0.09, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(-0.03, ivCellSize);
+  y = disc_val(0.09, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(-0.03, ivCellSize);
+  y = disc_val(0.13, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(-0.02, ivCellSize);
+  y = disc_val(0.14, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(-0.02, ivCellSize);
+  y = disc_val(0.14, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  x = disc_val(-0.01, ivCellSize);
+  y = disc_val(0.15, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
+  // first point has to be included at the end of the list again
+  x = disc_val(0.0, ivCellSize);
+  y = disc_val(0.15, ivCellSize);
+  step_range.push_back(std::pair<int, int>(x, y));
 
   // initialize the planner environment
   ivPlannerEnvironmentPtr.reset(
@@ -202,12 +242,13 @@ FootstepPlanner::FootstepPlanner()
                                      ivFootsizeY,
                                      ivOriginFootShiftX,
                                      ivOriginFootShiftY,
-                                     ivMaxFootstepX,
-                                     ivMaxFootstepY,
-                                     ivMaxFootstepTheta,
-                                     ivMaxInvFootstepX,
-                                     ivMaxInvFootstepY,
-                                     ivMaxInvFootstepTheta,
+                                     0.07,
+                                     0.15,
+                                     0.3,
+                                     -0.3,
+                                     0.09,
+                                     0.0,
+                                     step_range,
                                      step_cost,
                                      ivCollisionCheckAccuracy,
                                      max_hash_size,
@@ -252,14 +293,19 @@ void
 FootstepPlanner::setPlanner()
 {
   if (ivPlannerType == "ARAPlanner")
-    ivPlannerPtr.reset(new ARAPlanner(ivPlannerEnvironmentPtr.get(),
-                                      ivForwardSearch));
+  {
+    ivPlannerPtr.reset(
+      new ARAPlanner(ivPlannerEnvironmentPtr.get(), ivForwardSearch));
+  }
   else if (ivPlannerType == "ADPlanner")
-    ivPlannerPtr.reset(new ADPlanner(ivPlannerEnvironmentPtr.get(),
-                                     ivForwardSearch));
-  else if (ivPlannerType == "RSTARPlanner"){
-    RSTARPlanner* p = new RSTARPlanner(ivPlannerEnvironmentPtr.get(),
-                                       ivForwardSearch);
+  {
+    ivPlannerPtr.reset(
+      new ADPlanner(ivPlannerEnvironmentPtr.get(), ivForwardSearch));
+  }
+  else if (ivPlannerType == "RSTARPlanner")
+  {
+    RSTARPlanner* p =
+      new RSTARPlanner(ivPlannerEnvironmentPtr.get(), ivForwardSearch);
     // new options, require patched SBPL
     //          p->set_local_expand_thres(500);
     //          p->set_eps_step(1.0);

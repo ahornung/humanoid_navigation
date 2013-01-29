@@ -274,8 +274,6 @@ protected:
   double ivOriginFootShiftX, ivOriginFootShiftY;
   double ivFootSeparation;
   double ivFootsizeX, ivFootsizeY, ivFootsizeZ;
-  double ivMaxFootstepX, ivMaxFootstepY, ivMaxFootstepTheta;
-  double ivMaxInvFootstepX, ivMaxInvFootstepY, ivMaxInvFootstepTheta;
   double ivMaxStepWidth;
   int    ivCollisionCheckAccuracy;
 

@@ -112,6 +112,7 @@ public:
       double max_inverse_footstep_x,
       double max_inverse_footstep_y,
       double max_inverse_footstep_theta,
+      const std::vector<std::pair<int, int> >& step_range,
       double step_cost,
       int    collision_check_accuracy,
       int    hash_table_size,
@@ -327,6 +328,15 @@ protected:
    */
   bool closeToStart(const PlanningState& from);
 
+  /**
+   * @brief Crossing number method to determine whether a point lies within a
+   * polygon or not.
+   *
+   * Check http://geomalgorithms.com/a03-_inclusion.html for further details.
+   */
+  bool pointWithinPolygon(const std::pair<int, int>& point,
+                          const std::vector<std::pair<int, int> >& edges);
+
   /// < operator for planning states.
   struct less
   {
@@ -434,6 +444,8 @@ protected:
   exp_states_2d_t ivExpandedStates;
   exp_states_t ivRandomStates;  ///< random intermediate states for R*
   size_t ivNumExpandedStates;
+
+  bool* ivStepRange;
 };
 }
 

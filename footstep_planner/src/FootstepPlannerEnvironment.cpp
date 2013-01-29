@@ -39,6 +39,7 @@ FootstepPlannerEnvironment::FootstepPlannerEnvironment(
     double max_inverse_footstep_x,
     double max_inverse_footstep_y,
     double max_inverse_footstep_theta,
+    const std::vector<std::pair<int, int> >& step_range,
     double step_cost,
     int    collision_check_accuracy,
     int    hash_table_size,
@@ -88,6 +89,18 @@ FootstepPlannerEnvironment::FootstepPlannerEnvironment(
     ivMaxFootstepTheta -= ivNumAngleBins;
   if (ivMaxInvFootstepTheta >= num_angle_bins_half)
     ivMaxInvFootstepTheta -= ivNumAngleBins;
+
+  int num_x = ivMaxFootstepX - ivMaxInvFootstepX + 1;
+  ivStepRange = new bool[num_x * (ivMaxFootstepY - ivMaxInvFootstepY + 1)];
+
+  for (int j = ivMaxInvFootstepY; j <= ivMaxFootstepY; ++j)
+  {
+    for (int i = ivMaxInvFootstepX; i <= ivMaxFootstepX; ++i)
+    {
+      ivStepRange[(j - ivMaxInvFootstepY) * num_x + (i - ivMaxInvFootstepX)] =
+          pointWithinPolygon(std::pair<int, int>(i, j), step_range);
+    }
+  }
 }
 
 
@@ -99,6 +112,8 @@ FootstepPlannerEnvironment::~FootstepPlannerEnvironment()
     delete[] ivpStateHash2State;
     ivpStateHash2State = NULL;
   }
+
+  delete[] ivStepRange;
 }
 
 
@@ -503,13 +518,19 @@ FootstepPlannerEnvironment::reachable(const PlanningState& from,
     footstep_theta = -footstep_theta;
   }
 
-  return (footstep_x <= ivMaxFootstepX &&
-          footstep_x >= ivMaxInvFootstepX &&
-          footstep_y <= ivMaxFootstepY &&
-          footstep_y >= ivMaxInvFootstepY &&
-          footstep_theta <= ivMaxFootstepTheta &&
-          footstep_theta >= ivMaxInvFootstepTheta);
-
+  // check if footstep_x is not within the executable range
+  if (footstep_x > ivMaxFootstepX || footstep_x < ivMaxInvFootstepX)
+      return false;
+  // check if footstep_y is not within the executable range
+  if (footstep_y > ivMaxFootstepY || footstep_y < ivMaxInvFootstepY)
+      return false;
+  // check if footstep_theta is not within the executable range
+  if (footstep_theta > ivMaxFootstepTheta ||
+      footstep_theta < ivMaxInvFootstepTheta)
+      return false;
+  return ivStepRange[(footstep_y - ivMaxInvFootstepY) *
+                     (ivMaxFootstepX - ivMaxInvFootstepX + 1) +
+                     (footstep_x - ivMaxInvFootstepX)];
 
 //  // get the (continuous) orientation of state 'from'
 //  double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
@@ -1198,6 +1219,33 @@ int
 FootstepPlannerEnvironment::SizeofCreatedEnv()
 {
   return ivStateId2State.size();
+}
+
+
+bool
+FootstepPlannerEnvironment::pointWithinPolygon(
+    const std::pair<int, int>& point,
+    const std::vector<std::pair<int, int> >& edges)
+{
+  int cn = 0;
+
+  // loop through all edges of the polygon
+  for(unsigned int i = 0; i < edges.size() - 1; ++i)
+  {
+    if ((edges[i].second <= point.second && edges[i + 1].second > point.second)
+        ||
+        (edges[i].second > point.second && edges[i + 1].second <= point.second))
+    {
+      float vt = (float)(point.second - edges[i].second) /
+        (edges[i + 1].second - edges[i].second);
+      if (point.first <
+          edges[i].first + vt * (edges[i + 1].first - edges[i].first))
+      {
+        ++cn;
+      }
+    }
+  }
+  return cn & 1;
 }
 
 

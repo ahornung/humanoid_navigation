@@ -32,15 +32,15 @@ num_sensor_beams: 48
 
 # min traversed odometry interval between laser measurements:
 # 
-update_min_trans: 0.2
-update_min_rot: 0.4
+update_min_trans: 0.1
+update_min_rot: 0.5
 
 # laser obs. model (for raycasting only)
 raycasting/z_hit: 0.8
 raycasting/z_short: 0.1
 raycasting/z_max: 0.05
 raycasting/z_rand: 0.05
-raycasting/sigma_hit: 0.05
+raycasting/sigma_hit: 0.02
 raycasting/lambda_short: 0.1
 
 # laser obs.model (for endpoint model only)

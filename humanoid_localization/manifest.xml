@@ -1,10 +1,13 @@
 <package>
   <description brief="6D localization in an OctoMap for humanoid robots">
 
-     6D localization for humanoid robots based on depth data (laser, point clouds).
+     <p>6D localization for humanoid robots based on depth data (laser, point clouds).
      Two observation models are currently available based on OctoMap as 3D map:
-     Ray casting and an end point model (lookup in the distance map).
-
+     Ray casting and an end point model (lookup in the distance map).</p>
+     <p>Details can be found in the publication <br/>
+     <em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
+     by A. Hornung, K.M. Wurm, and M. Bennewitz; published in 
+     IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2010</p>
   </description>
   <author>Armin Hornung, Stefan Osswald, Daniel Maier</author>
   <license>GPL</license>

@@ -38,19 +38,16 @@ RaycastingModel::RaycastingModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel
   nh->param("raycasting/z_short", m_zShort, 0.1);
   nh->param("raycasting/z_max", m_zMax, 0.05);
   nh->param("raycasting/z_rand", m_zRand, 0.05);
-  nh->param("raycasting/sigma_hit", m_sigmaHit, 0.05);
+  nh->param("raycasting/sigma_hit", m_sigmaHit, 0.02);
   nh->param("raycasting/lambda_short", m_lambdaShort, 0.1);
 
-  // TODO: move to main localization code for point cloud handling
-//  nh->param("filter_ground", m_filterPointCloudGround, true);
-//  // distance of points from plane for RANSAC
-//  nh->param("ground_filter/distance", m_groundFilterDistance, 0.04);
-//  // angular derivation of found plane:
-//  nh->param("ground_filter/angle", m_groundFilterAngle, 0.15);
-//  // distance of found plane from z=0 to be detected as ground (e.g. to exclude tables)
-//  nh->param("ground_filter/plane_distance", m_groundFilterPlaneDistance, 0.07);
-//  nh->param("ground_filter/num_ground_points", m_numFloorPoints, 20);
-//  nh->param("ground_filter/num_non_ground_points", m_numNonFloorPoints, 80);
+  if (m_zMax <= 0.0){
+    ROS_ERROR("raycasting/z_max needs to be > 0.0");
+  }
+
+  if (m_zRand <= 0.0){
+    ROS_ERROR("raycasting/z_rand needs to be > 0.0");
+  }
 }
 
 RaycastingModel::~RaycastingModel(){
@@ -58,6 +55,7 @@ RaycastingModel::~RaycastingModel(){
 }
 
 void RaycastingModel::integrateMeasurement(Particles& particles, const PointCloud& pc, const std::vector<float>& ranges, float max_range, const tf::Transform& base_to_laser){
+  assert(pc.size() == ranges.size());
 
   if (!m_map){
     ROS_ERROR("Map file is not set in raycasting");

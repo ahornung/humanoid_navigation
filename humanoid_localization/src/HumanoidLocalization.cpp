@@ -38,7 +38,7 @@ m_nh(),m_privateNh("~"),
 m_odomFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("/map"),
 m_useRaycasting(true), m_initFromTruepose(false), m_numParticles(500),
 m_numSensorBeams(48),
-m_maxOdomInterval(7.0),
+m_sensorSampleDist(0.2),
 m_nEffFactor(1.0), m_minParticleWeight(0.0),
 m_bestParticleIdx(-1), m_lastIMUMsgBuffer(5),
 m_bestParticleAsMean(true),
@@ -47,7 +47,6 @@ m_syncedTruepose(false),
 m_observationThresholdTrans(0.1), m_observationThresholdRot(M_PI/6),
 m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
 m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
-m_translationSinceScan(0.0), m_rotationSinceScan(0.0),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
 m_constrainMotionZ (false), m_constrainMotionRP(false)
@@ -64,7 +63,6 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_privateNh.param("init_global", m_initGlobal, m_initGlobal);
   m_privateNh.param("best_particle_as_mean", m_bestParticleAsMean, m_bestParticleAsMean);
   m_privateNh.param("num_particles", m_numParticles, m_numParticles);
-  m_privateNh.param("max_odom_interval", m_maxOdomInterval, m_maxOdomInterval);
   m_privateNh.param("neff_factor", m_nEffFactor, m_nEffFactor);
   m_privateNh.param("min_particle_weight", m_minParticleWeight, m_minParticleWeight);
 
@@ -85,6 +83,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
 
   // laser observation model parameters:
   m_privateNh.param("num_sensor_beams", m_numSensorBeams, m_numSensorBeams);
+  m_privateNh.param("sensor_sampling_dist", m_sensorSampleDist, m_sensorSampleDist);
   m_privateNh.param("max_range", m_filterMaxRange, 30.0);
   m_privateNh.param("min_range", m_filterMinRange, 0.05);
   ROS_DEBUG("Using a range filter of %f to %f", m_filterMinRange, m_filterMaxRange);
@@ -159,7 +158,8 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_pauseLocSrv = m_privateNh.advertiseService("pause_localization_srv", &HumanoidLocalization::pauseLocalizationSrvCallback, this);
   m_resumeLocSrv = m_privateNh.advertiseService("resume_localization_srv", &HumanoidLocalization::resumeLocalizationSrvCallback, this);
 
-  m_imuSub = m_nh.subscribe("imu", 5, &HumanoidLocalization::imuCallback, this);
+  if (m_useIMU)
+    m_imuSub = m_nh.subscribe("imu", 5, &HumanoidLocalization::imuCallback, this);
 
   ROS_INFO("NaoLocalization initialized with %d particles.", m_numParticles);
 }
@@ -239,7 +239,7 @@ void HumanoidLocalization::reset(){
 
         // Get latest roll and pitch
         if(!m_lastIMUMsgBuffer.empty()) {
-          getRPY(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
+          getRP(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
         } else {
           ROS_WARN("Could not determine current roll and pitch, falling back to init_pose_{roll,pitch}");
           roll = m_initPose(3);
@@ -297,11 +297,9 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
     return;
 
-  // relative odom transform to last odomPose
-  tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
 
   bool sensor_integrated = false;
-  if (!m_paused && (!m_receivedSensorData || isAboveMotionThreshold(odomTransform))) {
+  if (!m_paused && (!m_receivedSensorData || isAboveMotionThreshold(odomPose))) {
     
     // convert laser to point cloud first:
     PointCloud pc_filtered;
@@ -309,9 +307,12 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
     prepareLaserPointCloud(msg, pc_filtered, laserRangesSparse);
     
     sensor_integrated = localizeWithMeasurement(pc_filtered, laserRangesSparse, msg->range_max);
+    m_lastLocalizedPose = odomPose;
     
   } else{ // no observation necessary: propagate particles forward by full interval
 
+    // relative odom transform to last odomPose
+    tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
     m_motionModel->applyOdomTransform(m_particles, odomTransform);
     constrainMotion(odomPose);
   }
@@ -348,23 +349,14 @@ void HumanoidLocalization::constrainMotion(const tf::Pose& odomPose){
   }
 }
 
-bool HumanoidLocalization::isAboveMotionThreshold(const tf::Transform& odomTransform){
-  float length = odomTransform.getOrigin().length();
-  if (length > 0.1){
-    ROS_WARN("Length of odometry change unexpectedly high: %f", length);
-  }
+bool HumanoidLocalization::isAboveMotionThreshold(const tf::Pose& odomPose){
+  tf::Transform odomTransform = m_lastLocalizedPose.inverse() * odomPose;
 
-  m_translationSinceScan += length;
   double yaw, pitch, roll;
   odomTransform.getBasis().getRPY(roll, pitch, yaw);
-  if (std::abs(yaw) > 0.15){
-    ROS_WARN("Yaw of odometry change unexpectedly high: %f", yaw);
-  }
-  m_rotationSinceScan += std::abs(yaw);
 
-
-  return (m_translationSinceScan >= m_observationThresholdTrans
-      || m_rotationSinceScan >= m_observationThresholdRot);
+  return (odomTransform.getOrigin().length() >= m_observationThresholdTrans
+      || std::abs(yaw) >= m_observationThresholdRot);
 }
 
 bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range){
@@ -440,8 +432,6 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   }
 
   m_receivedSensorData = true;
-  m_rotationSinceScan = 0.0;
-  m_translationSinceScan = 0.0;
 
   double dt = (ros::WallTime::now() - startTime).toSec();
   ROS_INFO_STREAM("Observations for "<< m_numParticles << " particles took "
@@ -451,17 +441,15 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
 }
 
 void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const{
-
-  // uniform sampling:
-//  pcl::UniformSampling uniformSampling;
-//  uniformSampling.setRadiusSearch(0.1);
+  unsigned numBeams = laser->ranges.size();
+  // skip every n-th scan:
+  //unsigned step = computeBeamStep(numBeams);
+  // build complete pointcloud:
+  unsigned step = 1;
 
 
 
   // prepare laser message:
-  unsigned numBeams = laser->ranges.size();
-  unsigned step = computeBeamStep(numBeams);
-
   unsigned int numBeamsSkipped = 0;
 
   // range_min of laser is also used to filter out wrong messages:
@@ -493,7 +481,24 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
   pc.height = 1;
   pc.width = pc.points.size();
   pc.is_dense = true;
-  ROS_INFO("%u/%zu laser beams skipped (out of valid range)", numBeamsSkipped, ranges.size());
+
+  // uniform sampling:
+  pcl::UniformSampling<pcl::PointXYZ> uniformSampling;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPtr;
+  cloudPtr.reset(new pcl::PointCloud<pcl::PointXYZ> (pc));
+  uniformSampling.setInputCloud(cloudPtr);
+  uniformSampling.setRadiusSearch(m_sensorSampleDist);
+  pcl::PointCloud<int> sampledIndices;
+  uniformSampling.compute(sampledIndices);
+  pcl::copyPointCloud(*cloudPtr, sampledIndices.points, pc);
+  // adjust "ranges" array to contain the same points:
+  std::vector<float> rangesSparse;
+  rangesSparse.resize(sampledIndices.size());
+  for (size_t i = 0; i < rangesSparse.size(); ++i){
+    rangesSparse[i] = ranges[sampledIndices.points[i]];
+  }
+  ranges = rangesSparse;
+  ROS_INFO("Laser PointCloud subsampled: %zu from %zu (%u out of valid range)", pc.size(), cloudPtr->size(), numBeamsSkipped);
 }
 
 int HumanoidLocalization::filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const{
@@ -757,7 +762,7 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
     double maxRange = 10.0; // TODO #4: What is a maxRange for pointClouds? NaN? maxRange is expected to be a double and integrateMeasurement checks rangesSparse[i] > maxRange
     ROS_DEBUG("Updating Pose Estimate from a PointCloud with %zu points and %zu ranges", pc_filtered.size(), rangesSparse.size());
     sensor_integrated = localizeWithMeasurement(pc_filtered, rangesSparse, maxRange);
-
+    m_lastLocalizedPose = odomPose;
   } else{ // no observation necessary: propagate particles forward by full interval
 
     m_motionModel->applyOdomTransform(m_particles, odomTransform);
@@ -776,6 +781,7 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
 }
 
 void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){
+
   m_lastIMUMsgBuffer.push_back(*msg);
 }
 
@@ -806,8 +812,8 @@ bool HumanoidLocalization::getImuMsg(const ros::Time& stamp, ros::Time& imuStamp
     imuStamp = ros::Time(weightOlder * closestOlder->header.stamp.toSec()
                           + weightNewer * closestNewer->header.stamp.toSec());
     double olderX, olderY, newerX, newerY;
-    getRPY(closestOlder->orientation, olderX, olderY);
-    getRPY(closestNewer->orientation, newerX, newerY);
+    getRP(closestOlder->orientation, olderX, olderY);
+    getRP(closestNewer->orientation, newerX, newerY);
     angleX   = weightOlder * olderX  + weightNewer * newerX;
     angleY   = weightOlder * olderY + weightNewer * newerY;
     ROS_DEBUG("Msg: %.3f, Interpolate [%.3f .. %.3f .. %.3f]\n", stamp.toSec(), closestOlder->header.stamp.toSec(),
@@ -817,7 +823,7 @@ bool HumanoidLocalization::getImuMsg(const ros::Time& stamp, ros::Time& imuStamp
     // Return closer one
     ItT it = (closestOlderStamp < closestNewerStamp) ? closestOlder : closestNewer;
     imuStamp = it->header.stamp;
-    getRPY(it->orientation, angleX, angleY);
+    getRP(it->orientation, angleX, angleY);
     return true;
   } else {
     if(closestOlderStamp < closestNewerStamp)
@@ -885,7 +891,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
           double roll, pitch;
           if(msg->header.stamp.isZero()) {
             // Header stamp is not set (e.g. RViz), use stamp from latest IMU message instead
-            getRPY(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
+            getRP(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
             ok = true;
           } else {
             ros::Time imuStamp;
@@ -967,8 +973,6 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
 
   // reset internal state:
   m_motionModel->reset();
-  m_translationSinceScan = 0.0;
-  m_rotationSinceScan = 0.0;
   m_receivedSensorData = false;
   m_initialized = true;
 
@@ -1102,8 +1106,6 @@ void HumanoidLocalization::initGlobal(){
 
   ROS_INFO("Global localization done");
   m_motionModel->reset();
-  m_translationSinceScan = 0.0;
-  m_rotationSinceScan = 0.0;
   m_receivedSensorData = false;
   m_initialized = true;
 

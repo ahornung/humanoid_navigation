@@ -11,7 +11,7 @@ Best\ Particle.ColorG=0.996078
 Best\ Particle.ColorR=0
 Best\ Particle.Enabled=1
 Best\ Particle.Topic=/nao_localization/best_particle
-Camera\ Config=0.739797 1.96773 5.40118 0.38986 0.972438 0
+Camera\ Config=0.714798 2.24283 1.59394 -0.415507 -0.132562 7.27176e-06
 Camera\ Type=rviz::XYOrbitViewController
 Fixed\ Frame=/map
 Grid.Alpha=0.5
@@ -61,11 +61,9 @@ Laser\ Scan.Topic=/scan
 MarkerArray.Enabled=1
 MarkerArray.Marker\ Array\ Topic=/occupied_cells_vis_array
 MarkerArray.Queue\ Size=100
-MarkerArray.map=1
-Markers.Enabled=1
-Markers.Marker\ Topic=occupied_cells_vis
-Markers.Queue\ Size=100
-Markers.map=1
+MarkerArray2.Enabled=0
+MarkerArray2.Marker\ Array\ Topic=/cortex_marker_array_throttle
+MarkerArray2.Queue\ Size=100
 Odometry.Angle\ Tolerance=0.1
 Odometry.ColorB=0
 Odometry.ColorG=0.1
@@ -101,7 +99,7 @@ PointCloud2..IntensityMin\ ColorR=0
 PointCloud2..IntensityMin\ Intensity=0
 PointCloud2..IntensityUse\ full\ RGB\ spectrum=0
 PointCloud2.Alpha=1
-PointCloud2.Billboard\ Size=0.01
+PointCloud2.Billboard\ Size=0.03
 PointCloud2.Color\ Transformer=FlatColor
 PointCloud2.Decay\ Time=0
 PointCloud2.Enabled=1
@@ -111,8 +109,8 @@ PointCloud2.Selectable=1
 PointCloud2.Style=2
 PointCloud2.Topic=/humanoid_localization/filtered_cloud
 Property\ Grid\ Splitter=771,76
-Property\ Grid\ State=expanded=.Global Options,Robot Model.Enabled,Robot Model.Status,Odometry.Enabled,Markers.Enabled,True Pose.Enabled,Best Particle.Enabled,Particlecloud.Enabled,MarkerArray.Enabled,MarkerArray.Namespaces,PointCloud2.Enabled;splitterratio=0.5
-QMainWindow=000000ff00000000fd00000003000000000000010800000392fc0200000001fb000000100044006900730070006c006100790073010000003000000392000000de01000005000000010000010800000392fc0200000003fb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000000300000010e0000006901000005fb0000000a0056006900650077007301000001410000018d000000ad01000005fb0000001200530065006c0065006300740069006f006e01000002d1000000f10000006901000005000000030000057800000041fc0100000001fb0000000800540069006d0065010000000000000578000001f001000005000003620000039200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+Property\ Grid\ State=expanded=.Global Options,TF.Enabled,TF.Frames,TF.Frames./CameraBottom_frame,TF.Frames./CameraTop_frame,TF.Frames./HeadPitch_link,TF.Frames./HeadYaw_link,TF.Frames./LAnklePitch_link,TF.Frames./LAnkleRoll_link,TF.Frames./LElbowRoll_link,TF.Frames./LElbowYaw_link,TF.Frames./LHipPitch_link,TF.Frames./LHipRoll_link,TF.Frames./LHipYawPitch_link,TF.Frames./LKneePitch_link,TF.Frames./LShoulderPitch_link,TF.Frames./LShoulderRoll_link,TF.Frames./LWristYaw_link,TF.Frames./Laser_frame,TF.Frames./RAnklePitch_link,TF.Frames./RAnkleRoll_link,TF.Frames./RElbowRoll_link,TF.Frames./RElbowYaw_link,TF.Frames./RHipPitch_link,TF.Frames./RHipRoll_link,TF.Frames./RHipYawPitch_link,TF.Frames./RKneePitch_link,TF.Frames./RShoulderPitch_link,TF.Frames./RShoulderRoll_link,TF.Frames./RWristYaw_link,TF.Frames./Torso_link_real,TF.Frames./base_footprint,TF.Frames./base_link,TF.Frames./gaze,TF.Frames./l_ankle,TF.Frames./l_gripper,TF.Frames./l_sole,TF.Frames./l_wrist,TF.Frames./map,TF.Frames./mocap,TF.Frames./nao_antenna2,TF.Frames./odom,TF.Frames./r_ankle,TF.Frames./r_gripper,TF.Frames./r_sole,TF.Frames./r_wrist,TF.Frames./torso,TF.Frames./torso_real,Robot Model.Enabled,Odometry.Enabled,True Pose.Enabled,Best Particle.Enabled,Particlecloud.Enabled,MarkerArray.Enabled,PointCloud2.Enabled,MarkerArray2.Enabled;splitterratio=0.5
+QMainWindow=000000ff00000000fd0000000300000000000001ea00000392fc0200000001fb000000100044006900730070006c006100790073010000003000000392000000de01000005000000010000010800000392fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000030000001360000006901000005fb0000000a00560069006500770073010000016900000174000000ad01000005fb0000001200530065006c0065006300740069006f006e01000002e0000000e20000006901000005000000030000057800000041fc0100000001fb0000000800540069006d0065010000000000000578000001f001000005000002800000039200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
 Robot\ Model.Alpha=1
 Robot\ Model.Collision\ Enabled=0
 Robot\ Model.Enabled=1
@@ -224,13 +222,13 @@ Robot\:\ Robot\ Model\ Link\ torsoAlpha=1
 Robot\:\ Robot\ Model\ Link\ torsoEnabled=1
 Robot\:\ Robot\ Model\ Link\ torsoShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ torsoShow\ Trail=0
-TF.All\ Enabled=1
-TF.Enabled=0
+TF.All\ Enabled=0
+TF.Enabled=1
 TF.Frame\ Timeout=15
 TF.Marker\ Scale=1
 TF.Show\ Arrows=0
 TF.Show\ Axes=1
-TF.Show\ Names=0
+TF.Show\ Names=1
 TF.Update\ Interval=0
 Target\ Frame=<Fixed Frame>
 Tool\ 2D\ Nav\ GoalTopic=goal
@@ -248,11 +246,11 @@ Name=Grid
 ClassName=rviz::AxesDisplay
 Name=Axes
 [Display10]
-ClassName=rviz::MarkerArrayDisplay
-Name=MarkerArray
-[Display11]
 ClassName=rviz::PointCloud2Display
 Name=PointCloud2
+[Display11]
+ClassName=rviz::MarkerArrayDisplay
+Name=MarkerArray2
 [Display2]
 ClassName=rviz::TFDisplay
 Name=TF
@@ -263,22 +261,68 @@ Name=Robot Model
 ClassName=rviz::OdometryDisplay
 Name=Odometry
 [Display5]
-ClassName=rviz::MarkerDisplay
-Name=Markers
-[Display6]
 ClassName=rviz::LaserScanDisplay
 Name=Laser Scan
-[Display7]
+[Display6]
 ClassName=rviz::PoseArrayDisplay
 Name=True Pose
-[Display8]
+[Display7]
 ClassName=rviz::PoseArrayDisplay
 Name=Best Particle
-[Display9]
+[Display8]
 ClassName=rviz::PoseArrayDisplay
 Name=Particlecloud
+[Display9]
+ClassName=rviz::MarkerArrayDisplay
+Name=MarkerArray
+[TF.Frames.]
+CameraBottom_frame.Enabled=0
+CameraTop_frame.Enabled=0
+HeadPitch_link.Enabled=0
+HeadYaw_link.Enabled=0
+LAnklePitch_link.Enabled=0
+LAnkleRoll_link.Enabled=0
+LElbowRoll_link.Enabled=0
+LElbowYaw_link.Enabled=0
+LHipPitch_link.Enabled=0
+LHipRoll_link.Enabled=0
+LHipYawPitch_link.Enabled=0
+LKneePitch_link.Enabled=0
+LShoulderPitch_link.Enabled=0
+LShoulderRoll_link.Enabled=0
+LWristYaw_link.Enabled=0
+Laser_frame.Enabled=0
+RAnklePitch_link.Enabled=0
+RAnkleRoll_link.Enabled=0
+RElbowRoll_link.Enabled=0
+RElbowYaw_link.Enabled=0
+RHipPitch_link.Enabled=0
+RHipRoll_link.Enabled=0
+RHipYawPitch_link.Enabled=0
+RKneePitch_link.Enabled=0
+RShoulderPitch_link.Enabled=0
+RShoulderRoll_link.Enabled=0
+RWristYaw_link.Enabled=0
+Torso_link_real.Enabled=0
+base_footprint.Enabled=0
+base_link.Enabled=0
+gaze.Enabled=0
+l_ankle.Enabled=0
+l_gripper.Enabled=0
+l_sole.Enabled=0
+l_wrist.Enabled=0
+map.Enabled=0
+mocap.Enabled=0
+nao_antenna2.Enabled=0
+odom.Enabled=0
+r_ankle.Enabled=0
+r_gripper.Enabled=0
+r_sole.Enabled=0
+r_wrist.Enabled=0
+torso.Enabled=1
+torso_real.Enabled=1
 [Window]
 Height=1050
 Width=1400
-X=1920
-Y=0
+X=1918
+Y=-23

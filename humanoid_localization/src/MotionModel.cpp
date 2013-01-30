@@ -108,6 +108,7 @@ void MotionModel::reset(){
 }
 
 void MotionModel::applyOdomTransform(Particles& particles, const tf::Transform& odomTransform){
+  // TODO: parallelize!
   for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
     transformPose(it->pose, odomTransform);
   }

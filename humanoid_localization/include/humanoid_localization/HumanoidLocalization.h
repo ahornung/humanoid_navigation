@@ -71,11 +71,14 @@
 
 namespace humanoid_localization{
 
-static inline void getRPY(const geometry_msgs::Quaternion& msg_q, double& roll, double& pitch){
+static inline void getRP(const geometry_msgs::Quaternion& msg_q, double& roll, double& pitch){
   tf::Quaternion bt_q;
   tf::quaternionMsgToTF(msg_q, bt_q);
   double useless_yaw;
   tf::Matrix3x3(bt_q).getRPY(roll, pitch, useless_yaw);
+
+  if (std::abs(useless_yaw) > 0.00001)
+    ROS_WARN("Non-zero yaw in IMU quaterion is ignored");
 }
 
 class HumanoidLocalization {
@@ -178,7 +181,7 @@ protected:
   void prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const;
   int filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const;
   
-  bool isAboveMotionThreshold(const tf::Transform& odomTransform);
+  bool isAboveMotionThreshold(const tf::Pose& odomTransform);
   
   bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);
 
@@ -222,8 +225,8 @@ protected:
   bool m_initFromTruepose;
   int m_numParticles;
   int m_numSensorBeams;
+  double m_sensorSampleDist;
 
-  double m_maxOdomInterval;
   double m_nEffFactor;
   double m_minParticleWeight;
   Vector6d m_initPose;	// fixed init. pose (from params)
@@ -257,10 +260,9 @@ protected:
   ros::Time m_lastPointCloudTime;
 
 
-  /// absolute, summed translation (3D) since last laser integration
-  double m_translationSinceScan;
-  /// absolute, summed yaw angle since last laser integraton
-  double m_rotationSinceScan;
+  /// sensor data last integrated at this odom pose, to check if moved enough since then
+  tf::Pose m_lastLocalizedPose;
+
   /// absolute, summed yaw angle since last measurement integraton
   double m_headYawRotationLastScan;
   /// absolute, summed pitch angle since last measurement integraton

@@ -90,7 +90,9 @@ void RaycastingModel::integrateMeasurement(Particles& particles, const PointClou
 
         // TODO: check first if endpoint is within map?
         octomap::point3d end;
-        if(m_map->castRay(originP,direction, end, true, max_range)){
+        // raycast in OctoMap, we need to cast a little longer than max_range
+        // to correct for particle drifts away from obstacles
+        if(m_map->castRay(originP,direction, end, true, 1.5*max_range)){
           assert(m_map->isNodeOccupied(m_map->search(end)));
           // TODO: use squared distances?
           float raycastRange = (originP - end).norm();

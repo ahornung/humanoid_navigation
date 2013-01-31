@@ -107,11 +107,16 @@ protected:
   /// @brief Starts the execution of the calculated path.
   void startExecution();
 
-  /// @brief Obtains the pose of the robot's foot from tf.
-  void getFootTransform(const std::string& foot_id,
-                const std::string& world_frame_id,
-                const ros::Time& time,
-                tf::Transform& foot);
+  /**
+   * @brief Obtains the pose of the robot's foot from tf.
+   *
+   * @return True if transformation has been received.
+   */
+  bool getFootTransform(const std::string& foot_id,
+                        const std::string& world_frame_id,
+                        const ros::Time& time,
+                        const ros::Duration& waiting_time,
+                        tf::Transform& foot);
 
   /**
    * @brief Calculates the footstep necessary to reach 'to' from within
@@ -119,8 +124,8 @@ protected:
    *
    * @return True if the footstep can be performed by the NAO robot.
    */
-  bool getFootstep(const tf::Pose& from, const State& to,
-               humanoid_nav_msgs::StepTarget& footstep);
+  bool getFootstep(const tf::Pose& from, const State& from_planned,
+		           const State& to, humanoid_nav_msgs::StepTarget& footstep);
 
   /**
    * @brief Extracts the footsteps necessary to perform the calculated
@@ -136,8 +141,8 @@ protected:
    * @return False if an extracted footstep is invalid.
    */
   bool getFootstepsFromPath(
-  const State& current_support_leg, int starting_step_num,
-  std::vector<humanoid_nav_msgs::StepTarget>& footsteps);
+      const State& current_support_leg, int starting_step_num,
+      std::vector<humanoid_nav_msgs::StepTarget>& footsteps);
 
   /// @brief Updates the robot's current pose.
   bool updateStart();

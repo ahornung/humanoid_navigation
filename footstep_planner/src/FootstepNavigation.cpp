@@ -119,6 +119,53 @@ FootstepNavigation::FootstepNavigation()
       exit(2);
     }
   }
+
+  // TODO: read this from config file
+  // create the polygon that defines the executable range of a single step
+  // this range is valid for all thetas in [-0.3, 0.3]
+  float x = 0.0;
+  float y = 0.15;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.01;
+  y = 0.15;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.02;
+  y = 0.15;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.03;
+  y = 0.14;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.05;
+  y = 0.13;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.06;
+  y = 0.13;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.07;
+  y = 0.12;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = 0.07;
+  y = 0.09;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = -0.03;
+  y = 0.09;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = -0.03;
+  y = 0.13;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = -0.02;
+  y = 0.14;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = -0.02;
+  y = 0.14;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  x = -0.01;
+  y = 0.15;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
+  // first point has to be included at the end of the list again
+  x = 0.0;
+  y = 0.15;
+  ivStepRange.push_back(std::pair<float, float>(x, y));
 }
 
 
@@ -153,13 +200,6 @@ FootstepNavigation::replan()
     ROS_ERROR("Start pose not accessible: check your odometry");
     return false;
   }
-
-  // lock the planning (NOTE: do not lock before since
-  // FootstepNavigation::updateStart() locks too)
-  // the lock is freed when this methods returns, i.e. shortly after the
-  // planning is finished (the execution itself is started in a new thread
-  // therefore this method returns before the execution is finished)
-  boost::mutex::scoped_lock lock(ivExecutionLock);
 
   bool path_existed = ivPlanner.pathExists();
 
@@ -244,7 +284,6 @@ FootstepNavigation::executeFootsteps()
     else // support_foot = LLEG
       support_foot_id = ivIdFootLeft;
     {
-      boost::mutex::scoped_lock lock(ivExecutionLock);
       // get real placement of the support foot
       getFootTransform(support_foot_id, ivIdMapFrame, ros::Time(0), from);
     }
@@ -252,9 +291,6 @@ FootstepNavigation::executeFootsteps()
     // calculate relative step and check if it can be performed
     if (getFootstep(from, *to_planned, step))
     {
-      // TODO: really necessary since thread continues till interruption point
-      // anyway?!
-      boost::mutex::scoped_lock lock(ivExecutionLock);
       step_srv.request.step = step;
       ivFootstepSrv.call(step_srv);
     }
@@ -522,10 +558,9 @@ FootstepNavigation::updateStart()
 {
   tf::Transform foot_left, foot_right;
   {
-    boost::mutex::scoped_lock lock(ivExecutionLock);
     // get real placement of the feet
-    getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time(0), foot_left);
-    getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time(0), foot_right);
+    getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(), foot_left);
+    getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time::now(), foot_right);
   }
   State left(foot_left.getOrigin().x(), foot_left.getOrigin().y(),
   		       tf::getYaw(foot_left.getRotation()), LEFT);
@@ -555,6 +590,21 @@ FootstepNavigation::getFootstep(const tf::Pose& from, const State& to,
     footstep.leg = humanoid_nav_msgs::StepTarget::right;
 
   // check if the footstep can be performed by the NAO robot
+
+//  if (performable(footstep))
+//  {
+//    return true;
+//  }
+//  else
+//  {
+//    ROS_ERROR("step (%f, %f, %f, %i)",
+//    		  footstep.pose.x, footstep.pose.y, footstep.pose.theta,
+//    		  footstep.leg);
+//    return false;
+//  }
+
+  // ALTERNATIVE: clip the footstep into the executable range; if nothing was
+  // clipped: perform; if too much was clipped: do not perform
   humanoid_nav_msgs::ClipFootstep footstep_clip;
   footstep_clip.request.step = footstep;
   ivClipFootstepSrv.call(footstep_clip);
@@ -613,7 +663,7 @@ FootstepNavigation::getFootTransform(
   try
   {
     ivTransformListener.waitForTransform(world_frame_id, foot_id, time,
-                                         ros::Duration(0.1));
+                                         ros::Duration(0.2));
     ivTransformListener.lookupTransform(world_frame_id, foot_id, time,
                                         stamped_foot_transform);
   }
@@ -658,5 +708,55 @@ FootstepNavigation::performanceValid(const State& planned,
   return performanceValid(
     planned.getX(), planned.getY(), planned.getTheta(),
     executed.getX(), executed.getY(), executed.getTheta());
+}
+
+
+bool
+FootstepNavigation::performable(const humanoid_nav_msgs::StepTarget& footstep)
+{
+  float step_x = footstep.pose.x;
+  float step_y = footstep.pose.y;
+  float step_theta = footstep.pose.theta;
+
+  if (footstep.leg == humanoid_nav_msgs::StepTarget::right)
+  {
+    step_y = -step_y;
+    step_theta = -step_theta;
+  }
+
+  if (fabs(step_theta - 0.3) < FLOAT_CMP_THR ||
+      fabs(step_theta - 0.0) < FLOAT_CMP_THR)
+  {
+    ROS_ERROR("angle wrong");
+    return false;
+  }
+  return performable(step_x, step_y);
+}
+
+
+bool
+FootstepNavigation::performable(float step_x, float step_y)
+{
+  int cn = 0;
+
+  // loop through all ivStepRange of the polygon
+  for(unsigned int i = 0; i < ivStepRange.size() - 1; ++i)
+  {
+    if ((ivStepRange[i].second <= step_y &&
+    	 ivStepRange[i + 1].second > step_y) ||
+        (ivStepRange[i].second >= step_y &&
+         ivStepRange[i + 1].second < step_y))
+    {
+      float vt = (float)(step_y - ivStepRange[i].second) /
+        (ivStepRange[i + 1].second - ivStepRange[i].second);
+      if (step_x <
+          ivStepRange[i].first + vt *
+            (ivStepRange[i + 1].first - ivStepRange[i].first))
+      {
+        ++cn;
+      }
+    }
+  }
+  return cn & 1;
 }
 }

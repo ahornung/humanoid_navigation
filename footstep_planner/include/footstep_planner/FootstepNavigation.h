@@ -172,6 +172,9 @@ protected:
   void feedbackCallback(
   const humanoid_nav_msgs::ExecFootstepsFeedbackConstPtr& fb);
 
+  bool performable(const humanoid_nav_msgs::StepTarget& footstep);
+  bool performable(float step_x, float step_y);
+
   /**
    * @param footstep The response from the clip footstep service (i.e. it
    * contains the unclipped (calculated) step and the clipped
@@ -187,7 +190,7 @@ protected:
 
   /// @return True if both states are equal upon some accuracy.
   bool performanceValid(float a_x, float a_y, float a_theta,
-                    float b_x, float b_y, float b_theta);
+                        float b_x, float b_y, float b_theta);
 
   FootstepPlanner ivPlanner;
 
@@ -248,6 +251,8 @@ protected:
 
   /// Whether to use the slower but more cautious execution or not.
   bool ivSafeExecution;
+
+  std::vector<std::pair<float, float> > ivStepRange;
 };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

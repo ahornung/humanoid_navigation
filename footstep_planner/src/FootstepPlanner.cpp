@@ -187,6 +187,7 @@ FootstepPlanner::FootstepPlanner()
     exit(1);
   }
 
+  // TODO: read this from config file
   // create the polygon that defines the executable range of a single step
   // this range is valid for all thetas in [-0.3, 0.3]
   std::vector<std::pair<int, int> > step_range;

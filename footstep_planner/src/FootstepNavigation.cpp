@@ -179,6 +179,7 @@ FootstepNavigation::replan()
     }
   }
   // path planning unsuccessful
+  ivExecutingFootsteps = false;
   return false;
 }
 
@@ -203,118 +204,118 @@ FootstepNavigation::startExecution()
 void
 FootstepNavigation::executeFootsteps()
 {
-	if (ivPlanner.getPathSize() <= 1)
-		return;
+  if (ivPlanner.getPathSize() <= 1)
+    return;
 
-	// lock this thread
-	ivExecutingFootsteps = true;
+  // lock this thread
+  ivExecutingFootsteps = true;
 
-	ROS_INFO("Start walking towards the goal.");
+  ROS_INFO("Start walking towards the goal.");
 
-	humanoid_nav_msgs::StepTarget step;
-	humanoid_nav_msgs::StepTargetService step_srv;
+  humanoid_nav_msgs::StepTarget step;
+  humanoid_nav_msgs::StepTargetService step_srv;
 
-	tf::Transform from;
-	std::string support_foot_id;
+  tf::Transform from;
+  std::string support_foot_id;
 
-	// calculate and perform relative footsteps until goal is reached
-	state_iter_t to_planned = ivPlanner.getPathBegin();
-	if (to_planned == ivPlanner.getPathEnd())
-	{
-		ROS_ERROR("No plan available. Return.");
-		return;
-	}
+  // calculate and perform relative footsteps until goal is reached
+  state_iter_t to_planned = ivPlanner.getPathBegin();
+  if (to_planned == ivPlanner.getPathEnd())
+  {
+    ROS_ERROR("No plan available. Return.");
+    return;
+  }
 
-	to_planned++;
-	while (to_planned != ivPlanner.getPathEnd())
-	{
-		try
-		{
-			boost::this_thread::interruption_point();
-		}
-		catch (const boost::thread_interrupted&)
-		{
-		    // leave this thread
-			return;
-		}
+  to_planned++;
+  while (to_planned != ivPlanner.getPathEnd())
+  {
+    try
+    {
+      boost::this_thread::interruption_point();
+    }
+    catch (const boost::thread_interrupted&)
+    {
+      // leave this thread
+      return;
+    }
 
-		if (to_planned->getLeg() == LEFT)
-			support_foot_id = ivIdFootRight;
-		else // support_foot = LLEG
-			support_foot_id = ivIdFootLeft;
-		{
-			boost::mutex::scoped_lock lock(ivExecutionLock);
-			// get real placement of the support foot
-			getFootTransform(support_foot_id, ivIdMapFrame, ros::Time(0), from);
-		}
+    if (to_planned->getLeg() == LEFT)
+      support_foot_id = ivIdFootRight;
+    else // support_foot = LLEG
+      support_foot_id = ivIdFootLeft;
+    {
+      boost::mutex::scoped_lock lock(ivExecutionLock);
+      // get real placement of the support foot
+      getFootTransform(support_foot_id, ivIdMapFrame, ros::Time(0), from);
+    }
 
-		// calculate relative step and check if it can be performed
-		if (getFootstep(from, *to_planned, step))
-		{
-		    // TODO: really necessary since thread continues till interruption
-		    // point anyway?!
-		    boost::mutex::scoped_lock lock(ivExecutionLock);
-            step_srv.request.step = step;
-			ivFootstepSrv.call(step_srv);
-		}
-		// ..if it cannot be performed initialize replanning
-		else
-		{
-			ROS_INFO("Footstep cannot be performed. Replanning necessary");
+    // calculate relative step and check if it can be performed
+    if (getFootstep(from, *to_planned, step))
+    {
+      // TODO: really necessary since thread continues till interruption point
+      // anyway?!
+      boost::mutex::scoped_lock lock(ivExecutionLock);
+      step_srv.request.step = step;
+      ivFootstepSrv.call(step_srv);
+    }
+    // ..if it cannot be performed initialize replanning
+    else
+    {
+      ROS_INFO("Footstep cannot be performed. Replanning necessary");
 
-			replan();
-			// leave the thread
-			return;
-		}
+      replan();
+      // leave the thread
+      return;
+    }
 
-		to_planned++;
-	}
-	ROS_INFO("Succeeded walking to the goal.\n");
+    to_planned++;
+  }
+  ROS_INFO("Succeeded walking to the goal.\n");
 
-	// free the lock
-	ivExecutingFootsteps = false;
+  // free the lock
+  ivExecutingFootsteps = false;
 }
 
 
 void
 FootstepNavigation::executeFootstepsFast()
 {
-	if (ivPlanner.getPathSize() <= 1)
-		return;
+  if (ivPlanner.getPathSize() <= 1)
+	return;
 
   // lock the planning and execution process
   ivExecutingFootsteps = true;
 
-	// make sure the action client is connected to the action server
-	ivFootstepsExecution.waitForServer();
+  // make sure the action client is connected to the action server
+  ivFootstepsExecution.waitForServer();
 
-	humanoid_nav_msgs::ExecFootstepsGoal goal;
-	State support_leg;
-	if (ivPlanner.getPathBegin()->getLeg() == RIGHT)
-		support_leg = ivPlanner.getStartFootRight();
-	else // leg == LEFT
-		support_leg = ivPlanner.getStartFootLeft();
-	if (getFootstepsFromPath(support_leg, 1, goal.footsteps))
-	{
-	goal.feedback_frequency = ivFeedbackFrequency;
-	ivControlStepIdx = 0;
-	ivResetStepIdx = 0;
+  humanoid_nav_msgs::ExecFootstepsGoal goal;
+  State support_leg;
+  if (ivPlanner.getPathBegin()->getLeg() == RIGHT)
+    support_leg = ivPlanner.getStartFootRight();
+  else // leg == LEFT
+    support_leg = ivPlanner.getStartFootLeft();
+  if (getFootstepsFromPath(support_leg, 1, goal.footsteps))
+  {
+    goal.feedback_frequency = ivFeedbackFrequency;
+    ivControlStepIdx = 0;
+    ivResetStepIdx = 0;
 
-	// start the execution via action; _1, _2 are place holders for
-	// function arguments (see boost doc)
-	ivFootstepsExecution.sendGoal(
-		goal,
-		boost::bind(&FootstepNavigation::doneCallback, this, _1, _2),
-		boost::bind(&FootstepNavigation::activeCallback, this),
-		boost::bind(&FootstepNavigation::feedbackCallback, this, _1));
-	}
-	else
-	{
+    // start the execution via action; _1, _2 are place holders for
+    // function arguments (see boost doc)
+    ivFootstepsExecution.sendGoal(
+      goal,
+      boost::bind(&FootstepNavigation::doneCallback, this, _1, _2),
+      boost::bind(&FootstepNavigation::activeCallback, this),
+      boost::bind(&FootstepNavigation::feedbackCallback, this, _1));
+  }
+  else
+  {
     // free the lock
     ivExecutingFootsteps = false;
 
     replan();
-	}
+  }
 }
 
 
@@ -369,7 +370,7 @@ FootstepNavigation::feedbackCallback(
     foot_id = ivIdFootRight;
   else
     foot_id = ivIdFootLeft;
-  getFootTransform(foot_id, ivIdMapFrame, ros::Time::now(), executed_tf);
+  getFootTransform(foot_id, ivIdMapFrame, ros::Time(0), executed_tf);
   State executed(executed_tf.getOrigin().x(), executed_tf.getOrigin().y(),
                  tf::getYaw(executed_tf.getRotation()), planned.getLeg());
 

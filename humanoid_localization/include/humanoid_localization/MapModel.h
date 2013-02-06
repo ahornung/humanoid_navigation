@@ -28,6 +28,7 @@
 #include <ros/ros.h>
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/GetOctomap.h>
+#include <octomap_ros/conversions.h>
 
 #include <humanoid_localization/humanoid_localization_defs.h>
 
@@ -56,6 +57,7 @@ public:
   /// "false" if the coordinate does not exist in the map (e.g. out of bounds).
   virtual bool isOccupied(const octomap::point3d& position) const;
   virtual bool isOccupied(octomap::OcTreeNode* node) const = 0;
+  virtual double getFloorHeight(const tf::Transform& pose) const = 0;
 
   /**
    * Get a list of valid z values at a given xy-position
@@ -86,6 +88,7 @@ public:
   virtual ~DistanceMap();
 
   virtual bool isOccupied(octomap::OcTreeNode* node) const;
+  virtual double getFloorHeight(const tf::Transform& pose) const;
 
 };
 
@@ -96,6 +99,7 @@ public:
   virtual ~OccupancyMap();
 
   virtual bool isOccupied(octomap::OcTreeNode* node) const;
+  virtual double getFloorHeight(const tf::Transform& pose) const;
 };
 
 }

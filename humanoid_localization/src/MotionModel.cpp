@@ -39,8 +39,6 @@ MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformL
 {
 
   // motion model noise parameters:
-  // covariance matrix, contains squared std.devs on diagonal
-  Matrix6f motionNoise = Matrix6f::Zero();
   double xx, yy, zz, RR, PP, YY;
   nh->param("motion_noise/x", xx, 0.01);
   nh->param("motion_noise/y", yy, 0.01);
@@ -56,6 +54,8 @@ MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformL
   m_motionNoise(5) = YY; // yaw
 
   // not used right now:
+// covariance matrix, contains squared std.devs on diagonal
+//  Matrix6f motionNoise = Matrix6f::Zero();
 //  motionNoise.diagonal() = m_motionNoise.cwiseProduct( m_motionNoise);
 
 //  if (motionNoise.isZero()){
@@ -74,24 +74,9 @@ MotionModel::~MotionModel() {
 
 void MotionModel::transformPose(tf::Pose& particlePose, const tf::Transform& odomTransform){
 
-  // about ~ 0.01 / 0.02 m
-  double dTrans = odomTransform.getOrigin().length();
-
-  // TODO: this needs to be single-thread (critical, rng access)
-  // the rest could be parallelized?
-  Vector6f poseNoise = m_motionNoise;
-  for (unsigned i = 0; i < 6; ++i){
-    poseNoise(i) *= dTrans * m_rngNormal();
-  }
-
-  //Vector6f poseCovNoise = m_motionNoiseL * poseNoise;
-
-
-  tf::Transform odomTransformNoise(tf::createQuaternionFromRPY(poseNoise(3), poseNoise(4),poseNoise(5)),
-                                   tf::Vector3(poseNoise(0), poseNoise(1), poseNoise(2)));
 
   // apply transform to particle:
-  particlePose *= odomTransform * odomTransformNoise;
+  particlePose *= odomTransform * odomTransformNoise(odomTransform);
 
   // HACK for testing: fix roll & pitch at 0:
 //  	double roll, pitch, yaw;
@@ -103,18 +88,32 @@ void MotionModel::transformPose(tf::Pose& particlePose, const tf::Transform& odo
 
 }
 
+tf::Transform MotionModel::odomTransformNoise(const tf::Transform& odomTransform){
+  // absolute amount of translation, used to scale odom noise:
+  // (about 1-2cm for each update step)
+  const double d = odomTransform.getOrigin().length();
+  return tf::Transform(tf::createQuaternionFromRPY(
+        d * m_motionNoise(3) * m_rngNormal(),
+        d * m_motionNoise(4) * m_rngNormal(),
+        d * m_motionNoise(5) * m_rngNormal()),
+      tf::Vector3(
+        d * m_motionNoise(0) * m_rngNormal(),
+        d * m_motionNoise(1) * m_rngNormal(),
+        d * m_motionNoise(2) * m_rngNormal()));
+}
+
 void MotionModel::reset(){
   m_firstOdometryReceived = false;
 }
 
 void MotionModel::applyOdomTransform(Particles& particles, const tf::Transform& odomTransform){
-  // TODO: parallelize!
-  for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
-    transformPose(it->pose, odomTransform);
+  for (unsigned i=0; i < particles.size(); ++i){
+    transformPose(particles[i].pose, odomTransform);
   }
 }
 
 bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Time& t, double dt){
+  ros::WallTime startTime = ros::WallTime::now();
 
   // first see if default time is available
   tf::Transform odomTransform;
@@ -128,22 +127,25 @@ bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Tim
   m_tfListener->getLatestCommonTime(m_odomFrameId, m_baseFrameId, maxTime, &errorString);
   ros::Duration maxDuration = maxTime - t;
 
-  for(Particles::iterator it = particles.begin(); it != particles.end(); ++it){
+  for (unsigned i=0; i < particles.size(); ++i){
     if (dt > 0.0){
       ros::Duration duration(m_rngUniform()*dt -dt/2.0);
       // TODO: time t is time of first measurement in scan!
       if (duration > maxDuration)
         duration = maxDuration;
       if (lookupOdomTransform(t + duration, timeSampledTransform))
-        transformPose(it->pose, timeSampledTransform);
+        transformPose(particles[i].pose, timeSampledTransform);
       else{
         ROS_WARN("Could not lookup temporal odomTransform");
-        transformPose(it->pose, odomTransform);
+        transformPose(particles[i].pose, odomTransform);
       }
     } else{
-      transformPose(it->pose, odomTransform);
+      transformPose(particles[i].pose, odomTransform);
     }
   }
+
+  double dwalltime = (ros::WallTime::now() - startTime).toSec();
+  ROS_INFO_STREAM("OdomTransformTemporal took " << dwalltime << "s ");
 
 
   return true;

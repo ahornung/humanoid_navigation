@@ -75,7 +75,8 @@ void MapModel::verifyPoses(Particles& particles){
   for (unsigned i = 0; i < particles.size(); ++i){
 
     octomap::point3d position(particles[i].pose.getOrigin().getX(),
-                              particles[i].pose.getOrigin().getY(), particles[i].pose.getOrigin().getZ());
+                              particles[i].pose.getOrigin().getY(),
+                              particles[i].pose.getOrigin().getZ());
 
     // see if outside of map bounds:
     if (position(0) < minX || position(0) > maxX
@@ -93,10 +94,10 @@ void MapModel::verifyPoses(Particles& particles){
 #pragma omp atomic
         numWall++;
       } else {
-        // see if current pose is a valid walking pose:
-        // TODO: need to check height over floor!
+        // see if current pose is has a valid walking height:
         if (m_motionRangeZ >= 0.0 &&
-            std::abs(particles[i].pose.getOrigin().getZ() - m_motionMeanZ) > m_motionRangeZ)
+            (std::abs(particles[i].pose.getOrigin().getZ() - getFloorHeight(particles[i].pose) - m_motionMeanZ)
+              > m_motionRangeZ))
         {
           particles[i].weight = minWeight;
 #pragma omp atomic
@@ -242,6 +243,13 @@ bool DistanceMap::isOccupied(octomap::OcTreeNode* node) const{
     return false;
 }
 
+double DistanceMap::getFloorHeight(const tf::Transform& pose) const{
+  // TODO:
+  ROS_ERROR("DistanceMap::getFloorHeight not implemented yet!");
+
+  return 0.0;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // Occupancy Map (Raycasting)
 ///////////////////////////////////////////////////////////////////////
@@ -278,6 +286,19 @@ OccupancyMap::~OccupancyMap(){
 
 bool OccupancyMap::isOccupied(octomap::OcTreeNode* node) const{
   return m_map->isNodeOccupied(node);
+}
+
+
+double OccupancyMap::getFloorHeight(const tf::Transform& pose)const {
+  octomap::point3d end;
+  if (m_map->castRay(octomap::pointTfToOctomap(pose.getOrigin()), octomap::point3d(0.0, 0.0, -1.0), end, false)){
+    // add resolution/2 so height is above voxel boundary:
+    return end.z()+m_map->getResolution()/2.0;
+  } else {
+    ROS_WARN("getFloorHeight raycast did not succeed, using 0.0");
+    return 0.0;
+  }
+
 }
 
 }

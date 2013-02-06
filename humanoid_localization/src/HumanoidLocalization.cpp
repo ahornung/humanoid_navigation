@@ -336,8 +336,8 @@ void HumanoidLocalization::constrainMotion(const tf::Pose& odomPose){
   for (unsigned i=0; i < m_particles.size(); ++i){
     if (m_constrainMotionZ){
       tf::Vector3 pos = m_particles[i].pose.getOrigin();
-      // TODO: check height in map model, add offset
-      pos.setZ(z);
+      double floor_z = m_mapModel->getFloorHeight(m_particles[i].pose);
+      pos.setZ(z+floor_z);
       m_particles[i].pose.setOrigin(pos);
     }
 
@@ -381,34 +381,36 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
 //### Particles in log-form from here...
   toLogForm();
 
-  // integrated pose (z, roll, pitch) meas. only if data OK:
-  bool imuMsgOk = false;
-  double angleX, angleY;
-  if(m_useIMU) {
-    ros::Time imuStamp;
-    imuMsgOk = getImuMsg(t, imuStamp, angleX, angleY);
-  } else {
-    tf::Stamped<tf::Pose> lastOdomPose;
-    if(m_motionModel->lookupOdomPose(t, lastOdomPose)) {
-      double dropyaw;
-      lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
-      imuMsgOk = true;
-    }
-  }
-
-  tf::StampedTransform footprintToTorso;
-  if(imuMsgOk) {
-    if (!m_motionModel->lookupLocalTransform(m_baseFootprintId, t, footprintToTorso)) {
-      ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
+  // skip pose integration if z, roll and pitch constrained to floor by odometry
+  if (!(m_constrainMotionRP && m_constrainMotionZ)){
+    bool imuMsgOk = false;
+    double angleX, angleY;
+    if(m_useIMU) {
+      ros::Time imuStamp;
+      imuMsgOk = getImuMsg(t, imuStamp, angleX, angleY);
     } else {
-      m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, footprintToTorso);
+      tf::Stamped<tf::Pose> lastOdomPose;
+      if(m_motionModel->lookupOdomPose(t, lastOdomPose)) {
+        double dropyaw;
+        lastOdomPose.getBasis().getRPY(angleX, angleY, dropyaw);
+        imuMsgOk = true;
+      }
     }
-  } else {
-    ROS_WARN("Could not obtain roll and pitch measurement, skipping Pose integration");
+
+    tf::StampedTransform footprintToTorso;
+    // integrated pose (z, roll, pitch) meas. only if data OK:
+    if(imuMsgOk) {
+      if (!m_motionModel->lookupLocalTransform(m_baseFootprintId, t, footprintToTorso)) {
+        ROS_WARN("Could not obtain pose height in localization, skipping Pose integration");
+      } else {
+        m_observationModel->integratePoseMeasurement(m_particles, angleX, angleY, footprintToTorso);
+      }
+    } else {
+      ROS_WARN("Could not obtain roll and pitch measurement, skipping Pose integration");
+    }
   }
 
   m_filteredPointCloudPub.publish(pc_filtered);
-
   m_observationModel->integrateMeasurement(m_particles, pc_filtered, ranges, max_range, torsoToSensor);
 
   // TODO: verify poses before measurements, ignore particles then
@@ -1091,7 +1093,7 @@ void HumanoidLocalization::resample(unsigned numParticles){
   m_particles.resize(numParticles);
   m_poseArray.poses.resize(numParticles);
   double newWeight = 1.0/numParticles;
-
+#pragma omp parallel for
   for (unsigned i = 0; i < numParticles; ++i){
     m_particles[i].pose = oldParticles[indices[i]].pose;
     m_particles[i].weight = newWeight;
@@ -1124,6 +1126,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   if (m_poseArray.poses.size() != m_particles.size())
     m_poseArray.poses.resize(m_particles.size());
 
+#pragma omp parallel for
   for (unsigned i = 0; i < m_particles.size(); ++i){
     tf::poseTFToMsg(m_particles[i].pose, m_poseArray.poses[i]);
   }

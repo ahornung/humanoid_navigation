@@ -77,6 +77,10 @@ protected:
   /// Transform a particle's pose with the relative odomTransform with added random noise
   void transformPose(tf::Pose& particlePose, const tf::Transform& odomTransform);
 
+  /// Generates motion noise corresponding to odomTransform
+  /// May not be called in parallel, accesses the random generator m_rngNormal
+  tf::Transform odomTransformNoise(const tf::Transform& odomTransform);
+
   tf::TransformListener* m_tfListener;
 
   NormalGeneratorT m_rngNormal; // standard normal-distributed noise

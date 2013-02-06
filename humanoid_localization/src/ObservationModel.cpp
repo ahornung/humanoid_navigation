@@ -54,6 +54,7 @@ ObservationModel::~ObservationModel() {
 }
 
 void ObservationModel::integratePoseMeasurement(Particles& particles, double poseRoll, double posePitch, const tf::StampedTransform& footprintToTorso){
+  // TODO: move to HumanoidLocalization, skip individual parts if z/rp constrained
   double poseHeight = footprintToTorso.getOrigin().getZ();
   ROS_DEBUG("Pose measurement z=%f R=%f P=%f", poseHeight, poseRoll, posePitch);
   // TODO cluster xy of particles => speedup

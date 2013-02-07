@@ -54,8 +54,8 @@ FootstepNavigation::FootstepNavigation()
     "goal", 1, &FootstepNavigation::goalPoseCallback, this);
   // subscribe to robot pose to get latest time
   ivRobotPoseSub = nh_public.subscribe<
-		geometry_msgs::PoseWithCovarianceStamped>(
-			"amcl_pose", 5, &FootstepNavigation::robotPoseCallback, this);
+    geometry_msgs::PoseWithCovarianceStamped>(
+	  "amcl_pose", 5, &FootstepNavigation::robotPoseCallback, this);
 
   // read parameters from config file:
   nh_private.param("rfoot_frame_id", ivIdFootRight, ivIdFootRight);
@@ -641,56 +641,56 @@ FootstepNavigation::getFootstep(const tf::Pose& from,
 
   // check if the footstep can be performed by the NAO robot
 
-//  if (performable(footstep))
-//  {
-//    return true;
-//  }
-//  else
-//  {
-//    float step_diff_x = fabs(from.getOrigin().x() - from_planned.getX());
-//    float step_diff_y = fabs(from.getOrigin().y() - from_planned.getY());
-//    float step_diff_theta = fabs(
-//        angles::shortest_angular_distance(tf::getYaw(from.getRotation()),
-//        		                          from_planned.getTheta()));
-//    if (step_diff_x < ivAccuracyX && step_diff_y < ivAccuracyY &&
-//        step_diff_theta < ivAccuracyTheta)
-//    {
-//	  step = tf::Pose(tf::createQuaternionFromYaw(from_planned.getTheta()),
-//	                  tf::Point(from_planned.getX(), from_planned.getY(), 0.0))
-//	         *
-//		     tf::Pose(tf::createQuaternionFromYaw(to.getTheta()),
-//				      tf::Point(to.getX(), to.getY(), 0.0));
-//
-//	  footstep.pose.x = step.getOrigin().x();
-//	  footstep.pose.y = step.getOrigin().y();
-//	  footstep.pose.theta = tf::getYaw(step.getRotation());
-//
-//	  return true;
-//    }
-//
-//    ROS_ERROR("step (%f, %f, %f, %i)",
-//    		  footstep.pose.x, footstep.pose.y, footstep.pose.theta,
-//    		  footstep.leg);
-//    return false;
-//  }
-
-  // ALTERNATIVE: clip the footstep into the executable range; if nothing was
-  // clipped: perform; if too much was clipped: do not perform
-  humanoid_nav_msgs::ClipFootstep footstep_clip;
-  footstep_clip.request.step = footstep;
-  ivClipFootstepSrv.call(footstep_clip);
-
-  if (performanceValid(footstep_clip))
+  if (performable(footstep))
   {
-  	footstep.pose.x = footstep_clip.response.step.pose.x;
-  	footstep.pose.y = footstep_clip.response.step.pose.y;
-  	footstep.pose.theta = footstep_clip.response.step.pose.theta;
-  	return true;
+    return true;
   }
   else
   {
+    float step_diff_x = fabs(from.getOrigin().x() - from_planned.getX());
+    float step_diff_y = fabs(from.getOrigin().y() - from_planned.getY());
+    float step_diff_theta = fabs(
+        angles::shortest_angular_distance(
+            tf::getYaw(from.getRotation()), from_planned.getTheta()));
+    if (step_diff_x < ivAccuracyX && step_diff_y < ivAccuracyY &&
+        step_diff_theta < ivAccuracyTheta)
+    {
+	  step = tf::Pose(tf::createQuaternionFromYaw(from_planned.getTheta()),
+	                  tf::Point(from_planned.getX(), from_planned.getY(), 0.0))
+	         *
+		     tf::Pose(tf::createQuaternionFromYaw(to.getTheta()),
+				      tf::Point(to.getX(), to.getY(), 0.0));
+
+	  footstep.pose.x = step.getOrigin().x();
+	  footstep.pose.y = step.getOrigin().y();
+	  footstep.pose.theta = tf::getYaw(step.getRotation());
+
+	  return true;
+    }
+
+    ROS_ERROR("step (%f, %f, %f, %i)",
+    		  footstep.pose.x, footstep.pose.y, footstep.pose.theta,
+    		  footstep.leg);
     return false;
   }
+
+//  // ALTERNATIVE: clip the footstep into the executable range; if nothing was
+//  // clipped: perform; if too much was clipped: do not perform
+//  humanoid_nav_msgs::ClipFootstep footstep_clip;
+//  footstep_clip.request.step = footstep;
+//  ivClipFootstepSrv.call(footstep_clip);
+//
+//  if (performanceValid(footstep_clip))
+//  {
+//  	footstep.pose.x = footstep_clip.response.step.pose.x;
+//  	footstep.pose.y = footstep_clip.response.step.pose.y;
+//  	footstep.pose.theta = footstep_clip.response.step.pose.theta;
+//  	return true;
+//  }
+//  else
+//  {
+//    return false;
+//  }
 }
 
 
@@ -802,7 +802,7 @@ FootstepNavigation::performable(const humanoid_nav_msgs::StepTarget& footstep)
   }
 
   if (fabs(step_theta - 0.3) < FLOAT_CMP_THR ||
-      fabs(step_theta - 0.0) < FLOAT_CMP_THR)
+      fabs(step_theta + 0.3) < FLOAT_CMP_THR)
   {
     ROS_ERROR("angle wrong");
     return false;

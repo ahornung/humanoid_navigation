@@ -235,8 +235,8 @@ FootstepPlanner::FootstepPlanner()
   y = disc_val(0.15, ivCellSize);
   step_range.push_back(std::pair<int, int>(x, y));
 
-  double max_x = max(0.07, fabs(-0.3));
-  double max_y = max(0.15, 0.09);
+  double max_x = std::max(0.07, fabs(-0.3));
+  double max_y = std::max(0.15, 0.09);
 
   // initialize the planner environment
   ivPlannerEnvironmentPtr.reset(

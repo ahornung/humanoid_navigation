@@ -639,14 +639,19 @@ FootstepNavigation::getFootstep(const tf::Pose& from,
   else // to.leg == RIGHT
     footstep.leg = humanoid_nav_msgs::StepTarget::right;
 
-  // check if the footstep can be performed by the NAO robot
 
+  /* check if the footstep can be performed by the NAO robot ******************/
+
+  // check if the step lies within the executable range
   if (performable(footstep))
   {
     return true;
   }
   else
   {
+    // check if there is only a minor divergence between the current support
+	// foot and the foot placement used during the plannig task: in such a case
+	// perform the step that has been used during the planning
     float step_diff_x = fabs(from.getOrigin().x() - from_planned.getX());
     float step_diff_y = fabs(from.getOrigin().y() - from_planned.getY());
     float step_diff_theta = fabs(
@@ -656,8 +661,8 @@ FootstepNavigation::getFootstep(const tf::Pose& from,
         step_diff_theta < ivAccuracyTheta)
     {
 	  step = tf::Pose(tf::createQuaternionFromYaw(from_planned.getTheta()),
-	                  tf::Point(from_planned.getX(), from_planned.getY(), 0.0))
-	         *
+	                  tf::Point(from_planned.getX(), from_planned.getY(), 0.0)
+	                  ).inverse() *
 		     tf::Pose(tf::createQuaternionFromYaw(to.getTheta()),
 				      tf::Point(to.getX(), to.getY(), 0.0));
 
@@ -668,9 +673,6 @@ FootstepNavigation::getFootstep(const tf::Pose& from,
 	  return true;
     }
 
-    ROS_ERROR("step (%f, %f, %f, %i)",
-    		  footstep.pose.x, footstep.pose.y, footstep.pose.theta,
-    		  footstep.leg);
     return false;
   }
 
@@ -801,8 +803,9 @@ FootstepNavigation::performable(const humanoid_nav_msgs::StepTarget& footstep)
     step_theta = -step_theta;
   }
 
+  // TODO: make this configurable
   if (fabs(step_theta - 0.3) < FLOAT_CMP_THR ||
-      fabs(step_theta + 0.3) < FLOAT_CMP_THR)
+      fabs(step_theta + 0.2) < FLOAT_CMP_THR)
   {
     ROS_ERROR("angle wrong");
     return false;

@@ -285,7 +285,7 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   }
 
   double timediff = (msg->header.stamp - m_lastLaserTime).toSec();
-  if (m_receivedSensorData && timediff < timediff){
+  if (m_receivedSensorData && timediff < 0){
     ROS_WARN("Ignoring received laser data that is %f s older than previous data!", timediff);
     return;
   }
@@ -295,31 +295,36 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   tf::Stamped<tf::Pose> odomPose;
   // check if odometry available, skip scan if not.
   if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
-    return;
+     return;
 
 
   bool sensor_integrated = false;
   if (!m_paused && (!m_receivedSensorData || isAboveMotionThreshold(odomPose))) {
-    
-    // convert laser to point cloud first:
-    PointCloud pc_filtered;
-    std::vector<float> laserRangesSparse;
-    prepareLaserPointCloud(msg, pc_filtered, laserRangesSparse);
-    
-    sensor_integrated = localizeWithMeasurement(pc_filtered, laserRangesSparse, msg->range_max);
-    m_lastLocalizedPose = odomPose;
-    
-  } else{ // no observation necessary: propagate particles forward by full interval
 
-    // relative odom transform to last odomPose
-    tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
-    m_motionModel->applyOdomTransform(m_particles, odomTransform);
-    constrainMotion(odomPose);
+     // convert laser to point cloud first:
+     PointCloud pc_filtered;
+     std::vector<float> laserRangesSparse;
+     prepareLaserPointCloud(msg, pc_filtered, laserRangesSparse);
+
+     sensor_integrated = localizeWithMeasurement(pc_filtered, laserRangesSparse, msg->range_max);
+
+  } 
+
+  if(!sensor_integrated){ // no laser integration: propagate particles forward by full interval
+
+     // relative odom transform to last odomPose
+     tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
+     m_motionModel->applyOdomTransform(m_particles, odomTransform);
+     constrainMotion(odomPose);
+  }
+  else
+  {
+     m_lastLocalizedPose = odomPose;
   }
 
   m_motionModel->storeOdomPose(odomPose);
   publishPoseEstimate(msg->header.stamp, sensor_integrated);
-  m_lastLaserTime = msg->header.stamp;
+  m_lastLaserTime = msg->header.stamp; 
 }
 
 void HumanoidLocalization::constrainMotion(const tf::Pose& odomPose){
@@ -718,7 +723,7 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
   }
 
   double timediff = (msg->header.stamp - m_lastPointCloudTime).toSec();
-  if (m_receivedSensorData && timediff < timediff){
+  if (m_receivedSensorData && timediff < 0){
     ROS_WARN("Ignoring received PointCloud data that is %f s older than previous data!", timediff);
     return;
   }
@@ -730,11 +735,8 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
   if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
     return;
 
-  // relative odom transform to last odomPose
-  tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
 
   bool sensor_integrated = false;
-
 
   // TODO #1: Make this nicer: head rotations for integration check
   // TODO #2: Initialization of m_headYawRotationLastScan, etc needs to be set correctly
@@ -754,7 +756,7 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
       isAboveHeadMotionThreshold = true;
   // end #1
 
-  if (!m_paused && (!m_receivedSensorData || isAboveHeadMotionThreshold || isAboveMotionThreshold(odomTransform))) {
+  if (!m_paused && (!m_receivedSensorData || isAboveHeadMotionThreshold || isAboveMotionThreshold(odomPose))) {
 
     // convert laser to point cloud first:
     PointCloud pc_filtered;
@@ -764,16 +766,19 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
     double maxRange = 10.0; // TODO #4: What is a maxRange for pointClouds? NaN? maxRange is expected to be a double and integrateMeasurement checks rangesSparse[i] > maxRange
     ROS_DEBUG("Updating Pose Estimate from a PointCloud with %zu points and %zu ranges", pc_filtered.size(), rangesSparse.size());
     sensor_integrated = localizeWithMeasurement(pc_filtered, rangesSparse, maxRange);
-    m_lastLocalizedPose = odomPose;
-  } else{ // no observation necessary: propagate particles forward by full interval
-
-    m_motionModel->applyOdomTransform(m_particles, odomTransform);
+   
+  } 
+  if(!sensor_integrated){ // no observation necessary: propagate particles forward by full interval
+     // relative odom transform to last odomPose
+     tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
+     m_motionModel->applyOdomTransform(m_particles, odomTransform);
+     constrainMotion(odomPose);
   }
-
-  // TODO #1
-  if (sensor_integrated){
-      m_headYawRotationLastScan = headYaw;
-      m_headPitchRotationLastScan = headPitch;
+  else{
+     m_lastLocalizedPose = odomPose;
+     // TODO #1
+     m_headYawRotationLastScan = headYaw;
+     m_headPitchRotationLastScan = headPitch;
   }
 
   m_motionModel->storeOdomPose(odomPose);
@@ -783,7 +788,6 @@ void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) 
 }
 
 void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){
-
   m_lastIMUMsgBuffer.push_back(*msg);
 }
 

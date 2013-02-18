@@ -727,6 +727,8 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
 
   if (old_map && ivPathExists)
   {
+	ROS_INFO("Received new map.");
+
     // updating the environment currently means resetting all previous planning
     // information
     updateEnvironment(old_map);

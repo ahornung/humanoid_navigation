@@ -298,7 +298,7 @@ FootstepNavigation::executeFootsteps()
       // ..if it cannot be performed initialize replanning
       else
       {
-        ROS_INFO("Footstep cannot be performed. Replanning necessary");
+        ROS_INFO("Footstep cannot be performed. Replanning necessary.");
 
         replan();
         // leave the thread
@@ -614,6 +614,10 @@ FootstepNavigation::updateStart()
   		       tf::getYaw(foot_left.getRotation()), LEFT);
   State right(foot_right.getOrigin().x(), foot_right.getOrigin().y(),
               tf::getYaw(foot_right.getRotation()), RIGHT);
+
+  ROS_INFO("Robot standing at (%f, %f, %f, %i) (%f, %f, %f, %i).",
+		   left.getX(), left.getY(), left.getTheta(), left.getLeg(),
+		   right.getX(), right.getY(), right.getTheta(), right.getLeg());
 
   return ivPlanner.setStart(left, right);
 }

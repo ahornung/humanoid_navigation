@@ -433,6 +433,8 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
 void
 FootstepPlanner::reset()
 {
+  ROS_INFO("Reseting previous planning information.");
+
   // reset the previously calculated paths
   ivPath.clear();
   ivPlanningStatesIds.clear();

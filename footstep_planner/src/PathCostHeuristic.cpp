@@ -122,8 +122,6 @@ PathCostHeuristic::calculateDistances(const PlanningState& from,
 
   if (to_x != ivGoalX || to_y != ivGoalY)
   {
-    ROS_ERROR("BLAAAA");
-
     ivGoalX = to_x;
     ivGoalY = to_y;
     ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,

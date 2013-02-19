@@ -27,8 +27,7 @@
 namespace footstep_planner
 {
 FootstepNavigation::FootstepNavigation()
-: ivLastRobotTime(0),
-  ivIdFootRight("/r_sole"),
+: ivIdFootRight("/r_sole"),
   ivIdFootLeft("/l_sole"),
   ivIdMapFrame("map"),
   ivExecutingFootsteps(false),
@@ -52,10 +51,6 @@ FootstepNavigation::FootstepNavigation()
     "map", 1, &FootstepNavigation::mapCallback, this);
   ivGoalPoseSub = nh_public.subscribe<geometry_msgs::PoseStamped>(
     "goal", 1, &FootstepNavigation::goalPoseCallback, this);
-  // subscribe to robot pose to get latest time
-  ivRobotPoseSub = nh_public.subscribe<
-    geometry_msgs::PoseWithCovarianceStamped>(
-	  "amcl_pose", 5, &FootstepNavigation::robotPoseCallback, this);
 
   // read parameters from config file:
   nh_private.param("rfoot_frame_id", ivIdFootRight, ivIdFootRight);
@@ -528,15 +523,6 @@ FootstepNavigation::goalPoseCallback(
 	else
 	  plan();
   }
-}
-
-
-void
-FootstepNavigation::robotPoseCallback(
-  const geometry_msgs::PoseWithCovarianceStampedConstPtr& robot_pose)
-{
-	boost::mutex::scoped_lock lock(ivExecutionLock);
-	ivLastRobotTime = robot_pose->header.stamp;
 }
 
 

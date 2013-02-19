@@ -924,10 +924,11 @@ FootstepPlannerEnvironment::GetRandomPredsatDistance(int TargetStateID,
                                                      std::vector<int>* PredIDV, std::vector<int>* CLowV)
 {
 
-  assert(TargetStateID >= 0 && unsigned(TargetStateID) < ivStateId2State.size());
+  assert(TargetStateID >= 0 &&
+		 unsigned(TargetStateID) < ivStateId2State.size());
 
-  //start state should be absorbing
-  if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootRight )
+  // start state should be absorbing
+  if (TargetStateID == ivIdStartFootLeft || TargetStateID == ivIdStartFootRight)
     return;
 
   const PlanningState* currentState = ivStateId2State[TargetStateID];

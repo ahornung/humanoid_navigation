@@ -63,14 +63,6 @@ public:
   bool setGoal(float x, float y, float theta);
 
   /**
-   * @brief Callback to retrieve the robot's position.
-   *
-   * Subscribed to 'amcl_pose'.
-   */
-  void robotPoseCallback(
-  const geometry_msgs::PoseWithCovarianceStampedConstPtr& robotPose);
-
-  /**
    * @brief Callback to set a simulated robot at a certain pose.
    *
    * Subscribed to 'goal'.
@@ -211,9 +203,6 @@ protected:
   boost::mutex ivExecutionLock;
 
   boost::shared_ptr<boost::thread> ivFootstepExecutionPtr;
-
-  // TODO: check if really needed
-  ros::Time ivLastRobotTime;
 
   std::string ivIdFootRight;
   std::string ivIdFootLeft;

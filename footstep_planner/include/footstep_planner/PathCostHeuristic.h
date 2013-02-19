@@ -53,15 +53,20 @@ public:
                     double max_step_width, double inflation_radius);
   virtual ~PathCostHeuristic();
 
-  virtual double getHValue(const PlanningState& from,
+  /**
+   * @return The estimated costs needed to reach the state 'to' from within the
+   * current state.
+   */
+  virtual double getHValue(const PlanningState& current,
                            const PlanningState& to) const;
 
   /**
    * @brief Calculates for each grid cell of the map a 2D path to the
-   * goal. (The start state is not really needed here.)
+   * cell (to.x, to.y).
+   * For forward planning 'to' is supposed to be the goal state, for backward
+   * planning 'to' is supposed to be the start state.
    */
-  bool calculateDistances(const PlanningState& start,
-                          const PlanningState& goal);
+  bool calculateDistances(const PlanningState& from, const PlanningState& to);
 
   void updateMap(gridmap_2d::GridMap2DPtr map);
 

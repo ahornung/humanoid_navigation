@@ -51,18 +51,18 @@ PathCostHeuristic::~PathCostHeuristic()
 
 
 double
-PathCostHeuristic::getHValue(const PlanningState& from,
+PathCostHeuristic::getHValue(const PlanningState& current,
                              const PlanningState& to)
 const
 {
-  if (from == to)
+  if (current == to)
     return 0.0;
 
   unsigned int from_x;
   unsigned int from_y;
   // could be removed after more testing (then use ...noBounds... again)
-  ivMapPtr->worldToMapNoBounds(cell_2_state(from.getX(), ivCellSize),
-                               cell_2_state(from.getY(), ivCellSize),
+  ivMapPtr->worldToMapNoBounds(cell_2_state(current.getX(), ivCellSize),
+                               cell_2_state(current.getY(), ivCellSize),
                                from_x, from_y);
 
   unsigned int to_x;
@@ -89,34 +89,33 @@ const
   {
     // get the number of bins between from.theta and to.theta
     int diff_angle_disc = (
-        ((to.getTheta() - from.getTheta()) % ivNumAngleBins) +
+        ((to.getTheta() - current.getTheta()) % ivNumAngleBins) +
         ivNumAngleBins) % ivNumAngleBins;
     // get the rotation independent from the rotation direction
     diff_angle = std::abs(angles::normalize_angle(
         angle_cell_2_state(diff_angle_disc, ivNumAngleBins)));
   }
 
-  return (dist + expected_steps * ivStepCost +
-      diff_angle * ivDiffAngleCost);
+  return (dist + expected_steps * ivStepCost + diff_angle * ivDiffAngleCost);
 }
 
 
 bool
-PathCostHeuristic::calculateDistances(const PlanningState& start,
-                                      const PlanningState& goal)
+PathCostHeuristic::calculateDistances(const PlanningState& from,
+                                      const PlanningState& to)
 {
   assert(ivMapPtr);
 
   unsigned int start_x;
   unsigned int start_y;
-  ivMapPtr->worldToMapNoBounds(cell_2_state(start.getX(), ivCellSize),
-                               cell_2_state(start.getY(), ivCellSize),
+  ivMapPtr->worldToMapNoBounds(cell_2_state(from.getX(), ivCellSize),
+                               cell_2_state(from.getY(), ivCellSize),
                                start_x, start_y);
 
   unsigned int to_x;
   unsigned int to_y;
-  ivMapPtr->worldToMapNoBounds(cell_2_state(goal.getX(), ivCellSize),
-                               cell_2_state(goal.getY(), ivCellSize),
+  ivMapPtr->worldToMapNoBounds(cell_2_state(to.getX(), ivCellSize),
+                               cell_2_state(to.getY(), ivCellSize),
                                to_x, to_y);
 
   if (to_x != ivGoalX || to_y != ivGoalY)

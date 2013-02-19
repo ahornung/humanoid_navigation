@@ -207,6 +207,8 @@ FootstepNavigation::replan()
   }
   else if (path_existed)
   {
+    ROS_INFO("Replanning unsuccessful. Reseting previous planning "
+             "information.");
     if (ivPlanner.plan())
     {
       startExecution();

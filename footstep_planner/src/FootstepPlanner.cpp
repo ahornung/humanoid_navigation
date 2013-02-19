@@ -100,7 +100,7 @@ FootstepPlanner::FootstepPlanner()
   double foot_incircle = std::min(
       (ivFootsizeX / 2.0 -std::abs(ivOriginFootShiftX)),
       (ivFootsizeY / 2.0 -std::abs(ivOriginFootShiftY)));
-  assert (foot_incircle > 0.0);
+  assert(foot_incircle > 0.0);
 
   // - footstep discretization
   XmlRpc::XmlRpcValue footsteps_x;
@@ -433,8 +433,6 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
 void
 FootstepPlanner::reset()
 {
-  ROS_INFO("Reseting previous planning information.");
-
   // reset the previously calculated paths
   ivPath.clear();
   ivPlanningStatesIds.clear();
@@ -747,7 +745,7 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
 void
 FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
 {
-  ROS_INFO("Reset old information in new planning task");
+  ROS_INFO("Reseting previous planning information.");
   // reset planner
   reset();
 

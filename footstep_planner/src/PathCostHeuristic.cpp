@@ -38,8 +38,8 @@ PathCostHeuristic::PathCostHeuristic(double cell_size,
   ivDiffAngleCost(diff_angle_cost),
   ivMaxStepWidth(max_step_width),
   ivInflationRadius(inflation_radius),
-  ivGoalX(0),
-  ivGoalY(0)
+  ivGoalX(-1),
+  ivGoalY(-1)
 {};
 
 
@@ -55,6 +55,8 @@ PathCostHeuristic::getHValue(const PlanningState& current,
                              const PlanningState& to)
 const
 {
+  assert(ivGoalX != -1 && ivGoalY != -1);
+
   if (current == to)
     return 0.0;
 
@@ -106,11 +108,11 @@ PathCostHeuristic::calculateDistances(const PlanningState& from,
 {
   assert(ivMapPtr);
 
-  unsigned int start_x;
-  unsigned int start_y;
+  unsigned int from_x;
+  unsigned int from_y;
   ivMapPtr->worldToMapNoBounds(cell_2_state(from.getX(), ivCellSize),
                                cell_2_state(from.getY(), ivCellSize),
-                               start_x, start_y);
+                               from_x, from_y);
 
   unsigned int to_x;
   unsigned int to_y;
@@ -120,10 +122,12 @@ PathCostHeuristic::calculateDistances(const PlanningState& from,
 
   if (to_x != ivGoalX || to_y != ivGoalY)
   {
+    ROS_ERROR("BLAAAA");
+
     ivGoalX = to_x;
     ivGoalY = to_y;
     ivGridSearchPtr->search(ivpGrid, cvObstacleThreshold,
-                            ivGoalX, ivGoalY, start_x, start_y,
+                            ivGoalX, ivGoalY, from_x, from_y,
                             SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
   }
 
@@ -137,8 +141,10 @@ PathCostHeuristic::updateMap(gridmap_2d::GridMap2DPtr map)
   ivMapPtr.reset();
   ivMapPtr = map;
 
-  unsigned width = map->getInfo().width;
-  unsigned height = map->getInfo().height;
+  ivGoalX = ivGoalY = -1;
+
+  unsigned width = ivMapPtr->getInfo().width;
+  unsigned height = ivMapPtr->getInfo().height;
 
   if (ivGridSearchPtr)
     ivGridSearchPtr->destroy();
@@ -155,13 +161,12 @@ PathCostHeuristic::updateMap(gridmap_2d::GridMap2DPtr map)
     for (unsigned x = 0; x < width; ++x)
     {
       float dist = ivMapPtr->distanceMapAtCell(x,y);
-      if (dist < 0.0f){
+      if (dist < 0.0f)
         ROS_ERROR("Distance map at %d %d out of bounds", x, y);
-      } else if (dist <= ivInflationRadius){
+      else if (dist <= ivInflationRadius)
         ivpGrid[x][y] = 255;
-      } else {
+      else
         ivpGrid[x][y] = 0;
-      }
     }
   }
 }

@@ -80,8 +80,8 @@ private:
   double ivMaxStepWidth;
   double ivInflationRadius;
 
-  unsigned int ivGoalX;
-  unsigned int ivGoalY;
+  int ivGoalX;
+  int ivGoalY;
 
   gridmap_2d::GridMap2DPtr ivMapPtr;
   boost::shared_ptr<SBPL2DGridSearch> ivGridSearchPtr;

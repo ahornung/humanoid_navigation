@@ -592,11 +592,19 @@ FootstepNavigation::updateStart()
 	  if (!getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
       		                ros::Duration(0.5), foot_left))
 	  {
+	    if (ivPlanner.pathExists())
+	    {
+	      ivExecutingFootsteps = false;
+	    }
 	    return false;
 	  }
     if (!getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time::now(),
     		                  ros::Duration(0.5), foot_right))
     {
+      if (ivPlanner.pathExists())
+      {
+        ivExecutingFootsteps = false;
+      }
       return false;
     }
   }

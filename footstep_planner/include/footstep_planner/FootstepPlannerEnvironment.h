@@ -41,6 +41,29 @@
 
 namespace footstep_planner
 {
+struct environment_params
+{
+  std::vector<Footstep> footstep_set;
+  boost::shared_ptr<Heuristic> heuristic;
+  std::vector<std::pair<int, int> > step_range;
+  double footsize_x, footsize_y, footsize_z;
+  double foot_origin_shift_x, foot_origin_shift_y;
+  double max_footstep_x, max_footstep_y, max_footstep_theta;
+  double max_inverse_footstep_x, max_inverse_footstep_y,
+         max_inverse_footstep_theta;
+  double step_cost;
+  int    collision_check_accuracy;
+  int    hash_table_size;
+  double cell_size;
+  int    num_angle_bins;
+  bool   forward_search;
+  double max_step_width;
+  int    num_random_nodes;
+  double random_node_distance;
+  double heuristic_scale;
+};
+
+
 /**
  * @brief A class defining a footstep planner environment for humanoid
  * robots used by the SBPL to perform planning tasks.
@@ -99,30 +122,7 @@ public:
    * @param forward_search Whether to use forward search (1) or backward
    * search (0).
    */
-  FootstepPlannerEnvironment(
-      const  std::vector<Footstep>& footstep_set,
-      const  boost::shared_ptr<Heuristic> heuristic,
-      double footsize_x,
-      double footsize_y,
-      double origin_foot_shift_x,
-      double origin_foot_shift_y,
-      double max_footstep_x,
-      double max_footstep_y,
-      double max_footstep_theta,
-      double max_inverse_footstep_x,
-      double max_inverse_footstep_y,
-      double max_inverse_footstep_theta,
-      const std::vector<std::pair<int, int> >& step_range,
-      double step_cost,
-      int    collision_check_accuracy,
-      int    hash_table_size,
-      double cell_size,
-      int    num_angle_bins,
-      bool   forward_search,
-      double max_step_width,
-      int num_random_nodes,
-      double random_node_distance,
-      double heuristic_scale);
+  FootstepPlannerEnvironment(const environment_params& params);
 
   virtual ~FootstepPlannerEnvironment();
 

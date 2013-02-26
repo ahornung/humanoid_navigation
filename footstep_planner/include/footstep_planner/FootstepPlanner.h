@@ -205,6 +205,9 @@ public:
   /// @brief Reset the previous planning information.
   void reset();
 
+  /// @brief Reset and reinitialize the environment.
+  void resetTotally();
+
   /// @return True if for the current start and goal pose a path exists.
   bool pathExists() { return ivPathExists; };
 
@@ -254,7 +257,6 @@ protected:
 
   boost::shared_ptr<const PathCostHeuristic> ivPathCostHeuristicPtr;
 
-  std::vector<Footstep> ivFootstepSet;
   std::vector<State> ivPath;
 
   State ivStartFootLeft;
@@ -271,9 +273,7 @@ protected:
   ros::Publisher  ivStartPoseVisPub;
   ros::ServiceServer ivFootstepPlanService;
 
-  double ivOriginFootShiftX, ivOriginFootShiftY;
   double ivFootSeparation;
-  double ivFootsizeX, ivFootsizeY, ivFootsizeZ;
   double ivMaxStepWidth;
   int    ivCollisionCheckAccuracy;
 
@@ -281,12 +281,9 @@ protected:
   bool   ivPathExists;
   int    ivLastMarkerMsgSize;
   double ivPathCost;
-  double ivCellSize;
   bool   ivSearchUntilFirstSolution;
   double ivMaxSearchTime;
   double ivInitialEpsilon;
-  bool   ivForwardSearch;
-  int    ivNumAngleBins;
 
   /**
    * @brief If limit of changed cells is reached the planner starts a new
@@ -298,6 +295,8 @@ protected:
   std::string ivMarkerNamespace;
 
   std::vector<int> ivPlanningStatesIds;
+
+  environment_params ivEnvironmentParams;
 };
 }
 

@@ -24,63 +24,42 @@
 #include <footstep_planner/FootstepPlannerEnvironment.h>
 
 
-namespace footstep_planner{
-
+namespace footstep_planner
+{
 FootstepPlannerEnvironment::FootstepPlannerEnvironment(
-    const  std::vector<Footstep>& footstep_set,
-    const  boost::shared_ptr<Heuristic> heuristic,
-    double footsize_x,
-    double footsize_y,
-    double origin_foot_shift_x,
-    double origin_foot_shift_y,
-    double max_footstep_x,
-    double max_footstep_y,
-    double max_footstep_theta,
-    double max_inverse_footstep_x,
-    double max_inverse_footstep_y,
-    double max_inverse_footstep_theta,
-    const std::vector<std::pair<int, int> >& step_range,
-    double step_cost,
-    int    collision_check_accuracy,
-    int    hash_table_size,
-    double cell_size,
-    int    num_angle_bins,
-    bool   forward_search,
-    double max_step_width,
-    int num_random_nodes,
-    double random_node_distance,
-    double heuristic_scale)
+    const environment_params& params)
 : DiscreteSpaceInformation(),
   ivIdStartFootLeft(-1),
   ivIdStartFootRight(-1),
   ivIdGoalFootLeft(-1),
   ivIdGoalFootRight(-1),
   ivpStateHash2State(
-    new std::vector<const PlanningState*>[hash_table_size]),
-  ivFootstepSet(footstep_set),
-  ivHeuristicConstPtr(heuristic),
-  ivFootsizeX(footsize_x),
-  ivFootsizeY(footsize_y),
-  ivOriginFootShiftX(origin_foot_shift_x),
-  ivOriginFootShiftY(origin_foot_shift_y),
-  ivMaxFootstepX(disc_val(max_footstep_x, cell_size)),
-  ivMaxFootstepY(disc_val(max_footstep_y, cell_size)),
+    new std::vector<const PlanningState*>[params.hash_table_size]),
+  ivFootstepSet(params.footstep_set),
+  ivHeuristicConstPtr(params.heuristic),
+  ivFootsizeX(params.footsize_x),
+  ivFootsizeY(params.footsize_y),
+  ivOriginFootShiftX(params.foot_origin_shift_x),
+  ivOriginFootShiftY(params.foot_origin_shift_y),
+  ivMaxFootstepX(disc_val(params.max_footstep_x, params.cell_size)),
+  ivMaxFootstepY(disc_val(params.max_footstep_y, params.cell_size)),
   ivMaxFootstepTheta(
-    angle_state_2_cell(max_footstep_theta, num_angle_bins)),
-  ivMaxInvFootstepX(disc_val(max_inverse_footstep_x, cell_size)),
-  ivMaxInvFootstepY(disc_val(max_inverse_footstep_y, cell_size)),
+    angle_state_2_cell(params.max_footstep_theta, params.num_angle_bins)),
+  ivMaxInvFootstepX(disc_val(params.max_inverse_footstep_x, params.cell_size)),
+  ivMaxInvFootstepY(disc_val(params.max_inverse_footstep_y, params.cell_size)),
   ivMaxInvFootstepTheta(
-    angle_state_2_cell(max_inverse_footstep_theta, num_angle_bins)),
-  ivStepCost(cvMmScale * step_cost),
-  ivCollisionCheckAccuracy(collision_check_accuracy),
-  ivHashTableSize(hash_table_size),
-  ivCellSize(cell_size),
-  ivNumAngleBins(num_angle_bins),
-  ivForwardSearch(forward_search),
-  ivMaxStepWidth(double(disc_val(max_step_width, cell_size))),
-  ivNumRandomNodes(num_random_nodes),
-  ivRandomNodeDist(random_node_distance / ivCellSize),
-  ivHeuristicScale(heuristic_scale),
+    angle_state_2_cell(params.max_inverse_footstep_theta,
+                       params.num_angle_bins)),
+  ivStepCost(cvMmScale * params.step_cost),
+  ivCollisionCheckAccuracy(params.collision_check_accuracy),
+  ivHashTableSize(params.hash_table_size),
+  ivCellSize(params.cell_size),
+  ivNumAngleBins(params.num_angle_bins),
+  ivForwardSearch(params.forward_search),
+  ivMaxStepWidth(double(disc_val(params.max_step_width, params.cell_size))),
+  ivNumRandomNodes(params.num_random_nodes),
+  ivRandomNodeDist(params.random_node_distance / ivCellSize),
+  ivHeuristicScale(params.heuristic_scale),
   ivHeuristicExpired(true),
   ivNumExpandedStates(0)
 {
@@ -98,7 +77,7 @@ FootstepPlannerEnvironment::FootstepPlannerEnvironment(
     for (int i = ivMaxInvFootstepX; i <= ivMaxFootstepX; ++i)
     {
       ivStepRange[(j - ivMaxInvFootstepY) * num_x + (i - ivMaxInvFootstepX)] =
-          pointWithinPolygon(std::pair<int, int>(i, j), step_range);
+          pointWithinPolygon(std::pair<int, int>(i, j), params.step_range);
     }
   }
 }
@@ -227,8 +206,8 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
   unsigned int state_hash = s.getHashTag();
   PlanningState* new_state = new PlanningState(s);
 
-  int state_id = ivStateId2State.size();
-  assert(state_id < std::numeric_limits<int>::max());
+  size_t state_id = ivStateId2State.size();
+  assert(state_id < (size_t)std::numeric_limits<int>::max());
 
   // insert the ID of the new state into the corresponding map
   new_state->setId(state_id);
@@ -244,7 +223,7 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
     StateID2IndexMapping[state_id][i] = -1;
   }
 
-  assert(StateID2IndexMapping.size()-1 == state_id);
+  assert(StateID2IndexMapping.size() - 1 == state_id);
 
   return new_state;
 }

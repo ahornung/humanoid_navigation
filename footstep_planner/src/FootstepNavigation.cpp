@@ -520,10 +520,10 @@ FootstepNavigation::goalPoseCallback(
   {
     // this check enforces a planning from scratch if necessary (dependent on
     // planning direction)
-	if (ivForwardSearch)
-	  replan();
-	else
-	  plan();
+	  if (ivForwardSearch)
+	    replan();
+	  else
+	    plan();
   }
 }
 
@@ -584,16 +584,18 @@ FootstepNavigation::setGoal(float x, float y, float theta)
 bool
 FootstepNavigation::updateStart()
 {
+  ros::Duration(0.5).sleep();
+
   tf::Transform foot_left, foot_right;
   {
     // get real placement of the feet
-	if (!getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
-    		              ros::Duration(0.5), foot_left))
-	{
-      return false;
-	}
+	  if (!getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
+      		                ros::Duration(0.5), foot_left))
+	  {
+	    return false;
+	  }
     if (!getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time::now(),
-    		         ros::Duration(0.5), foot_right))
+    		                  ros::Duration(0.5), foot_right))
     {
       return false;
     }
@@ -604,8 +606,8 @@ FootstepNavigation::updateStart()
               tf::getYaw(foot_right.getRotation()), RIGHT);
 
   ROS_INFO("Robot standing at (%f, %f, %f, %i) (%f, %f, %f, %i).",
-		   left.getX(), left.getY(), left.getTheta(), left.getLeg(),
-		   right.getX(), right.getY(), right.getTheta(), right.getLeg());
+		       left.getX(), left.getY(), left.getTheta(), left.getLeg(),
+		       right.getX(), right.getY(), right.getTheta(), right.getLeg());
 
   return ivPlanner.setStart(left, right);
 }

@@ -126,7 +126,6 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_posePub = m_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 10);
   m_poseEvalPub = m_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose_eval", 10);
   m_poseOdomPub = m_privateNh.advertise<geometry_msgs::PoseStamped>("pose_odom_sync", 10);
-  m_poseTruePub = m_privateNh.advertise<geometry_msgs::PoseStamped>("pose_true_sync", 10);
   m_poseArrayPub = m_privateNh.advertise<geometry_msgs::PoseArray>("particlecloud", 10);
   m_bestPosePub = m_privateNh.advertise<geometry_msgs::PoseArray>("best_particle", 10);
   m_nEffPub = m_privateNh.advertise<std_msgs::Float32>("n_eff", 10);
@@ -191,7 +190,7 @@ void HumanoidLocalization::reset(){
     if (m_initFromTruepose){ // useful for evaluation, when ground truth available:
       geometry_msgs::PoseStamped truePose;
       tf::Stamped<tf::Pose> truePoseTF;
-      tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(), btVector3(0,0,0)), ros::Time::now(), "/torso_real"); // TODO: param
+      tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), ros::Time::now(), "/torso_real"); // TODO: param
 
       ros::Time lookupTime = ros::Time::now();
       while(m_nh.ok() && !m_tfListener.waitForTransform(m_globalFrameId, ident.frame_id_, lookupTime, ros::Duration(1.0))){
@@ -1223,7 +1222,7 @@ tf::Pose HumanoidLocalization::getMeanParticlePose() const{
 
   double totalWeight = 0.0;
 
-  meanPose.setBasis(btMatrix3x3(0,0,0,0,0,0,0,0,0));
+  meanPose.setBasis(tf::Matrix3x3(0,0,0,0,0,0,0,0,0));
   for (Particles::const_iterator it = m_particles.begin(); it != m_particles.end(); ++it){
     meanPose.getOrigin() += it->pose.getOrigin() * it->weight;
     meanPose.getBasis()[0] += it->pose.getBasis()[0];
@@ -1238,7 +1237,7 @@ tf::Pose HumanoidLocalization::getMeanParticlePose() const{
   // just in case weights are not normalized:
   meanPose.getOrigin() /= totalWeight;
   // TODO: only rough estimate of mean rotation, asserts normalized weights!
-  meanPose.getBasis() = meanPose.getBasis().scaled(btVector3(1.0/m_numParticles, 1.0/m_numParticles, 1.0/m_numParticles));
+  meanPose.getBasis() = meanPose.getBasis().scaled(tf::Vector3(1.0/m_numParticles, 1.0/m_numParticles, 1.0/m_numParticles));
 
   // Apparently we need to normalize again
   meanPose.setRotation(meanPose.getRotation().normalized());

@@ -60,12 +60,25 @@ motion_sigma_z: 0.02
 motion_sigma_roll: 0.015 # 0.85 deg.
 motion_sigma_pitch: 0.015 # 0.85 deg.
 
+# noise of the motion model:
 motion_noise/x: 0.15    # per m
 motion_noise/y: 0.15    # per m
 motion_noise/z: 0.05   # per m
 motion_noise/roll: 0.1    # per m
 motion_noise/pitch: 0.1    # per m
 motion_noise/yaw: 0.8    # per m
+
+# odometry calibration for 2D drift (x,y,theta)
+# this is the identy matrix - uses odometry uncalibrated
+motion_calib/xx:  1.0
+motion_calib/xy:  0.0
+motion_calib/xt:  0.0
+motion_calib/yx:  0.0
+motion_calib/yy:  1.0
+motion_calib/yt:  0.0
+motion_calib/zx:  0.0
+motion_calib/zy:  0.0
+motion_calib/zt:  1.0
 
 # initial pose (when no truepose available):
 initial_pose/x: 2.0

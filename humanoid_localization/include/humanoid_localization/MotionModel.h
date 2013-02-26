@@ -81,6 +81,9 @@ protected:
   /// May not be called in parallel, accesses the random generator m_rngNormal
   tf::Transform odomTransformNoise(const tf::Transform& odomTransform);
 
+  /// calibrary odometry transform w.r.t. 2D drift (pos. + orientation)
+  tf::Transform calibrateOdometry(const tf::Transform& odomTransform) const;
+
   tf::TransformListener* m_tfListener;
 
   NormalGeneratorT m_rngNormal; // standard normal-distributed noise
@@ -88,6 +91,7 @@ protected:
   // parameters:
   //Matrix6f m_motionNoiseL;
   Vector6f m_motionNoise;
+  Eigen::Matrix3d m_odomCalibration2D;
   //NoiseParams m_motionNoise;
 
 

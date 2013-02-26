@@ -53,6 +53,17 @@ MotionModel::MotionModel(ros::NodeHandle* nh, EngineT* rngEngine, tf::TransformL
   m_motionNoise(4) = PP; // pitch
   m_motionNoise(5) = YY; // yaw
 
+  m_odomCalibration2D = Eigen::Matrix3d::Identity();
+  nh->param("motion_calib/xx", m_odomCalibration2D(0,0), 1.0);
+  nh->param("motion_calib/xy", m_odomCalibration2D(0,1), 0.0);
+  nh->param("motion_calib/xt", m_odomCalibration2D(0,2), 0.0);
+  nh->param("motion_calib/yx", m_odomCalibration2D(1,0), 0.0);
+  nh->param("motion_calib/yy", m_odomCalibration2D(1,1), 1.0);
+  nh->param("motion_calib/yt", m_odomCalibration2D(1,2), 0.0);
+  nh->param("motion_calib/tx", m_odomCalibration2D(2,0), 0.0);
+  nh->param("motion_calib/ty", m_odomCalibration2D(2,1), 0.0);
+  nh->param("motion_calib/tt", m_odomCalibration2D(2,2), 1.0);
+
   // not used right now:
 // covariance matrix, contains squared std.devs on diagonal
 //  Matrix6f motionNoise = Matrix6f::Zero();
@@ -107,8 +118,10 @@ void MotionModel::reset(){
 }
 
 void MotionModel::applyOdomTransform(Particles& particles, const tf::Transform& odomTransform){
+  tf::Transform calibratedOdomTransform = calibrateOdometry(odomTransform);
+
   for (unsigned i=0; i < particles.size(); ++i){
-    transformPose(particles[i].pose, odomTransform);
+    transformPose(particles[i].pose, calibratedOdomTransform);
   }
 }
 
@@ -149,6 +162,22 @@ bool MotionModel::applyOdomTransformTemporal(Particles& particles,const ros::Tim
 
 
   return true;
+}
+
+tf::Transform MotionModel::calibrateOdometry(const tf::Transform& odomTransform) const {
+  Eigen::Vector3d odomPose2D;
+  double roll, pitch;
+  odomPose2D(0) = odomTransform.getOrigin().getX();
+  odomPose2D(1) = odomTransform.getOrigin().getY();
+  odomPose2D(2) = tf::getYaw(odomTransform.getRotation());
+  odomTransform.getBasis().getRPY(roll, pitch, odomPose2D(2));
+
+  odomPose2D = m_odomCalibration2D * odomPose2D;
+
+  return tf::Transform(tf::createQuaternionFromRPY(roll, pitch, odomPose2D(2)),
+                       tf::Vector3(odomPose2D(0), odomPose2D(1), odomTransform.getOrigin().getZ()));
+
+
 }
 
 bool MotionModel::lookupOdomTransform(const ros::Time& t, tf::Transform& odomTransform) const{

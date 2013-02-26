@@ -358,12 +358,20 @@ FootstepPlanner::run()
            ivPlannerPtr->get_initial_eps());
   int path_cost;
   ros::WallTime startTime = ros::WallTime::now();
-  ret = ivPlannerPtr->replan(ivMaxSearchTime, &solution_state_ids,
-                             &path_cost);
+  try
+  {
+    ret = ivPlannerPtr->replan(ivMaxSearchTime, &solution_state_ids,
+                               &path_cost);
+  }
+  catch (const SBPL_Exception& e)
+  {
+    ROS_ERROR("SBPL planning failed (%s)", e.what());
+    return false;
+  }
   ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;
 
-  if (ret && solution_state_ids.size() > 0 &&
-      pathIsNew(solution_state_ids))
+  bool path_is_new = pathIsNew(solution_state_ids);
+  if (ret && solution_state_ids.size() > 0 && path_is_new)
   {
     ROS_INFO("Solution of size %zu found after %f s",
              solution_state_ids.size(),
@@ -392,6 +400,12 @@ FootstepPlanner::run()
       ROS_ERROR("extracting path failed\n\n");
       return false;
     }
+  }
+  else if (!path_is_new)
+  {
+    ROS_ERROR("Solution found by SBPL is the same as the old solution. "
+              "Replanning failed.");
+    return false;
   }
   else
   {

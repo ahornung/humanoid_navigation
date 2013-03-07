@@ -553,13 +553,6 @@ FootstepNavigation::mapCallback(
   // updates the map and starts replanning if necessary
   if (ivPlanner.updateMap(map))
   {
-    // NOTE: instead of planning from scratch and deleting all previously
-    // collected information one could think of updating the states affected
-    // from the map change, update these states and start a replanning.
-
-    // reset the planner
-    ivPlanner.reset();
-    // calculate a new path
     replan();
   }
 }

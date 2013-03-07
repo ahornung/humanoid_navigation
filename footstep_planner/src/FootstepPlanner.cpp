@@ -468,6 +468,7 @@ FootstepPlanner::reset()
   ivPlannerEnvironmentPtr->reset();
   //ivPlannerPtr->force_planning_from_scratch();
   setPlanner();
+  ivPathExists = false;
 }
 
 
@@ -477,10 +478,11 @@ FootstepPlanner::resetTotally()
   // reset the previously calculated paths
   ivPath.clear();
   ivPlanningStatesIds.clear();
-  // reset and initialize the planner environment
+  // reinitialize the planner environment
   ivPlannerEnvironmentPtr.reset(
       new FootstepPlannerEnvironment(ivEnvironmentParams));
   setPlanner();
+  ivPathExists = false;
 }
 
 
@@ -763,21 +765,19 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
   // store new map
   ivMapPtr.reset();
   ivMapPtr = map;
-  // update map of planning environment
-  ivPlannerEnvironmentPtr->updateMap(map);
 
+  // check if a previous map and a path existed
   if (old_map && ivPathExists)
   {
-	  ROS_INFO("Received new map.");
-
-    // updating the environment currently means resetting all previous planning
-    // information
     updateEnvironment(old_map);
 
     return true;
   }
+  // ..otherwise the environment's map can simply be updated
   else
   {
+    ivPlannerEnvironmentPtr->updateMap(map);
+
     return false;
   }
 }
@@ -786,9 +786,14 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
 void
 FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
 {
-  ROS_INFO("Reseting previous planning information.");
-  // reset planner
-  reset();
+  ROS_INFO("Reseting the planning environment.");
+  // reset environment
+  resetTotally();
+  // set the new map
+  ivPlannerEnvironmentPtr->updateMap(ivMapPtr);
+
+
+  // The following is not used any more
 
   // Replanning based on old planning info currently disabled
   //        // TODO: handle size changes of the map; currently the planning

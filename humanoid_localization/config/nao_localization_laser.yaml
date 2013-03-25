@@ -28,12 +28,12 @@ neff_factor: 1.0
 # Warning: this keeps the particles from converging properly!
 #min_particle_weight: 0.000001
 
-num_sensor_beams: 48
+sensor_sampling_dist: 0.25
 
 # min traversed odometry interval between laser measurements:
 # 
-update_min_trans: 0.1
-update_min_rot: 0.5
+update_min_trans: 0.2
+update_min_rot: 0.4
 
 # laser obs. model (for raycasting only)
 raycasting/z_hit: 0.8
@@ -60,13 +60,29 @@ motion_sigma_z: 0.02
 motion_sigma_roll: 0.015 # 0.85 deg.
 motion_sigma_pitch: 0.015 # 0.85 deg.
 
-# noise of the motion model:
-motion_noise/x: 0.15    # per m
-motion_noise/y: 0.15    # per m
+# noise of the motion model
+# std.devs for z,r,p depend on amount of translation (per meter):
 motion_noise/z: 0.05   # per m
 motion_noise/roll: 0.1    # per m
 motion_noise/pitch: 0.1    # per m
-motion_noise/yaw: 0.8    # per m
+
+#noise affecting x direction (sq. / variance)
+motion_noise/xx:    0.03
+motion_noise/xy:   0.05
+motion_noise/xt: 0.0003
+#noise affecting y direction (sq. / variance)
+motion_noise/yx:    0.13
+motion_noise/yy:   0.09
+motion_noise/yt:  0.004
+#noise affecting orientation (sq. / variance)
+motion_noise/tx:     1.58
+motion_noise/ty:     1.03
+motion_noise/tt:    0.11
+
+# single linear dependencies are no longer used!
+#motion_noise/x: 0.15  
+#motion_noise/y: 0.15  
+#motion_noise/yaw: 0.8 
 
 # odometry calibration for 2D drift (x,y,theta)
 # this is the identy matrix - uses odometry uncalibrated
@@ -76,9 +92,9 @@ motion_calib/xt:  0.0
 motion_calib/yx:  0.0
 motion_calib/yy:  1.0
 motion_calib/yt:  0.0
-motion_calib/zx:  0.0
-motion_calib/zy:  0.0
-motion_calib/zt:  1.0
+motion_calib/tx:  0.0
+motion_calib/ty:  0.0
+motion_calib/tt:  1.0
 
 # initial pose (when no truepose available):
 initial_pose/x: 2.0

@@ -37,7 +37,6 @@ m_rngUniform(m_rngEngine, UniformDistributionT(0.0, 1.0)),
 m_nh(),m_privateNh("~"),
 m_odomFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("/map"),
 m_useRaycasting(true), m_initFromTruepose(false), m_numParticles(500),
-m_numSensorBeams(48),
 m_sensorSampleDist(0.2),
 m_nEffFactor(1.0), m_minParticleWeight(0.0),
 m_bestParticleIdx(-1), m_lastIMUMsgBuffer(5),
@@ -81,8 +80,10 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_privateNh.param("initial_std/pitch", m_initNoiseStd(4), 0.04); // 0.04
   m_privateNh.param("initial_std_yaw", m_initNoiseStd(5), M_PI/12); // M_PI/12
 
+  if (m_privateNh.hasParam("num_sensor_beams"))
+    ROS_WARN("Parameter \"num_sensor_beams\" is no longer used, use \"sensor_sampling_dist\" instead");
+
   // laser observation model parameters:
-  m_privateNh.param("num_sensor_beams", m_numSensorBeams, m_numSensorBeams);
   m_privateNh.param("sensor_sampling_dist", m_sensorSampleDist, m_sensorSampleDist);
   m_privateNh.param("max_range", m_filterMaxRange, 30.0);
   m_privateNh.param("min_range", m_filterMinRange, 0.05);
@@ -279,7 +280,7 @@ void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& m
   ROS_DEBUG("Laser received (time: %f)", msg->header.stamp.toSec());
   
   if (!m_initialized){
-    ROS_WARN("Loclization not initialized yet, skipping laser callback.");
+    ROS_WARN("Localization not initialized yet, skipping laser callback.");
     return;
   }
 
@@ -463,11 +464,11 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
 
   // (range_max readings stay, will be used in the sensor model)
 
-  ranges.reserve(m_numSensorBeams+3);
+  ranges.reserve(50);
 
   // build a point cloud
   pc.header = laser->header;
-  pc.points.reserve(m_numSensorBeams+3);
+  pc.points.reserve(50);
   for (unsigned beam_idx = 0; beam_idx < numBeams; beam_idx+= step){
     float range = laser->ranges[beam_idx];
     if (range >= laserMin && range <= m_filterMaxRange){
@@ -698,20 +699,6 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
 
 }
 
-
-unsigned HumanoidLocalization::computeBeamStep(unsigned numBeams) const{
-  unsigned step = 1;
-  if (m_numSensorBeams > 1){
-    // from "amcl_node"
-    step = (numBeams -1) / (m_numSensorBeams - 1);
-    if (step < 1)
-      step = 1;
-  } else if (m_numSensorBeams == 1){
-    step = numBeams;
-  }
-
-  return step;
-}
 
 void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) {
   ROS_DEBUG("PointCloud received (time: %f)", msg->header.stamp.toSec());

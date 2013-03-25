@@ -192,7 +192,9 @@ protected:
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
 
   EngineT m_rngEngine;
+  /// standard normal distribution
   NormalGeneratorT m_rngNormal;
+  /// uniform distribution [0:1]
   UniformGeneratorT m_rngUniform;
   boost::shared_ptr<MotionModel> m_motionModel;
   boost::shared_ptr<ObservationModel> m_observationModel;
@@ -224,7 +226,6 @@ protected:
   bool m_useRaycasting;
   bool m_initFromTruepose;
   int m_numParticles;
-  int m_numSensorBeams;
   double m_sensorSampleDist;
 
   double m_nEffFactor;

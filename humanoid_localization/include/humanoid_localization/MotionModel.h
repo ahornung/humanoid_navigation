@@ -53,9 +53,7 @@ public:
   /// lookup the height of the torso, based on tf between the base and footprint frames
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
 
-
-
-  /// apply odomTransform to all particles (with random noise)
+  /// apply odomTransform to all particles (with random noise and calibration)
   void applyOdomTransform(Particles& particles, const tf::Transform& odomTransform);
 
   /// apply odomTransform to all particles (noisy), with temporal sampling over the range of dt.
@@ -74,6 +72,9 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 protected:
+  /// apply odomTransform to one particle pose (with random noise and calibration)
+  void applyOdomTransform(tf::Pose& particlePose, const tf::Transform& odomTransform);
+
   /// Transform a particle's pose with the relative odomTransform with added random noise
   void transformPose(tf::Pose& particlePose, const tf::Transform& odomTransform);
 
@@ -81,7 +82,7 @@ protected:
   /// May not be called in parallel, accesses the random generator m_rngNormal
   tf::Transform odomTransformNoise(const tf::Transform& odomTransform);
 
-  /// calibrary odometry transform w.r.t. 2D drift (pos. + orientation)
+  /// @return calibrated odometry transform w.r.t. 2D drift (pos. + orientation)
   tf::Transform calibrateOdometry(const tf::Transform& odomTransform) const;
 
   tf::TransformListener* m_tfListener;
@@ -89,10 +90,16 @@ protected:
   NormalGeneratorT m_rngNormal; // standard normal-distributed noise
   UniformGeneratorT m_rngUniform;
   // parameters:
-  //Matrix6f m_motionNoiseL;
-  Vector6f m_motionNoise;
+  /// variance parameters for calibrated odometry noise
+  Eigen::Matrix3d m_odomNoise2D;
+  /// systematic calibration parameters for odometry drift
   Eigen::Matrix3d m_odomCalibration2D;
-  //NoiseParams m_motionNoise;
+  /// std.dev param of noise in Z (depending on distance traveled)
+  double m_odomNoiseZ;
+  /// std.dev param of noise in roll (depending on distance traveled)
+  double m_odomNoiseRoll;
+  /// std.dev param of noise in pitch (depending on distance traveled)
+  double m_odomNoisePitch;
 
 
   std::string m_odomFrameId;

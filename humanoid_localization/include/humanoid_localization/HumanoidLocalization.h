@@ -261,6 +261,16 @@ protected:
   ros::Time m_lastPointCloudTime;
 
 
+  // PointCloud parameters
+
+  bool m_groundFilterPointCloud;
+  double m_groundFilterDistance;
+  double m_groundFilterAngle;
+  double m_groundFilterPlaneDistance;
+  int m_numFloorPoints;
+  int m_numNonFloorPoints;
+
+
   /// sensor data last integrated at this odom pose, to check if moved enough since then
   tf::Pose m_lastLocalizedPose;
 

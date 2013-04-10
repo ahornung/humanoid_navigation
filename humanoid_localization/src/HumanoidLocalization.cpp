@@ -46,6 +46,9 @@ m_syncedTruepose(false),
 m_observationThresholdTrans(0.1), m_observationThresholdRot(M_PI/6),
 m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
 m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
+m_groundFilterPointCloud(true), m_groundFilterDistance(0.04),
+m_groundFilterAngle(0.15), m_groundFilterPlaneDistance(0.07),
+m_numFloorPoints(20), m_numNonFloorPoints(80),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
 m_constrainMotionZ (false), m_constrainMotionRP(false)
@@ -99,6 +102,16 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_privateNh.param("use_imu", m_useIMU, m_useIMU);
   m_privateNh.param("constrain_motion_z", m_constrainMotionZ, m_constrainMotionZ);
   m_privateNh.param("constrain_motion_rp", m_constrainMotionRP, m_constrainMotionRP);
+
+  // point cloud observation model parameters
+  m_privateNh.param("ground_filter_point_cloud", m_groundFilterPointCloud, m_groundFilterPointCloud);
+  m_privateNh.param("ground_filter_distance", m_groundFilterDistance, m_groundFilterDistance);
+  m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle); 
+  m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
+  m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
+  m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
+
+  // motion model parameters
 
   m_motionModel = boost::shared_ptr<MotionModel>(new MotionModel(&m_privateNh, &m_rngEngine, &m_tfListener, m_odomFrameId, m_baseFrameId));
 
@@ -661,14 +674,7 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
 
     // identify ground plane
     PointCloud ground, nonground;
-    double m_groundFilterDistance = 0.04; // TODO: Parameter
-    double m_groundFilterAngle = 0.15; // TODO: Parameter
-    double m_groundFilterPlaneDistance = 0.07; // TODO: Parameter
-    bool m_filteredPointCloud = true; // TODO: Parameter
-    int m_numFloorPoints = 20; // TODO: Parameter
-    int m_numNonFloorPoints = 80; // TODO: Parameter
-
-    if (m_filteredPointCloud)
+    if (m_groundFilterPointCloud)
     {
         Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
         pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);

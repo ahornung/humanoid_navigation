@@ -379,7 +379,7 @@ FootstepPlanner::run()
   }
   catch (const SBPL_Exception& e)
   {
-    ROS_ERROR("SBPL planning failed (%s)", e.what());
+    // ROS_ERROR("SBPL planning failed (%s)", e.what());
     return false;
   }
   ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;

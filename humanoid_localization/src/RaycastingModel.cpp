@@ -136,8 +136,8 @@ bool RaycastingModel::getHeightError(const Particle& p, const tf::StampedTransfo
   if (!m_map->castRay(origin, direction, end, true, 2*direction.norm()))
     return false;
 
-  heightError =  std::max(0.0, std::abs((origin-end).z() - p.pose.getOrigin().getZ()) - m_map->getResolution());
-//  ROS_INFO("Height error: %f", heightError);
+  heightError =  std::max(0.0, std::abs((origin-end).z() - footprintToBase.getOrigin().z()) - m_map->getResolution());
+  //ROS_INFO("Height error: %f", heightError);
 
   return true;
 }

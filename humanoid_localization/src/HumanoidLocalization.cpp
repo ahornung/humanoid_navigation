@@ -971,6 +971,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
 
   // reset internal state:
   m_motionModel->reset();
+  // force integration of next laser data:
   m_receivedSensorData = false;
   m_initialized = true;
 

@@ -28,7 +28,7 @@ namespace humanoid_localization{
 EndpointModel::EndpointModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel> mapModel, EngineT * rngEngine)
 : ObservationModel(nh, mapModel, rngEngine), m_sigma(0.2), m_maxObstacleDistance(0.5)
 {
-  ROS_INFO("Using Endpoint observation model");
+  ROS_INFO("Using Endpoint observation model (precomputing...)");
 
   nh->param("endpoint/sigma", m_sigma, m_sigma);
   nh->param("endpoint/max_obstacle_distance", m_maxObstacleDistance, m_maxObstacleDistance);

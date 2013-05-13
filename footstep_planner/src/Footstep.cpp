@@ -32,8 +32,6 @@ namespace footstep_planner
 Footstep::Footstep(double x, double y, double theta, double cell_size,
                    int num_angle_bins, int max_hash_size)
 : ivTheta(angle_state_2_cell(theta, num_angle_bins)),
-  ivContX(x),
-  ivContY(y),
   ivCellSize(cell_size),
   ivNumAngleBins(num_angle_bins),
   ivMaxHashSize(max_hash_size),
@@ -42,7 +40,7 @@ Footstep::Footstep(double x, double y, double theta, double cell_size,
   ivDiscPredecessorLeft(num_angle_bins),
   ivDiscPredecessorRight(num_angle_bins)
 {
-  init();
+  init(x, y);
 }
 
 
@@ -50,9 +48,8 @@ Footstep::~Footstep()
 {}
 
 
-// TODO: get rid of ivContX, ivContY
 void
-Footstep::init()
+Footstep::init(double x, double y)
 {
   int backward_angle;
   int footstep_x;
@@ -60,11 +57,13 @@ Footstep::init()
 
   for (int a = 0; a < ivNumAngleBins; ++a)
   {
-    backward_angle = calculateForwardStep(RIGHT, a, &footstep_x, &footstep_y);
+    backward_angle = calculateForwardStep(RIGHT, a, x, y,
+                                          &footstep_x, &footstep_y);
     ivDiscSuccessorRight[a] = footstep_xy(footstep_x, footstep_y);
     ivDiscPredecessorLeft[backward_angle] = footstep_xy(-footstep_x,
                                                         -footstep_y);
-    backward_angle = calculateForwardStep(LEFT, a, &footstep_x, &footstep_y);
+    backward_angle = calculateForwardStep(LEFT, a, x, y,
+                                          &footstep_x, &footstep_y);
     ivDiscSuccessorLeft[a] = footstep_xy(footstep_x, footstep_y);
     ivDiscPredecessorRight[backward_angle] = footstep_xy(-footstep_x,
                                                          -footstep_y);
@@ -147,6 +146,7 @@ const
 
 int
 Footstep::calculateForwardStep(Leg leg, int global_theta,
+                               double x, double y,
                                int* footstep_x, int* footstep_y)
 const
 {
@@ -157,15 +157,15 @@ const
   double theta_sin = sin(cont_global_theta);
   if (leg == RIGHT)
   {
-    cont_footstep_x = theta_cos * ivContX - theta_sin * ivContY;
-    cont_footstep_y = theta_sin * ivContX + theta_cos * ivContY;
+    cont_footstep_x = theta_cos * x - theta_sin * y;
+    cont_footstep_y = theta_sin * x + theta_cos * y;
 
     global_theta += ivTheta;
   }
   else // leg == LEFT
       {
-    cont_footstep_x = theta_cos * ivContX + theta_sin * ivContY;
-    cont_footstep_y = theta_sin * ivContX - theta_cos * ivContY;
+    cont_footstep_x = theta_cos * x + theta_sin * y;
+    cont_footstep_y = theta_sin * x - theta_cos * y;
 
     global_theta -= ivTheta;
       }

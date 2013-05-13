@@ -86,7 +86,7 @@ private:
   typedef std::pair<int, int> footstep_xy;
 
   /// Initialization method called within the constructor.
-  void init();
+  void init(double x, double y);
 
   /**
    * @brief Discretizes the translation of the footstep for a certain
@@ -95,6 +95,8 @@ private:
    * @param leg The supporting leg of the possible state.
    * @param global_theta The (discretized) orientation of the possible
    * state.
+   * @param x The (continuous) translation in x direction.
+   * @param y The (continuous) translation in y direction.
    * @param footstep_x The resulting (discretized) translation in x
    * direction.
    * @param footstep_y The resulting (discretized) translation in y
@@ -104,15 +106,11 @@ private:
    * reversed footstep.
    */
   int calculateForwardStep(Leg leg, int global_theta,
+                           double x, double y,
                            int* footstep_x, int* footstep_y) const;
 
   /// The (discretized) rotation of the footstep.
   int ivTheta;
-
-  /// The (continuous) translation in x direction.
-  double ivContX;
-  /// The (continuous) translation in y direction.
-  double ivContY;
 
   /// The parameter for the discretization of the translation.
   double ivCellSize;

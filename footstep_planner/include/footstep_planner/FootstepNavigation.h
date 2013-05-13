@@ -219,7 +219,6 @@ protected:
 
   /// Used to lock the calculation and execution of footsteps.
   bool ivExecutingFootsteps;
-  bool ivBla;
 
   /// The rate the action server sends its feedback.
   double ivFeedbackFrequency;

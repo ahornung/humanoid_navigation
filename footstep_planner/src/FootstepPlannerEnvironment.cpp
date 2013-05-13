@@ -230,7 +230,7 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
 
   int* entry = new int[NUMOFINDICES_STATEID2IND];
   StateID2IndexMapping.push_back(entry);
-  for(int i = 0; i < NUMOFINDICES_STATEID2IND; i++)
+  for(int i = 0; i < NUMOFINDICES_STATEID2IND; ++i)
   {
     StateID2IndexMapping[state_id][i] = -1;
   }
@@ -256,7 +256,7 @@ FootstepPlannerEnvironment::getHashEntry(const PlanningState& s)
   std::vector<const PlanningState*>::const_iterator state_iter;
   for (state_iter = ivpStateHash2State[state_hash].begin();
        state_iter != ivpStateHash2State[state_hash].end();
-       state_iter++)
+       ++state_iter)
   {
     if (*(*state_iter) == s)
       return *state_iter;
@@ -576,7 +576,7 @@ FootstepPlannerEnvironment::getPredsOfGridCells(
   std::vector<State>::const_iterator state_iter;
   for (state_iter = changed_states.begin();
       state_iter != changed_states.end();
-      state_iter++)
+      ++state_iter)
   {
     PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
                     ivHashTableSize);
@@ -584,7 +584,7 @@ FootstepPlannerEnvironment::getPredsOfGridCells(
     std::vector<Footstep>::const_iterator footstep_set_iter;
     for(footstep_set_iter = ivFootstepSet.begin();
         footstep_set_iter != ivFootstepSet.end();
-        footstep_set_iter++)
+        ++footstep_set_iter)
     {
       PlanningState pred = footstep_set_iter->reverseMeOnThisState(s);
       // check if predecessor exists
@@ -607,7 +607,7 @@ FootstepPlannerEnvironment::getSuccsOfGridCells(
   std::vector<State>::const_iterator state_iter;
   for (state_iter = changed_states.begin();
       state_iter != changed_states.end();
-      state_iter++)
+      ++state_iter)
   {
     PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
                     ivHashTableSize);
@@ -615,7 +615,7 @@ FootstepPlannerEnvironment::getSuccsOfGridCells(
     std::vector<Footstep>::const_iterator footstep_set_iter;
     for(footstep_set_iter = ivFootstepSet.begin();
         footstep_set_iter != ivFootstepSet.end();
-        footstep_set_iter++)
+        ++footstep_set_iter)
     {
       PlanningState succ = footstep_set_iter->performMeOnThisState(s);
       // check if successor exists
@@ -702,7 +702,7 @@ FootstepPlannerEnvironment::GetPreds(int TargetStateID,
       std::vector<int>::const_iterator state_id_iter;
       for(state_id_iter = ivStateArea.begin();
           state_id_iter != ivStateArea.end();
-          state_id_iter++)
+          ++state_id_iter)
       {
         s = ivStateId2State[*state_id_iter];
         cost = stepCost(*current, *s);
@@ -714,7 +714,7 @@ FootstepPlannerEnvironment::GetPreds(int TargetStateID,
   }
 
   ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
-  ivNumExpandedStates++;
+  ++ivNumExpandedStates;
 
   if (closeToStart(*current))
   {
@@ -736,7 +736,7 @@ FootstepPlannerEnvironment::GetPreds(int TargetStateID,
   std::vector<Footstep>::const_iterator footstep_set_iter;
   for(footstep_set_iter = ivFootstepSet.begin();
       footstep_set_iter != ivFootstepSet.end();
-      footstep_set_iter++)
+      ++footstep_set_iter)
   {
     const PlanningState predecessor =
         footstep_set_iter->reverseMeOnThisState(*current);
@@ -800,7 +800,7 @@ FootstepPlannerEnvironment::GetSuccs(int SourceStateID,
       std::vector<int>::const_iterator state_id_iter;
       for(state_id_iter = ivStateArea.begin();
           state_id_iter != ivStateArea.end();
-          state_id_iter++)
+          ++state_id_iter)
       {
         s = ivStateId2State[*state_id_iter];
         cost = stepCost(*current, *s);
@@ -812,7 +812,7 @@ FootstepPlannerEnvironment::GetSuccs(int SourceStateID,
   }
 
   ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
-  ivNumExpandedStates++;
+  ++ivNumExpandedStates;
 
   if (closeToGoal(*current))
   {
@@ -835,7 +835,7 @@ FootstepPlannerEnvironment::GetSuccs(int SourceStateID,
   std::vector<Footstep>::const_iterator footstep_set_iter;
   for(footstep_set_iter = ivFootstepSet.begin();
       footstep_set_iter != ivFootstepSet.end();
-      footstep_set_iter++)
+      ++footstep_set_iter)
   {
     PlanningState successor =
         footstep_set_iter->performMeOnThisState(*current);
@@ -871,7 +871,7 @@ FootstepPlannerEnvironment::GetSuccsTo(int SourceStateID, int goalStateId,
 
   const PlanningState* current = ivStateId2State[SourceStateID];
   ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
-  ivNumExpandedStates++;
+  ++ivNumExpandedStates;
 
   //ROS_INFO("GetSuccsTo %d -> %d: %f", SourceStateID, goalStateId, euclidean_distance(current->getX(), current->getY(), ivStateId2State[goalStateId]->getX(), ivStateId2State[goalStateId]->getY()));
 
@@ -918,7 +918,7 @@ FootstepPlannerEnvironment::GetSuccsTo(int SourceStateID, int goalStateId,
   std::vector<Footstep>::const_iterator footstep_set_iter;
   for(footstep_set_iter = ivFootstepSet.begin();
       footstep_set_iter != ivFootstepSet.end();
-      footstep_set_iter++)
+      ++footstep_set_iter)
   {
     PlanningState successor =
         footstep_set_iter->performMeOnThisState(*current);
@@ -1043,7 +1043,7 @@ void FootstepPlannerEnvironment::GetRandomNeighs(const PlanningState* currentSta
 
   //iterate through random actions
   int nAttempts = 0;
-  for (int i = 0; i < nNumofNeighs && nAttempts < 5*nNumofNeighs; i++, nAttempts++)
+  for (int i = 0; i < nNumofNeighs && nAttempts < 5*nNumofNeighs; ++i, ++nAttempts)
   {
 
     // pick goal in random direction
@@ -1159,8 +1159,8 @@ FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
   );
 
 
-  // compare the actual values (exact comparison)
-  //		return (*s1 == *s2);
+//  compare the actual values (exact comparison)
+//  return (*s1 == *s2);
 }
 
 
@@ -1168,8 +1168,8 @@ FootstepPlannerEnvironment::AreEquivalent(int StateID1, int StateID2)
 bool
 FootstepPlannerEnvironment::InitializeEnv(const char *sEnvFile)
 {
-  //        ROS_ERROR("FootstepPlanerEnvironment::InitializeEnv: Hit "
-  //		          "unimplemented function. Check this!");
+//  ROS_ERROR("FootstepPlanerEnvironment::InitializeEnv: Hit unimplemented "
+//            "function. Check this!");
   return true;
 }
 

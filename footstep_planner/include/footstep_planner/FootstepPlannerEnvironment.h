@@ -450,6 +450,7 @@ protected:
    */
   double ivHeuristicScale;
 
+  /// Indicates if heuristic has to be updated.
   bool ivHeuristicExpired;
 
   /// Pointer to the map.

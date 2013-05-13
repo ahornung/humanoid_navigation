@@ -138,7 +138,7 @@ FootstepPlanner::FootstepPlanner()
   // create footstep set
   ivEnvironmentParams.footstep_set.clear();
   double max_step_width = 0;
-  for(int i=0; i < footsteps_x.size(); i++)
+  for(int i=0; i < footsteps_x.size(); ++i)
   {
     double x = (double)footsteps_x[i];
     double y = (double)footsteps_y[i];
@@ -429,13 +429,13 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
     ivPath.clear();
     return false;
   }
-  state_ids_iter++;
+  ++state_ids_iter;
   if (!ivPlannerEnvironmentPtr->getState(*state_ids_iter, &s))
   {
     ivPath.clear();
     return false;
   }
-  state_ids_iter++;
+  ++state_ids_iter;
 
   if (s.getLeg() == LEFT)
     ivPath.push_back(ivStartFootRight);
@@ -443,7 +443,7 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
     ivPath.push_back(start_left);
   ivPath.push_back(s);
 
-  for(; state_ids_iter < state_ids.end(); state_ids_iter++)
+  for(; state_ids_iter < state_ids.end(); ++state_ids_iter)
   {
     if (!ivPlannerEnvironmentPtr->getState(*state_ids_iter, &s))
     {
@@ -579,7 +579,7 @@ FootstepPlanner::planService(humanoid_nav_msgs::PlanFootsteps::Request &req,
 
   humanoid_nav_msgs::StepTarget foot;
   state_iter_t path_iter;
-  for (path_iter = getPathBegin(); path_iter != getPathEnd(); path_iter++)
+  for (path_iter = getPathBegin(); path_iter != getPathEnd(); ++path_iter)
   {
     foot.pose.x = path_iter->getX();
     foot.pose.y = path_iter->getY();
@@ -843,7 +843,7 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
   //                {
   //                    if (changed_cells.at<uchar>(x,y) == 255)
   //                    {
-  //                        num_changed_cells++;
+  //                        ++num_changed_cells;
   //                        ivMapPtr->mapToWorld(x, y, wx, wy);
   //                        s.setX(wx);
   //                        s.setY(wy);
@@ -927,7 +927,7 @@ FootstepPlanner::pathIsNew(const std::vector<int>& new_path)
     return true;
 
   bool unequal = true;
-  for (unsigned i = 0; i < new_path.size(); i++)
+  for (unsigned i = 0; i < new_path.size(); ++i)
     unequal = new_path[i] != ivPlanningStatesIds[i] && unequal;
 
   return unequal;
@@ -947,7 +947,7 @@ FootstepPlanner::clearFootstepPathVis(unsigned num_footsteps)
   if (num_footsteps < 1)
     num_footsteps = ivLastMarkerMsgSize;
 
-  for (unsigned i = 0; i < num_footsteps; i++)
+  for (unsigned i = 0; i < num_footsteps; ++i)
   {
     marker.ns = ivMarkerNamespace;
     marker.id = i;
@@ -973,7 +973,7 @@ FootstepPlanner::broadcastExpandedNodesVis()
     FootstepPlannerEnvironment::exp_states_2d_iter_t state_id_it;
     for(state_id_it = ivPlannerEnvironmentPtr->getExpandedStatesStart();
         state_id_it != ivPlannerEnvironmentPtr->getExpandedStatesEnd();
-        state_id_it++)
+        ++state_id_it)
     {
       point.x = cell_2_state(state_id_it->first,
                              ivEnvironmentParams.cell_size);
@@ -1021,8 +1021,8 @@ FootstepPlanner::broadcastFootstepPathVis()
   markers.push_back(marker);
 
   // add the footsteps of the path to the publish vector
-  state_iter_t path_iter = getPathBegin();
-  for(; path_iter != getPathEnd(); path_iter++)
+  for(state_iter_t path_iter = getPathBegin(); path_iter != getPathEnd();
+      ++path_iter)
   {
     footPoseToMarker(*path_iter, &marker);
     marker.id = markers_counter++;
@@ -1054,7 +1054,7 @@ FootstepPlanner::broadcastRandomNodesVis()
     FootstepPlannerEnvironment::exp_states_iter_t state_id_iter;
     for(state_id_iter = ivPlannerEnvironmentPtr->getRandomStatesStart();
         state_id_iter != ivPlannerEnvironmentPtr->getRandomStatesEnd();
-        state_id_iter++)
+        ++state_id_iter)
     {
       if (!ivPlannerEnvironmentPtr->getState(*state_id_iter, &s))
       {
@@ -1094,7 +1094,7 @@ FootstepPlanner::broadcastPathVis()
   state.header.frame_id = ivMapPtr->getFrameID();
 
   state_iter_t path_iter;
-  for(path_iter = getPathBegin(); path_iter != getPathEnd(); path_iter++)
+  for(path_iter = getPathBegin(); path_iter != getPathEnd(); ++path_iter)
   {
     state.pose.position.x = path_iter->getX();
     state.pose.position.y = path_iter->getY();

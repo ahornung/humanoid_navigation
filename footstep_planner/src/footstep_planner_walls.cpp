@@ -39,7 +39,8 @@ using gridmap_2d::GridMap2DPtr;
  */
 class FootstepPlannerWallsNode {
 public:
-  FootstepPlannerWallsNode(){
+  FootstepPlannerWallsNode()
+  {
     ros::NodeHandle privateNh("~");
     // params:
     privateNh.param("footstep_wall_dist", ivFootstepWallDist, 0.15);
@@ -51,23 +52,24 @@ public:
 
     // service:
     ivFootstepPlanService = ivNh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
-
   }
 
   virtual ~FootstepPlannerWallsNode(){};
 
-  void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap){
-
+  void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap)
+  {
     ROS_INFO("Obstacle map received, now waiting for wall map.");
     ivGridMap = GridMap2DPtr(new GridMap2D(occupancyMap));
     // don't set wall => wait for wall map!
     //ivFootstepPlanner.setMap(ivGridMap);
 
     // now subscribe to walls, so that they arrive in order:
-    ivWallMapSub = ivNh.subscribe<nav_msgs::OccupancyGrid>("map_walls", 1, &FootstepPlannerWallsNode::wallMapCallback, this);
+    ivWallMapSub = ivNh.subscribe<nav_msgs::OccupancyGrid>(
+      "map_walls", 1, &FootstepPlannerWallsNode::wallMapCallback, this);
   }
 
-  void wallMapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap){
+  void wallMapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap)
+  {
     ROS_INFO("Wall / Obstacle map received");
     assert(ivGridMap);
     GridMap2DPtr wallMap(new GridMap2D(occupancyMap));
@@ -79,8 +81,8 @@ public:
     enlargedWallMap->setMap(binaryMap);
 
     ivFootstepPlanner.updateMap(enlargedWallMap);
-
   }
+
 protected:
   ros::NodeHandle ivNh;
   footstep_planner::FootstepPlanner ivFootstepPlanner;
@@ -90,7 +92,9 @@ protected:
   ros::ServiceServer ivFootstepPlanService;
 };
 
-int main(int argc, char** argv){
+
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, "footstep_planner");
 
   FootstepPlannerWallsNode planner;

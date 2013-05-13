@@ -41,13 +41,16 @@ FootstepNavigation::FootstepNavigation()
   ros::NodeHandle nh_public;
 
   // service
-  ivFootstepSrv = nh_public.serviceClient<humanoid_nav_msgs::StepTargetService>(
+  ivFootstepSrv =
+    nh_public.serviceClient<humanoid_nav_msgs::StepTargetService>(
     "footstep_srv");
-  ivClipFootstepSrv = nh_public.serviceClient<humanoid_nav_msgs::ClipFootstep>(
+  ivClipFootstepSrv =
+    nh_public.serviceClient<humanoid_nav_msgs::ClipFootstep>(
     "clip_footstep_srv");
 
   // subscribers
-  ivGridMapSub = nh_public.subscribe<nav_msgs::OccupancyGrid>(
+  ivGridMapSub =
+    nh_public.subscribe<nav_msgs::OccupancyGrid>(
     "map", 1, &FootstepNavigation::mapCallback, this);
   ivGoalPoseSub = nh_public.subscribe<geometry_msgs::PoseStamped>(
     "goal", 1, &FootstepNavigation::goalPoseCallback, this);
@@ -68,99 +71,39 @@ FootstepNavigation::FootstepNavigation()
   nh_private.param("feedback_frequency", ivFeedbackFrequency, 5.0);
   nh_private.param("safe_execution", ivSafeExecution, true);
 
-  // check if each footstep can be performed by the NAO robot
-  XmlRpc::XmlRpcValue footsteps_x;
-  XmlRpc::XmlRpcValue footsteps_y;
-  XmlRpc::XmlRpcValue footsteps_theta;
-  ros::ServiceClient footstep_clip_srv = nh_public.serviceClient<
-    humanoid_nav_msgs::ClipFootstep>("clip_footstep_srv");
-  humanoid_nav_msgs::ClipFootstep performable_step;
-  humanoid_nav_msgs::StepTarget step;
-  // read the footstep parameters
-  nh_private.getParam("footsteps/x", footsteps_x);
-  nh_private.getParam("footsteps/y", footsteps_y);
-  nh_private.getParam("footsteps/theta", footsteps_theta);
-  if (footsteps_x.getType() != XmlRpc::XmlRpcValue::TypeArray)
+  nh_private.param("foot/max/step/x", ivMaxStepX, 0.07);
+  nh_private.param("foot/max/step/y", ivMaxStepY, 0.15);
+  nh_private.param("foot/max/step/theta", ivMaxStepTheta, 0.3);
+  nh_private.param("foot/max/inverse/step/x", ivMaxInvStepX, -0.03);
+  nh_private.param("foot/max/inverse/step/y", ivMaxInvStepY, 0.09);
+  nh_private.param("foot/max/inverse/step/theta", ivMaxInvStepTheta, -0.01);
+
+  // step range
+  XmlRpc::XmlRpcValue step_range_x;
+  XmlRpc::XmlRpcValue step_range_y;
+  nh_private.getParam("step_range/x", step_range_x);
+  nh_private.getParam("step_range/y", step_range_y);
+  if (step_range_x.getType() != XmlRpc::XmlRpcValue::TypeArray)
     ROS_ERROR("Error reading footsteps/x from config file.");
-  if (footsteps_y.getType() != XmlRpc::XmlRpcValue::TypeArray)
+  if (step_range_y.getType() != XmlRpc::XmlRpcValue::TypeArray)
     ROS_ERROR("Error reading footsteps/y from config file.");
-  if (footsteps_theta.getType() != XmlRpc::XmlRpcValue::TypeArray)
-    ROS_ERROR("Error reading footsteps/theta from config file.");
-  // check each footstep
-  for(int i=0; i < footsteps_x.size(); i++)
+  if (step_range_x.size() != step_range_y.size())
   {
-    double x = (double) footsteps_x[i];
-    double y = (double) footsteps_y[i];
-    double theta = (double) footsteps_theta[i];
-
-    step.pose.x = x;
-    step.pose.y = y;
-    step.pose.theta = theta;
-    step.leg = humanoid_nav_msgs::StepTarget::left;
-
-    performable_step.request.step = step;
-    footstep_clip_srv.call(performable_step);
-
-    if (fabs(step.pose.x - performable_step.response.step.pose.x) >
-          FLOAT_CMP_THR ||
-        fabs(step.pose.y - performable_step.response.step.pose.y) >
-          FLOAT_CMP_THR ||
-        fabs(angles::shortest_angular_distance(
-          step.pose.theta, performable_step.response.step.pose.theta)) >
-            FLOAT_CMP_THR)
-    {
-      ROS_ERROR("Step (%f, %f, %f) cannot be performed by the NAO "
-                "robot. Exit!", x, y, theta);
-      exit(2);
-    }
+    ROS_ERROR("Step range points have different size. Exit!");
+    exit(2);
   }
-
-  // TODO: read this from config file
-  // create the polygon that defines the executable range of a single step
-  // this range is valid for all thetas in [-0.3, 0.3]
-  float x = 0.0;
-  float y = 0.15;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.01;
-  y = 0.15;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.02;
-  y = 0.15;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.03;
-  y = 0.14;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.05;
-  y = 0.13;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.06;
-  y = 0.13;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.07;
-  y = 0.12;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = 0.07;
-  y = 0.09;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = -0.03;
-  y = 0.09;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = -0.03;
-  y = 0.13;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = -0.02;
-  y = 0.14;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = -0.02;
-  y = 0.14;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  x = -0.01;
-  y = 0.15;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
-  // first point has to be included at the end of the list again
-  x = 0.0;
-  y = 0.15;
-  ivStepRange.push_back(std::pair<float, float>(x, y));
+  // create step range
+  ivStepRange.clear();
+  ivStepRange.reserve(step_range_x.size());
+  double x, y;
+  for (int i = 0; i < step_range_x.size(); ++i)
+  {
+    x = (double)step_range_x[i];
+    y = (double)step_range_y[i];
+    ivStepRange.push_back(std::pair<double, double>(x, y));
+  }
+  // insert first point again at the end!
+  ivStepRange.push_back(ivStepRange[0]);
 }
 
 
@@ -798,13 +741,16 @@ FootstepNavigation::performable(const humanoid_nav_msgs::StepTarget& footstep)
     step_theta = -step_theta;
   }
 
-  // TODO: make this configurable
-  if (fabs(step_theta - 0.3) < FLOAT_CMP_THR ||
-      fabs(step_theta + 0.2) < FLOAT_CMP_THR)
-  {
-    ROS_ERROR("angle wrong");
+  if (step_x + FLOAT_CMP_THR > ivMaxStepX ||
+      step_x - FLOAT_CMP_THR < ivMaxInvStepX)
     return false;
-  }
+  if (step_y + FLOAT_CMP_THR > ivMaxStepY ||
+      step_y - FLOAT_CMP_THR < ivMaxInvStepY)
+    return false;
+  if (step_theta + FLOAT_CMP_THR > ivMaxStepTheta ||
+      step_theta - FLOAT_CMP_THR < ivMaxInvStepTheta)
+    return false;
+
   return performable(step_x, step_y);
 }
 

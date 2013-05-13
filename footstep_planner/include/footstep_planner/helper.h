@@ -203,6 +203,16 @@ inline int round(double r)
 bool collision_check(double x, double y, double theta,
                      double height, double width, int accuracy,
                      const gridmap_2d::GridMap2D& distance_map);
-}
 
+
+/**
+ * @brief Crossing number method to determine whether a point lies within a
+ * polygon or not.
+ * @param edges (x,y)-points defining the polygon.
+ *
+ * Check http://geomalgorithms.com/a03-_inclusion.html for further details.
+ */
+bool pointWithinPolygon(int x, int y,
+                        const std::vector<std::pair<int, int> >& edges);
+}
 #endif  /* FOOTSTEP_PLANNER_HELPER_H_ */

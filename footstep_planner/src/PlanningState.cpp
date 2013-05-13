@@ -87,7 +87,7 @@ const
     return false;
 
   return (ivX == s2.getX() && ivY == s2.getY() &&
-      ivTheta == s2.getTheta() && ivLeg == s2.getLeg());
+    ivTheta == s2.getTheta() && ivLeg == s2.getLeg());
 }
 
 

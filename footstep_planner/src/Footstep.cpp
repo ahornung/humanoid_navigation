@@ -50,6 +50,7 @@ Footstep::~Footstep()
 {}
 
 
+// TODO: get rid of ivContX, ivContY
 void
 Footstep::init()
 {

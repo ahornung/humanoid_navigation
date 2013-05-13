@@ -24,8 +24,6 @@
 #include <footstep_planner/FootstepPlanner.h>
 #include <humanoid_nav_msgs/ClipFootstep.h>
 
-#include <time.h>
-
 
 using gridmap_2d::GridMap2D;
 using gridmap_2d::GridMap2DPtr;
@@ -58,27 +56,23 @@ FootstepPlanner::FootstepPlanner()
   ivStartPoseVisPub = nh_private.advertise<
       geometry_msgs::PoseStamped>("start", 1);
 
-  int max_hash_size;
   std::string heuristic_type;
-  double step_cost;
   double diff_angle_cost;
-  int num_random_nodes;
-  double random_node_dist;
-  double heuristic_scale;
 
   // read parameters from config file:
-  // - planner environment settings
+  // planner environment settings
   nh_private.param("heuristic_type", heuristic_type,
                    std::string("EuclideanHeuristic"));
-  nh_private.param("heuristic_scale", heuristic_scale, 1.0);
-  nh_private.param("max_hash_size", max_hash_size, 65536);
-  nh_private.param(
-      "accuracy/collision_check", ivEnvironmentParams.collision_check_accuracy,
-      2);
+  nh_private.param("heuristic_scale", ivEnvironmentParams.heuristic_scale, 1.0);
+  nh_private.param("max_hash_size", ivEnvironmentParams.hash_table_size, 65536);
+  nh_private.param("accuracy/collision_check",
+                   ivEnvironmentParams.collision_check_accuracy,
+                   2);
   nh_private.param("accuracy/cell_size", ivEnvironmentParams.cell_size, 0.01);
-  nh_private.param(
-      "accuracy/num_angle_bins", ivEnvironmentParams.num_angle_bins, 64);
-  nh_private.param("step_cost", step_cost, 0.05);
+  nh_private.param("accuracy/num_angle_bins",
+                   ivEnvironmentParams.num_angle_bins,
+                   64);
+  nh_private.param("step_cost", ivEnvironmentParams.step_cost, 0.05);
   nh_private.param("diff_angle_cost", diff_angle_cost, 0.0);
 
   nh_private.param("planner_type", ivPlannerType, std::string("ARAPlanner"));
@@ -88,29 +82,38 @@ FootstepPlanner::FootstepPlanner()
   nh_private.param("forward_search", ivEnvironmentParams.forward_search, false);
   nh_private.param("initial_epsilon", ivInitialEpsilon, 3.0);
   nh_private.param("changed_cells_limit", ivChangedCellsLimit, 20000);
-  nh_private.param("num_random_nodes", num_random_nodes, 20);
-  nh_private.param("random_node_dist", random_node_dist, 1.0);
+  nh_private.param("num_random_nodes", ivEnvironmentParams.num_random_nodes,
+                   20);
+  nh_private.param("random_node_dist", ivEnvironmentParams.random_node_distance,
+                   1.0);
 
-  // - footstep settings
+  // footstep settings
   nh_private.param("foot/size/x", ivEnvironmentParams.footsize_x, 0.16);
   nh_private.param("foot/size/y", ivEnvironmentParams.footsize_y, 0.06);
   nh_private.param("foot/size/z", ivEnvironmentParams.footsize_z, 0.015);
   nh_private.param("foot/separation", ivFootSeparation, 0.1);
-  nh_private.param(
-      "foot/origin_shift/x", ivEnvironmentParams.foot_origin_shift_x, 0.02);
-  nh_private.param(
-      "foot/origin_shift/y", ivEnvironmentParams.foot_origin_shift_y, 0.0);
+  nh_private.param("foot/origin_shift/x",
+                   ivEnvironmentParams.foot_origin_shift_x,
+                   0.02);
+  nh_private.param("foot/origin_shift/y",
+                   ivEnvironmentParams.foot_origin_shift_y,
+                   0.0);
+  nh_private.param("foot/max/step/x", ivEnvironmentParams.max_footstep_x, 0.08);
+  nh_private.param("foot/max/step/y", ivEnvironmentParams.max_footstep_y, 0.16);
+  nh_private.param("foot/max/step/theta",
+                   ivEnvironmentParams.max_footstep_theta,
+                   0.3);
+  nh_private.param("foot/max/inverse/step/x",
+                   ivEnvironmentParams.max_inverse_footstep_x,
+                   -0.04);
+  nh_private.param("foot/max/inverse/step/y",
+                   ivEnvironmentParams.max_inverse_footstep_y,
+                   0.09);
+  nh_private.param("foot/max/inverse/step/theta",
+                   ivEnvironmentParams.max_inverse_footstep_theta,
+                   -0.3);
 
-  // for heuristic inflation
-  double foot_incircle =
-    std::min(
-      (ivEnvironmentParams.footsize_x / 2.0 -
-       std::abs(ivEnvironmentParams.foot_origin_shift_x)),
-      (ivEnvironmentParams.footsize_y / 2.0 -
-       std::abs(ivEnvironmentParams.foot_origin_shift_y)));
-  assert(foot_incircle > 0.0);
-
-  // - footstep discretization
+  // footstep discretization
   XmlRpc::XmlRpcValue footsteps_x;
   XmlRpc::XmlRpcValue footsteps_y;
   XmlRpc::XmlRpcValue footsteps_theta;
@@ -123,40 +126,28 @@ FootstepPlanner::FootstepPlanner()
     ROS_ERROR("Error reading footsteps/y from config file.");
   if (footsteps_theta.getType() != XmlRpc::XmlRpcValue::TypeArray)
     ROS_ERROR("Error reading footsteps/theta from config file.");
-  // check if received footstep discretization is valid
-  int size, size_y, size_t;
-  try
+  int size_x = footsteps_x.size();
+  int size_y = footsteps_y.size();
+  int size_t = footsteps_theta.size();
+  if (size_x != size_y || size_x != size_t)
   {
-    size = footsteps_x.size();
-    size_y = footsteps_y.size();
-    size_t = footsteps_theta.size();
-
-    if (size != size_y || size != size_t)
-    {
-      ROS_ERROR("Footstep parameterization has different sizes for "
-          "x/y/theta, exiting.");
-      exit(2);
-    }
-  }
-  catch (const XmlRpc::XmlRpcException& e)
-  {
-    ROS_ERROR("No footstep parameterization available, exiting.");
+    ROS_ERROR("Footstep parameterization has different sizes for x/y/theta. "
+              "Exit!");
     exit(2);
   }
-
   // create footstep set
   ivEnvironmentParams.footstep_set.clear();
   double max_step_width = 0;
-  for(int i=0; i < size; i++)
+  for(int i=0; i < footsteps_x.size(); i++)
   {
-    double x = (double) footsteps_x[i];
-    double y = (double) footsteps_y[i];
-    double theta = (double) footsteps_theta[i];
+    double x = (double)footsteps_x[i];
+    double y = (double)footsteps_y[i];
+    double theta = (double)footsteps_theta[i];
 
     Footstep f(x, y, theta,
                ivEnvironmentParams.cell_size,
                ivEnvironmentParams.num_angle_bins,
-               max_hash_size);
+               ivEnvironmentParams.hash_table_size);
     ivEnvironmentParams.footstep_set.push_back(f);
 
     double cur_step_width = sqrt(x*x + y*y);
@@ -164,6 +155,42 @@ FootstepPlanner::FootstepPlanner()
     if (cur_step_width > max_step_width)
       max_step_width = cur_step_width;
   }
+
+  // step range
+  XmlRpc::XmlRpcValue step_range_x;
+  XmlRpc::XmlRpcValue step_range_y;
+  nh_private.getParam("step_range/x", step_range_x);
+  nh_private.getParam("step_range/y", step_range_y);
+  if (step_range_x.getType() != XmlRpc::XmlRpcValue::TypeArray)
+    ROS_ERROR("Error reading footsteps/x from config file.");
+  if (step_range_y.getType() != XmlRpc::XmlRpcValue::TypeArray)
+    ROS_ERROR("Error reading footsteps/y from config file.");
+  if (step_range_x.size() != step_range_y.size())
+  {
+    ROS_ERROR("Step range points have different size. Exit!");
+    exit(2);
+  }
+  // create step range
+  ivEnvironmentParams.step_range.clear();
+  ivEnvironmentParams.step_range.reserve(step_range_x.size());
+  double x, y;
+  double max_x = 0.0;
+  double max_y = 0.0;
+  double cell_size = ivEnvironmentParams.cell_size;
+  for (int i=0; i < step_range_x.size(); ++i)
+  {
+    x = (double)step_range_x[i];
+    y = (double)step_range_y[i];
+    if (fabs(x) > max_x)
+      max_x = fabs(x);
+    if (fabs(y) > max_y)
+      max_y = fabs(y);
+    ivEnvironmentParams.step_range.push_back(
+      std::pair<int, int>(disc_val(x, cell_size), disc_val(y, cell_size)));
+  }
+  // insert first point again at the end!
+  ivEnvironmentParams.step_range.push_back(ivEnvironmentParams.step_range[0]);
+  ivEnvironmentParams.max_step_width = sqrt(max_x*max_x + max_y*max_y) * 1.5;
 
   // initialize the heuristic
   boost::shared_ptr<Heuristic> h;
@@ -179,23 +206,33 @@ FootstepPlanner::FootstepPlanner()
     h.reset(
         new EuclStepCostHeuristic(ivEnvironmentParams.cell_size,
                                   ivEnvironmentParams.num_angle_bins,
-                                  step_cost, diff_angle_cost,
+                                  ivEnvironmentParams.step_cost,
+                                  diff_angle_cost,
                                   max_step_width));
-    ROS_INFO("FootstepPlanner heuristic: euclidean distance with step "
-        "costs");
+    ROS_INFO("FootstepPlanner heuristic: euclidean distance with step costs");
   }
   else if (heuristic_type == "PathCostHeuristic")
   {
+    // for heuristic inflation
+    double foot_incircle =
+      std::min((ivEnvironmentParams.footsize_x / 2.0 -
+                std::abs(ivEnvironmentParams.foot_origin_shift_x)),
+               (ivEnvironmentParams.footsize_y / 2.0 -
+                std::abs(ivEnvironmentParams.foot_origin_shift_y)));
+    assert(foot_incircle > 0.0);
+
     h.reset(
         new PathCostHeuristic(ivEnvironmentParams.cell_size,
                               ivEnvironmentParams.num_angle_bins,
-                              step_cost, diff_angle_cost, max_step_width,
+                              ivEnvironmentParams.step_cost,
+                              diff_angle_cost,
+                              max_step_width,
                               foot_incircle));
     ROS_INFO("FootstepPlanner heuristic: 2D path euclidean distance with step "
              "costs");
+
     // keep a local ptr for visualization
-    ivPathCostHeuristicPtr = boost::dynamic_pointer_cast<
-        PathCostHeuristic>(h);
+    ivPathCostHeuristicPtr = boost::dynamic_pointer_cast<PathCostHeuristic>(h);
   }
   else
   {
@@ -203,77 +240,11 @@ FootstepPlanner::FootstepPlanner()
                      "exiting.");
     exit(1);
   }
-
-  // TODO: read this from config file
-  // create the polygon that defines the executable range of a single step
-  // this range is valid for all thetas in [-0.3, 0.3]
-  std::vector<std::pair<int, int> > step_range;
-  double cell_size = ivEnvironmentParams.cell_size;
-  int x = disc_val(0.0, cell_size);
-  int y = disc_val(0.15, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.01, cell_size);
-  y = disc_val(0.15, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.02, cell_size);
-  y = disc_val(0.15, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.03, cell_size);
-  y = disc_val(0.14, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.05, cell_size);
-  y = disc_val(0.13, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.06, cell_size);
-  y = disc_val(0.13, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.07, cell_size);
-  y = disc_val(0.12, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(0.07, cell_size);
-  y = disc_val(0.09, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(-0.03, cell_size);
-  y = disc_val(0.09, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(-0.03, cell_size);
-  y = disc_val(0.13, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(-0.02, cell_size);
-  y = disc_val(0.14, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(-0.02, cell_size);
-  y = disc_val(0.14, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  x = disc_val(-0.01, cell_size);
-  y = disc_val(0.15, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-  // first point has to be included at the end of the list again
-  x = disc_val(0.0, cell_size);
-  y = disc_val(0.15, cell_size);
-  step_range.push_back(std::pair<int, int>(x, y));
-
-  double max_x = std::max(0.07, fabs(-0.3));
-  double max_y = std::max(0.15, 0.09);
-
   ivEnvironmentParams.heuristic = h;
-  ivEnvironmentParams.max_footstep_x = 0.07;
-  ivEnvironmentParams.max_footstep_y = 0.15;
-  ivEnvironmentParams.max_footstep_theta = 0.3;
-  ivEnvironmentParams.max_inverse_footstep_x = -0.3;
-  ivEnvironmentParams.max_inverse_footstep_y = 0.09;
-  ivEnvironmentParams.max_inverse_footstep_theta = 0.0;
-  ivEnvironmentParams.step_range = step_range;
-  ivEnvironmentParams.step_cost = step_cost;
-  ivEnvironmentParams.hash_table_size = max_hash_size;
-  ivEnvironmentParams.max_step_width = sqrt(max_x * max_x + max_y * max_y) * 1.5;
-  ivEnvironmentParams.num_random_nodes = num_random_nodes;
-  ivEnvironmentParams.random_node_distance = random_node_dist;
-  ivEnvironmentParams.heuristic_scale = heuristic_scale;
 
   // initialize the planner environment
   ivPlannerEnvironmentPtr.reset(
-      new FootstepPlannerEnvironment(ivEnvironmentParams));
+    new FootstepPlannerEnvironment(ivEnvironmentParams));
 
   // set up planner
   if (ivPlannerType == "ARAPlanner" ||
@@ -338,19 +309,31 @@ FootstepPlanner::setPlanner()
 bool
 FootstepPlanner::run()
 {
+  bool path_existed = ivPathExists;
+  int ret = 0;
+  MDPConfig mdp_config;
+  std::vector<int> solution_state_ids;
   ivPathExists = false;
 
   // commit start/goal poses to the environment
   ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
   ivPlannerEnvironmentPtr->updateGoal(ivGoalFootLeft, ivGoalFootRight);
   ivPlannerEnvironmentPtr->updateHeuristicValues();
-
-  int ret = 0;
-  MDPConfig mdp_config;
-  std::vector<int> solution_state_ids;
-
   ivPlannerEnvironmentPtr->InitializeEnv(NULL);
   ivPlannerEnvironmentPtr->InitializeMDPCfg(&mdp_config);
+
+  // inform AD planner about changed (start) states for replanning
+  if (path_existed &&
+      !ivEnvironmentParams.forward_search &&
+      ivPlannerType == "ADPlanner")
+  {
+    std::vector<int> changed_edges;
+    changed_edges.push_back(mdp_config.startstateid);
+    // update the AD planner
+    boost::shared_ptr<ADPlanner> ad_planner =
+      boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
+    ad_planner->update_preds_of_changededges(&changed_edges);
+  }
 
   // set up SBPL
   if (ivPlannerPtr->set_start(mdp_config.startstateid) == 0)
@@ -438,9 +421,31 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
   ivPath.clear();
 
   State s;
-  for(unsigned int i = 0; i < state_ids.size(); ++i)
+  State start_left;
+  std::vector<int>::const_iterator state_ids_iter = state_ids.begin();
+
+  if (!ivPlannerEnvironmentPtr->getState(*state_ids_iter, &start_left))
   {
-    if (!ivPlannerEnvironmentPtr->getState(state_ids[i], &s))
+    ivPath.clear();
+    return false;
+  }
+  state_ids_iter++;
+  if (!ivPlannerEnvironmentPtr->getState(*state_ids_iter, &s))
+  {
+    ivPath.clear();
+    return false;
+  }
+  state_ids_iter++;
+
+  if (s.getLeg() == LEFT)
+    ivPath.push_back(ivStartFootRight);
+  else
+    ivPath.push_back(start_left);
+  ivPath.push_back(s);
+
+  for(; state_ids_iter < state_ids.end(); state_ids_iter++)
+  {
+    if (!ivPlannerEnvironmentPtr->getState(*state_ids_iter, &s))
     {
       ivPath.clear();
       return false;
@@ -465,8 +470,11 @@ FootstepPlanner::reset()
   ivPath.clear();
   ivPlanningStatesIds.clear();
   // reset the planner
-  ivPlannerEnvironmentPtr->reset();
+  // INFO: force_planning_from_scratch was not working properly the last time
+  // checked; therefore instead of using this function the planner is manually
+  // reset
   //ivPlannerPtr->force_planning_from_scratch();
+  ivPlannerEnvironmentPtr->reset();
   setPlanner();
   ivPathExists = false;
 }
@@ -737,7 +745,6 @@ FootstepPlanner::setStart(float x, float y, float theta)
   State foot_right = getFootPose(start, RIGHT);
 
   bool success = setStart(foot_left, foot_right);
-
   if (success)
     ROS_INFO("Start pose set to (%f %f %f)", x, y, theta);
   else
@@ -773,13 +780,10 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
 
     return true;
   }
-  // ..otherwise the environment's map can simply be updated
-  else
-  {
-    ivPlannerEnvironmentPtr->updateMap(map);
 
-    return false;
-  }
+  // ..otherwise the environment's map can simply be updated
+  ivPlannerEnvironmentPtr->updateMap(map);
+  return false;
 }
 
 

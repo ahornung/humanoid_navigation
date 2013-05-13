@@ -1,6 +1,6 @@
-### Footstep parameterization for a large humanoid, similar to ASIMO or HRP-2 ##
+### Footstep parameterization for a large humanoid, similar to ASIMO or HRP-2 #
 
-### footstep settings ##########################################################
+### footstep settings #########################################################
 # Footstep displacement vectors (in meter / rad)
 # WARNING: data type has to be float/double, integers will cause an exception
 footsteps:
@@ -9,7 +9,7 @@ footsteps:
   theta: [0.00, 0.00, 0.00, 0.70, 0.30,-0.40, 0.00, 0.30, 0.00, 0.00, 0.00, 0.00, 0.00,-0.25]
 
 
-### foot settings ##############################################################
+### foot settings #############################################################
 foot:
   size: {x: 0.16, y: 0.10, z: 0.015}
   separation: 0.14
@@ -18,3 +18,12 @@ foot:
     step: {x: 0.22, y: 0.28, theta: 0.7}
     inverse:
       step: {x: -0.1, y: 0.12, theta: -0.4}
+
+
+### step range ################################################################
+
+# more accurate than the bounding box defined by the max/max inverse step
+step_range:
+  x: [0.22, 0.22,-0.10,-0.10]
+  y: [0.28, 0.12, 0.12, 0.28]
+

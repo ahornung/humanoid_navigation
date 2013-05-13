@@ -81,4 +81,27 @@ collision_check(double x, double y, double theta, double height,
           collision_check(x-x_shift, y-y_shift, theta, h_new, w_new,
                           accuracy, distance_map));
 }
+
+
+bool
+pointWithinPolygon(int x, int y, const std::vector<std::pair<int, int> >& edges)
+{
+  int cn = 0;
+
+  // loop through all edges of the polygon
+  for(unsigned int i = 0; i < edges.size() - 1; ++i)
+  {
+    if ((edges[i].second <= y && edges[i + 1].second > y) ||
+        (edges[i].second > y && edges[i + 1].second <= y))
+    {
+      float vt = (float)(y - edges[i].second) /
+        (edges[i + 1].second - edges[i].second);
+      if (x < edges[i].first + vt * (edges[i + 1].first - edges[i].first))
+      {
+        ++cn;
+      }
+    }
+  }
+  return cn & 1;
+}
 }

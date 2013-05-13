@@ -45,6 +45,7 @@
 #include <XmlRpcException.h>
 
 #include <assert.h>
+#include <time.h>
 
 
 namespace footstep_planner
@@ -211,6 +212,9 @@ public:
   /// @return True if for the current start and goal pose a path exists.
   bool pathExists() { return ivPathExists; };
 
+  /// @brief Planning parameters.
+  environment_params ivEnvironmentParams;
+
 protected:
   void broadcastExpandedNodesVis();
   void broadcastRandomNodesVis();
@@ -295,8 +299,6 @@ protected:
   std::string ivMarkerNamespace;
 
   std::vector<int> ivPlanningStatesIds;
-
-  environment_params ivEnvironmentParams;
 };
 }
 

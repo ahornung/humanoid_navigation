@@ -246,7 +246,14 @@ protected:
   /// Whether to use the slower but more cautious execution or not.
   bool ivSafeExecution;
 
-  std::vector<std::pair<float, float> > ivStepRange;
+  double ivMaxStepX;
+  double ivMaxStepY;
+  double ivMaxStepTheta;
+  double ivMaxInvStepX;
+  double ivMaxInvStepY;
+  double ivMaxInvStepTheta;
+
+  std::vector<std::pair<double, double> > ivStepRange;
 };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPNAVIGATION_H_

@@ -1,11 +1,12 @@
-### planner environment settings ###############################################
+### planner environment settings ##############################################
 
 # the size of the used hash map (the bigger the better); should be something
 # with 2^X (initially 2^16=65536)
 max_hash_size: 65536
 
-# the heuristic that should be used to estimate the step costs of a planning state
-# possible choices: EuclideanHeuristic, EuclStepCostHeuristic, PathCostHeuristic
+# the heuristic that should be used to estimate the step costs of a planning 
+# state possible choices: 
+# EuclideanHeuristic, EuclStepCostHeuristic, PathCostHeuristic
 heuristic_type: PathCostHeuristic
 
 

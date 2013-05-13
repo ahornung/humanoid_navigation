@@ -53,6 +53,7 @@ protected:
   ros::Subscriber ivRobotPoseSub;
 
   ros::ServiceServer ivFootstepPlanService;
+  ros::ServiceServer ivFootstepReplanService;
 };
 }
 #endif  // FOOTSTEP_PLANNER_FOOTSTEPPLANNERNODE_H_

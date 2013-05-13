@@ -45,7 +45,10 @@ struct environment_params
 {
   std::vector<Footstep> footstep_set;
   boost::shared_ptr<Heuristic> heuristic;
+
+  /// Defines the area of performable (discrete) steps.
   std::vector<std::pair<int, int> > step_range;
+
   double footsize_x, footsize_y, footsize_z;
   double foot_origin_shift_x, foot_origin_shift_y;
   double max_footstep_x, max_footstep_y, max_footstep_theta;
@@ -126,11 +129,21 @@ public:
 
   virtual ~FootstepPlannerEnvironment();
 
-  /// @brief Update the goal pose for both feet.
-  void updateGoal(const State& foot_left, const State& foot_right);
+  /**
+   * @brief Update the robot's feet poses in the goal state.
+   * @return The new IDs (left, right) of the planning state representing the
+   * feet.
+   */
+  std::pair<int, int> updateGoal(const State& foot_left,
+                                 const State& foot_right);
 
-  /// @brief Update the start pose for both feet.
-  void updateStart(const State& foot_left, const State& right_right);
+  /**
+   * @brief Update the robot's feet poses in the start state.
+   * @return The new IDs (left, right) of the planning states representing the
+   * feet.
+   */
+  std::pair<int, int> updateStart(const State& foot_left,
+                                  const State& right_right);
 
   void updateMap(gridmap_2d::GridMap2DPtr map);
 
@@ -293,6 +306,8 @@ protected:
                        std::vector<int>* CLowV,
                        int nNumofNeighs, int nDist_c, bool bSuccs);
 
+  void setStateArea(const PlanningState& left, const PlanningState& right);
+
   /// Wrapper for FootstepPlannerEnvironment::createNewHashEntry(PlanningState).
   const PlanningState* createNewHashEntry(const State& s);
 
@@ -328,21 +343,18 @@ protected:
    */
   bool closeToStart(const PlanningState& from);
 
-  /**
-   * @brief Crossing number method to determine whether a point lies within a
-   * polygon or not.
-   *
-   * Check http://geomalgorithms.com/a03-_inclusion.html for further details.
-   */
-  bool pointWithinPolygon(const std::pair<int, int>& point,
-                          const std::vector<std::pair<int, int> >& edges);
-
   /// < operator for planning states.
   struct less
   {
     bool operator ()(const PlanningState* a,
                      const PlanningState* b) const;
   };
+
+  /**
+   * @brief ID of the planning goal, i.e. dependent on the planning direction
+   * (forward/backward) this ID is used to map to the goal/start poses.
+   */
+  int ivIdPlanningGoal;
 
   /// ID of the start pose of the left foot.
   int ivIdStartFootLeft;
@@ -352,6 +364,8 @@ protected:
   int ivIdGoalFootLeft;
   /// ID of the goal pose of the right foot.
   int ivIdGoalFootRight;
+
+  std::vector<int> ivStateArea;
 
   /**
    * @brief Maps from an ID to the corresponding PlanningState. (Used in
@@ -445,7 +459,7 @@ protected:
   exp_states_t ivRandomStates;  ///< random intermediate states for R*
   size_t ivNumExpandedStates;
 
-  bool* ivStepRange;
+  bool* ivpStepRange;
 };
 }
 

@@ -29,6 +29,7 @@ namespace footstep_planner
 FootstepPlannerEnvironment::FootstepPlannerEnvironment(
     const environment_params& params)
 : DiscreteSpaceInformation(),
+  ivIdPlanningGoal(-1),
   ivIdStartFootLeft(-1),
   ivIdStartFootRight(-1),
   ivIdGoalFootLeft(-1),
@@ -70,14 +71,16 @@ FootstepPlannerEnvironment::FootstepPlannerEnvironment(
     ivMaxInvFootstepTheta -= ivNumAngleBins;
 
   int num_x = ivMaxFootstepX - ivMaxInvFootstepX + 1;
-  ivStepRange = new bool[num_x * (ivMaxFootstepY - ivMaxInvFootstepY + 1)];
+  ivpStepRange = new bool[num_x * (ivMaxFootstepY - ivMaxInvFootstepY + 1)];
 
+  // determine whether a (x,y) translation can be performed by the robot by
+  // checking if it is within a certain area of performable steps
   for (int j = ivMaxInvFootstepY; j <= ivMaxFootstepY; ++j)
   {
     for (int i = ivMaxInvFootstepX; i <= ivMaxFootstepX; ++i)
     {
-      ivStepRange[(j - ivMaxInvFootstepY) * num_x + (i - ivMaxInvFootstepX)] =
-          pointWithinPolygon(std::pair<int, int>(i, j), params.step_range);
+      ivpStepRange[(j - ivMaxInvFootstepY) * num_x + (i - ivMaxInvFootstepX)] =
+        pointWithinPolygon(i, j, params.step_range);
     }
   }
 }
@@ -91,12 +94,15 @@ FootstepPlannerEnvironment::~FootstepPlannerEnvironment()
     delete[] ivpStateHash2State;
     ivpStateHash2State = NULL;
   }
-
-  delete[] ivStepRange;
+  if (ivpStepRange)
+  {
+    delete[] ivpStepRange;
+    ivpStepRange = NULL;
+  }
 }
 
 
-void
+std::pair<int, int>
 FootstepPlannerEnvironment::updateGoal(const State& foot_left,
                                        const State& foot_right)
 {
@@ -139,12 +145,15 @@ FootstepPlannerEnvironment::updateGoal(const State& foot_left,
         goal_foot_id_right != ivIdGoalFootRight)
     {
       ivHeuristicExpired = true;
+      setStateArea(*p_foot_left, *p_foot_right);
     }
   }
+
+  return std::pair<int, int>(ivIdGoalFootLeft, ivIdGoalFootRight);
 }
 
 
-void
+std::pair<int, int>
 FootstepPlannerEnvironment::updateStart(const State& foot_left,
                                         const State& foot_right)
 {
@@ -183,12 +192,15 @@ FootstepPlannerEnvironment::updateStart(const State& foot_left,
   if (!ivForwardSearch)
   {
     // check if the start states have been changed
-    if (start_foot_id_left != ivIdStartFootLeft &&
+    if (start_foot_id_left != ivIdStartFootLeft ||
         start_foot_id_right != ivIdStartFootRight)
     {
       ivHeuristicExpired = true;
+      setStateArea(*p_foot_left, *p_foot_right);
     }
   }
+
+  return std::pair<int, int>(ivIdStartFootLeft, ivIdStartFootRight);
 }
 
 
@@ -243,8 +255,8 @@ FootstepPlannerEnvironment::getHashEntry(const PlanningState& s)
   unsigned int state_hash = s.getHashTag();
   std::vector<const PlanningState*>::const_iterator state_iter;
   for (state_iter = ivpStateHash2State[state_hash].begin();
-      state_iter != ivpStateHash2State[state_hash].end();
-      state_iter++)
+       state_iter != ivpStateHash2State[state_hash].end();
+       state_iter++)
   {
     if (*(*state_iter) == s)
       return *state_iter;
@@ -419,6 +431,8 @@ FootstepPlannerEnvironment::reset()
   ivNumExpandedStates = 0;
   ivRandomStates.clear();
 
+  ivIdPlanningGoal = -1;
+
   ivIdGoalFootLeft = -1;
   ivIdGoalFootRight = -1;
   ivIdStartFootLeft = -1;
@@ -509,9 +523,9 @@ FootstepPlannerEnvironment::reachable(const PlanningState& from,
   if (footstep_theta > ivMaxFootstepTheta ||
       footstep_theta < ivMaxInvFootstepTheta)
       return false;
-  return ivStepRange[(footstep_y - ivMaxInvFootstepY) *
-                     (ivMaxFootstepX - ivMaxInvFootstepX + 1) +
-                     (footstep_x - ivMaxInvFootstepX)];
+  return ivpStepRange[(footstep_y - ivMaxInvFootstepY) *
+                      (ivMaxFootstepX - ivMaxInvFootstepX + 1) +
+                      (footstep_x - ivMaxInvFootstepX)];
 
 //  // get the (continuous) orientation of state 'from'
 //  double orient = -(angle_cell_2_state(from.getTheta(), ivNumAngleBins));
@@ -665,32 +679,54 @@ FootstepPlannerEnvironment::GetPreds(int TargetStateID,
   // make goal state absorbing (only left!)
   if (TargetStateID == ivIdStartFootLeft)
     return;
-
-  const PlanningState* current = ivStateId2State[TargetStateID];
-
-  // add cheap transition from right to left, so right becomes an equivalent goal
-  if (TargetStateID == ivIdStartFootRight && current->getLeg() == RIGHT)
+  // add cheap transition from right to left, so right becomes an equivalent
+  // goal
+  if (TargetStateID == ivIdStartFootRight)
   {
     PredIDV->push_back(ivIdStartFootLeft);
-    CostV->push_back(ivStepCost);
+    CostV->push_back(0.0);
     return;
   }
 
-  ivExpandedStates.insert(std::pair<int,int>(current->getX(),
-                                             current->getY()));
+  const PlanningState* current = ivStateId2State[TargetStateID];
+
+  // make sure goal state transitions are consistent with
+  // GetSuccs(some_state, goal_state) where goal_state is reachable by an
+  // arbitrary step from some_state
+  if (ivForwardSearch)
+  {
+    if (TargetStateID == ivIdGoalFootLeft || TargetStateID == ivIdGoalFootRight)
+    {
+      const PlanningState* s;
+      int cost;
+      std::vector<int>::const_iterator state_id_iter;
+      for(state_id_iter = ivStateArea.begin();
+          state_id_iter != ivStateArea.end();
+          state_id_iter++)
+      {
+        s = ivStateId2State[*state_id_iter];
+        cost = stepCost(*current, *s);
+        PredIDV->push_back(s->getId());
+        CostV->push_back(cost);
+      }
+      return;
+    }
+  }
+
+  ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
   ivNumExpandedStates++;
 
   if (closeToStart(*current))
   {
+    // map to the start state id
+    PredIDV->push_back(ivIdStartFootLeft);
+    // get actual costs (dependent on whether the start foot is left or right)
     int start_id;
     if (current->getLeg() == RIGHT)
       start_id = ivIdStartFootLeft;
     else
       start_id = ivIdStartFootRight;
-
-    const PlanningState* start = ivStateId2State[start_id];
-    PredIDV->push_back(start_id);
-    CostV->push_back(stepCost(*current, *start));
+    CostV->push_back(stepCost(*current, *ivStateId2State[start_id]));
 
     return;
   }
@@ -740,20 +776,42 @@ FootstepPlannerEnvironment::GetSuccs(int SourceStateID,
   {
     return;
   }
-
-  const PlanningState* current = ivStateId2State[SourceStateID];
-
   // add cheap transition from right to left, so right becomes an
   // equivalent goal
-  if (SourceStateID == ivIdGoalFootRight && current->getLeg() == RIGHT)
+  if (SourceStateID == ivIdGoalFootRight)
   {
     SuccIDV->push_back(ivIdGoalFootLeft);
-    CostV->push_back(ivStepCost);
+    CostV->push_back(0.0);
     return;
   }
 
-  ivExpandedStates.insert(std::pair<int,int>(current->getX(),
-                                             current->getY()));
+  const PlanningState* current = ivStateId2State[SourceStateID];
+
+  // make sure start state transitions are consistent with
+  // GetPreds(some_state, start_state) where some_state is reachable by an
+  // arbitrary step from start_state
+  if (!ivForwardSearch)
+  {
+    if (SourceStateID == ivIdStartFootLeft ||
+        SourceStateID == ivIdStartFootRight)
+    {
+      const PlanningState* s;
+      int cost;
+      std::vector<int>::const_iterator state_id_iter;
+      for(state_id_iter = ivStateArea.begin();
+          state_id_iter != ivStateArea.end();
+          state_id_iter++)
+      {
+        s = ivStateId2State[*state_id_iter];
+        cost = stepCost(*current, *s);
+        SuccIDV->push_back(s->getId());
+        CostV->push_back(cost);
+      }
+      return;
+    }
+  }
+
+  ivExpandedStates.insert(std::pair<int,int>(current->getX(), current->getY()));
   ivNumExpandedStates++;
 
   if (closeToGoal(*current))
@@ -1204,30 +1262,60 @@ FootstepPlannerEnvironment::SizeofCreatedEnv()
 }
 
 
-bool
-FootstepPlannerEnvironment::pointWithinPolygon(
-    const std::pair<int, int>& point,
-    const std::vector<std::pair<int, int> >& edges)
+void
+FootstepPlannerEnvironment::setStateArea(const PlanningState& left,
+                                         const PlanningState& right)
 {
-  int cn = 0;
+  ivStateArea.clear();
 
-  // loop through all edges of the polygon
-  for(unsigned int i = 0; i < edges.size() - 1; ++i)
+  const PlanningState* p_state = getHashEntry(right);
+  ivStateArea.push_back(p_state->getId());
+
+  double cont_step_x, cont_step_y, cont_step_theta;
+  for (int step_y = ivMaxInvFootstepY; step_y <= ivMaxFootstepY; ++step_y)
   {
-    if ((edges[i].second <= point.second && edges[i + 1].second > point.second)
-        ||
-        (edges[i].second > point.second && edges[i + 1].second <= point.second))
+    for (int step_x = ivMaxInvFootstepX; step_x <= ivMaxFootstepX; ++step_x)
     {
-      float vt = (float)(point.second - edges[i].second) /
-        (edges[i + 1].second - edges[i].second);
-      if (point.first <
-          edges[i].first + vt * (edges[i + 1].first - edges[i].first))
+      for (int step_theta = ivMaxInvFootstepTheta;
+           step_theta <= ivMaxFootstepTheta;
+           ++step_theta)
       {
-        ++cn;
+        cont_step_x = cont_val(step_x, ivCellSize);
+        cont_step_y = cont_val(step_y, ivCellSize);
+        cont_step_theta = angle_cell_2_state(step_theta, ivNumAngleBins);
+        Footstep step(cont_step_x, cont_step_y, cont_step_theta,
+                      ivCellSize, ivNumAngleBins, ivHashTableSize);
+        if (ivForwardSearch)
+        {
+          PlanningState pred = step.reverseMeOnThisState(left);
+          if (occupied(pred) || !reachable(pred, left))
+            continue;
+          p_state = createHashEntryIfNotExists(pred);
+          ivStateArea.push_back(p_state->getId());
+
+          pred = step.reverseMeOnThisState(right);
+          if (occupied(pred) || !reachable(pred, right))
+            continue;
+          p_state = createHashEntryIfNotExists(pred);
+          ivStateArea.push_back(p_state->getId());
+        }
+        else
+        {
+          PlanningState succ = step.performMeOnThisState(left);
+          if (occupied(succ) || !reachable(left, succ))
+            continue;
+          p_state = createHashEntryIfNotExists(succ);
+          ivStateArea.push_back(p_state->getId());
+
+          succ = step.performMeOnThisState(right);
+          if (occupied(succ) || !reachable(right, succ))
+            continue;
+          p_state = createHashEntryIfNotExists(succ);
+          ivStateArea.push_back(p_state->getId());
+        }
       }
     }
   }
-  return cn & 1;
 }
 
 

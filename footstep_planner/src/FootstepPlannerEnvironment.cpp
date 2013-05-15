@@ -418,14 +418,8 @@ FootstepPlannerEnvironment::reset()
       ivpStateHash2State[i].clear();
   }
 
-  for(unsigned int i = 0; i < StateID2IndexMapping.size(); ++i)
-  {
-    if (StateID2IndexMapping[i])
-    {
-      delete[] StateID2IndexMapping[i];
-    }
-  }
-  StateID2IndexMapping.clear();
+  // NOTE: StateID2IndexMapping cleaned up by super class
+  // DiscreteSpaceInformation
 
   ivExpandedStates.clear();
   ivNumExpandedStates = 0;

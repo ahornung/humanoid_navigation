@@ -210,7 +210,7 @@ public:
   void resetTotally();
 
   /// @return True if for the current start and goal pose a path exists.
-  bool pathExists() { return ivPathExists; };
+  bool pathExists() { return (bool)ivPath.size(); };
 
   /// @brief Planning parameters.
   environment_params ivEnvironmentParams;
@@ -282,7 +282,6 @@ protected:
   int    ivCollisionCheckAccuracy;
 
   bool   ivStartPoseSetUp, ivGoalPoseSetUp;
-  bool   ivPathExists;
   int    ivLastMarkerMsgSize;
   double ivPathCost;
   bool   ivSearchUntilFirstSolution;

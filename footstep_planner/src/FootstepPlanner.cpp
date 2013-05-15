@@ -34,7 +34,6 @@ namespace footstep_planner
 FootstepPlanner::FootstepPlanner()
 : ivStartPoseSetUp(false),
   ivGoalPoseSetUp(false),
-  ivPathExists(false),
   ivLastMarkerMsgSize(0),
   ivPathCost(0),
   ivMarkerNamespace("")
@@ -309,11 +308,10 @@ FootstepPlanner::setPlanner()
 bool
 FootstepPlanner::run()
 {
-  bool path_existed = ivPathExists;
+  bool path_existed = (bool)ivPath.size();
   int ret = 0;
   MDPConfig mdp_config;
   std::vector<int> solution_state_ids;
-  ivPathExists = false;
 
   // commit start/goal poses to the environment
   ivPlannerEnvironmentPtr->updateStart(ivStartFootLeft, ivStartFootRight);
@@ -383,7 +381,6 @@ FootstepPlanner::run()
       ROS_INFO("Path cost: %f (%i)\n", ivPathCost, path_cost);
 
       ivPlanningStatesIds = solution_state_ids;
-      ivPathExists = true;
 
       broadcastExpandedNodesVis();
       broadcastRandomNodesVis();
@@ -424,6 +421,7 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
   State start_left;
   std::vector<int>::const_iterator state_ids_iter = state_ids.begin();
 
+  // first state is always the robot's left foot
   if (!ivPlannerEnvironmentPtr->getState(*state_ids_iter, &start_left))
   {
     ivPath.clear();
@@ -437,6 +435,8 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
   }
   ++state_ids_iter;
 
+  // check if the robot's left foot can be ommited as first state in the path,
+  // i.e. the robot's right foot is appended first to the path
   if (s.getLeg() == LEFT)
     ivPath.push_back(ivStartFootRight);
   else
@@ -476,7 +476,6 @@ FootstepPlanner::reset()
   //ivPlannerPtr->force_planning_from_scratch();
   ivPlannerEnvironmentPtr->reset();
   setPlanner();
-  ivPathExists = false;
 }
 
 
@@ -490,7 +489,6 @@ FootstepPlanner::resetTotally()
   ivPlannerEnvironmentPtr.reset(
       new FootstepPlannerEnvironment(ivEnvironmentParams));
   setPlanner();
-  ivPathExists = false;
 }
 
 
@@ -767,17 +765,16 @@ FootstepPlanner::setStart(float x, float y, float theta)
 bool
 FootstepPlanner::updateMap(const GridMap2DPtr& map)
 {
-  // store old map locally
+  // store old map pointer locally
   GridMap2DPtr old_map = ivMapPtr;
   // store new map
   ivMapPtr.reset();
   ivMapPtr = map;
 
   // check if a previous map and a path existed
-  if (old_map && ivPathExists)
+  if (old_map && (bool)ivPath.size())
   {
     updateEnvironment(old_map);
-
     return true;
   }
 

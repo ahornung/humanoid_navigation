@@ -539,8 +539,8 @@ FootstepPlanner::replan()
 
 
 bool
-FootstepPlanner::plan(const geometry_msgs::PoseStampedConstPtr& start,
-                      const geometry_msgs::PoseStampedConstPtr& goal)
+FootstepPlanner::plan(const geometry_msgs::PoseStampedConstPtr start,
+                      const geometry_msgs::PoseStampedConstPtr goal)
 {
   return plan(start->pose.position.x, start->pose.position.y,
               tf::getYaw(start->pose.orientation),
@@ -662,8 +662,7 @@ FootstepPlanner::mapCallback(
 
 
 bool
-FootstepPlanner::setGoal(
-    const geometry_msgs::PoseStampedConstPtr& goal_pose)
+FootstepPlanner::setGoal(const geometry_msgs::PoseStampedConstPtr goal_pose)
 {
   return setGoal(goal_pose->pose.position.x,
                  goal_pose->pose.position.y,
@@ -702,8 +701,7 @@ FootstepPlanner::setGoal(float x, float y, float theta)
 
 
 bool
-FootstepPlanner::setStart(
-    const geometry_msgs::PoseStampedConstPtr& start_pose)
+FootstepPlanner::setStart(const geometry_msgs::PoseStampedConstPtr start_pose)
 {
   return setStart(start_pose->pose.position.x,
                   start_pose->pose.position.y,
@@ -763,7 +761,7 @@ FootstepPlanner::setStart(float x, float y, float theta)
 
 
 bool
-FootstepPlanner::updateMap(const GridMap2DPtr& map)
+FootstepPlanner::updateMap(const GridMap2DPtr map)
 {
   // store old map pointer locally
   GridMap2DPtr old_map = ivMapPtr;
@@ -785,7 +783,7 @@ FootstepPlanner::updateMap(const GridMap2DPtr& map)
 
 
 void
-FootstepPlanner::updateEnvironment(const GridMap2DPtr& old_map)
+FootstepPlanner::updateEnvironment(const GridMap2DPtr old_map)
 {
   ROS_INFO("Reseting the planning environment.");
   // reset environment

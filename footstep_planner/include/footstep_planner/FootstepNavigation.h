@@ -57,7 +57,7 @@ public:
   virtual ~FootstepNavigation();
 
   /// @brief Wrapper for FootstepPlanner::setGoal.
-  bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
+  bool setGoal(const geometry_msgs::PoseStampedConstPtr goal_pose);
 
   /// @brief Wrapper for FootstepPlanner::setGoal.
   bool setGoal(float x, float y, float theta);
@@ -108,7 +108,7 @@ protected:
                         const std::string& world_frame_id,
                         const ros::Time& time,
                         const ros::Duration& waiting_time,
-                        tf::Transform& foot);
+                        tf::Transform* foot);
 
   /**
    * @brief Calculates the footstep necessary to reach 'to' from within
@@ -117,7 +117,7 @@ protected:
    * @return True if the footstep can be performed by the NAO robot.
    */
   bool getFootstep(const tf::Pose& from, const State& from_planned,
-		           const State& to, humanoid_nav_msgs::StepTarget& footstep);
+		               const State& to, humanoid_nav_msgs::StepTarget* footstep);
 
   /**
    * @brief Extracts the footsteps necessary to perform the calculated

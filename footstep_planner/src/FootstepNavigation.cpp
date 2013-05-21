@@ -43,25 +43,26 @@ FootstepNavigation::FootstepNavigation()
   // service
   ivFootstepSrv =
     nh_public.serviceClient<humanoid_nav_msgs::StepTargetService>(
-    "footstep_srv");
+      "footstep_srv");
   ivClipFootstepSrv =
     nh_public.serviceClient<humanoid_nav_msgs::ClipFootstep>(
-    "clip_footstep_srv");
+      "clip_footstep_srv");
 
   // subscribers
   ivGridMapSub =
     nh_public.subscribe<nav_msgs::OccupancyGrid>(
-    "map", 1, &FootstepNavigation::mapCallback, this);
-  ivGoalPoseSub = nh_public.subscribe<geometry_msgs::PoseStamped>(
-    "goal", 1, &FootstepNavigation::goalPoseCallback, this);
+      "map", 1, &FootstepNavigation::mapCallback, this);
+  ivGoalPoseSub =
+    nh_public.subscribe<geometry_msgs::PoseStamped>(
+      "goal", 1, &FootstepNavigation::goalPoseCallback, this);
 
   // read parameters from config file:
   nh_private.param("rfoot_frame_id", ivIdFootRight, ivIdFootRight);
   nh_private.param("lfoot_frame_id", ivIdFootLeft, ivIdFootLeft);
 
-  nh_private.param("accuracy/footstep/x", ivAccuracyX, 0.005);
-  nh_private.param("accuracy/footstep/y", ivAccuracyY, 0.005);
-  nh_private.param("accuracy/footstep/theta", ivAccuracyTheta, 0.05);
+  nh_private.param("accuracy/footstep/x", ivAccuracyX, 0.01);
+  nh_private.param("accuracy/footstep/y", ivAccuracyY, 0.01);
+  nh_private.param("accuracy/footstep/theta", ivAccuracyTheta, 0.1);
 
   nh_private.param("accuracy/cell_size", ivCellSize, 0.005);
   nh_private.param("accuracy/num_angle_bins", ivNumAngleBins, 128);
@@ -197,6 +198,7 @@ FootstepNavigation::executeFootsteps()
 
   tf::Transform from;
   std::string support_foot_id;
+  // TODO: use pointer instead of copying each time
   State from_planned;
 
   // calculate and perform relative footsteps until goal is reached
@@ -221,16 +223,20 @@ FootstepNavigation::executeFootsteps()
       return;
     }
 
-    if (to_planned->getLeg() == LEFT)
+    if (from_planned.getLeg() == RIGHT)
       support_foot_id = ivIdFootRight;
     else // support_foot = LLEG
       support_foot_id = ivIdFootLeft;
+
+    ROS_ERROR("%f, %f, %f", from_planned.getX(), from_planned.getY(), from_planned.getTheta());
+    ROS_ERROR("%i", from_planned.getLeg());
+
     // try to get real placement of the support foot
     if (getFootTransform(support_foot_id, ivIdMapFrame, ros::Time::now(),
-                         ros::Duration(0.5), from))
+                         ros::Duration(0.5), &from))
     {
       // calculate relative step and check if it can be performed
-      if (getFootstep(from, from_planned, *to_planned, step))
+      if (getFootstep(from, from_planned, *to_planned, &step))
       {
         step_srv.request.step = step;
         ivFootstepSrv.call(step_srv);
@@ -357,7 +363,7 @@ FootstepNavigation::feedbackCallback(
     foot_id = ivIdFootLeft;
 
   if (!getFootTransform(foot_id, ivIdMapFrame, ros::Time::now(),
-		                ros::Duration(0.5), executed_tf))
+		                    ros::Duration(0.5), &executed_tf))
   {
     State executed(executed_tf.getOrigin().x(), executed_tf.getOrigin().y(),
                    tf::getYaw(executed_tf.getRotation()), planned.getLeg());
@@ -502,7 +508,7 @@ FootstepNavigation::mapCallback(
 
 
 bool
-FootstepNavigation::setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose)
+FootstepNavigation::setGoal(const geometry_msgs::PoseStampedConstPtr goal_pose)
 {
   return setGoal(goal_pose->pose.position.x,
                  goal_pose->pose.position.y,
@@ -526,7 +532,7 @@ FootstepNavigation::updateStart()
   {
     // get real placement of the feet
 	  if (!getFootTransform(ivIdFootLeft, ivIdMapFrame, ros::Time::now(),
-      		                ros::Duration(0.5), foot_left))
+      		                ros::Duration(0.5), &foot_left))
 	  {
 	    if (ivPlanner.pathExists())
 	    {
@@ -535,7 +541,7 @@ FootstepNavigation::updateStart()
 	    return false;
 	  }
     if (!getFootTransform(ivIdFootRight, ivIdMapFrame, ros::Time::now(),
-    		                  ros::Duration(0.5), foot_right))
+    		                  ros::Duration(0.5), &foot_right))
     {
       if (ivPlanner.pathExists())
       {
@@ -560,28 +566,28 @@ FootstepNavigation::updateStart()
 bool
 FootstepNavigation::getFootstep(const tf::Pose& from,
                                 const State& from_planned,
-		                        const State& to,
-		                        humanoid_nav_msgs::StepTarget& footstep)
+		                            const State& to,
+		                            humanoid_nav_msgs::StepTarget* footstep)
 {
   // get footstep to reach 'to' from 'from'
   tf::Transform step = from.inverse() *
-    tf::Pose(tf::createQuaternionFromYaw(to.getTheta()),
-             tf::Point(to.getX(), to.getY(), 0.0));
+                       tf::Pose(tf::createQuaternionFromYaw(to.getTheta()),
+                                tf::Point(to.getX(), to.getY(), 0.0));
 
   // set the footstep
-  footstep.pose.x = step.getOrigin().x();
-  footstep.pose.y = step.getOrigin().y();
-  footstep.pose.theta = tf::getYaw(step.getRotation());
+  footstep->pose.x = step.getOrigin().x();
+  footstep->pose.y = step.getOrigin().y();
+  footstep->pose.theta = tf::getYaw(step.getRotation());
   if (to.getLeg() == LEFT)
-    footstep.leg = humanoid_nav_msgs::StepTarget::left;
+    footstep->leg = humanoid_nav_msgs::StepTarget::left;
   else // to.leg == RIGHT
-    footstep.leg = humanoid_nav_msgs::StepTarget::right;
+    footstep->leg = humanoid_nav_msgs::StepTarget::right;
 
 
   /* check if the footstep can be performed by the NAO robot ******************/
 
   // check if the step lies within the executable range
-  if (performable(footstep))
+  if (performable(*footstep))
   {
     return true;
   }
@@ -604,9 +610,9 @@ FootstepNavigation::getFootstep(const tf::Pose& from,
 		     tf::Pose(tf::createQuaternionFromYaw(to.getTheta()),
 				      tf::Point(to.getX(), to.getY(), 0.0));
 
-	  footstep.pose.x = step.getOrigin().x();
-	  footstep.pose.y = step.getOrigin().y();
-	  footstep.pose.theta = tf::getYaw(step.getRotation());
+	  footstep->pose.x = step.getOrigin().x();
+	  footstep->pose.y = step.getOrigin().y();
+	  footstep->pose.theta = tf::getYaw(step.getRotation());
 
 	  return true;
     }
@@ -636,8 +642,8 @@ FootstepNavigation::getFootstep(const tf::Pose& from,
 
 bool
 FootstepNavigation::getFootstepsFromPath(
-    const State& current_support_leg, int starting_step_num,
-    std::vector<humanoid_nav_msgs::StepTarget>& footsteps)
+  const State& current_support_leg, int starting_step_num,
+  std::vector<humanoid_nav_msgs::StepTarget>& footsteps)
 {
   humanoid_nav_msgs::StepTarget footstep;
 
@@ -649,7 +655,7 @@ FootstepNavigation::getFootstepsFromPath(
   to_planned++;
   for (; to_planned != ivPlanner.getPathEnd(); to_planned++)
   {
-    if (getFootstep(last, from_planned, *to_planned, footstep))
+    if (getFootstep(last, from_planned, *to_planned, &footstep))
     {
       footsteps.push_back(footstep);
     }
@@ -669,9 +675,11 @@ FootstepNavigation::getFootstepsFromPath(
 
 
 bool
-FootstepNavigation::getFootTransform(
-  const std::string& foot_id, const std::string& world_frame_id,
-  const ros::Time& time, const ros::Duration& waiting_time, tf::Transform& foot)
+FootstepNavigation::getFootTransform(const std::string& foot_id,
+                                     const std::string& world_frame_id,
+                                     const ros::Time& time,
+                                     const ros::Duration& waiting_time,
+                                     tf::Transform* foot)
 {
   tf::StampedTransform stamped_foot_transform;
   try
@@ -687,8 +695,8 @@ FootstepNavigation::getFootTransform(
     return false;
   }
 
-  foot.setOrigin(stamped_foot_transform.getOrigin());
-  foot.setRotation(stamped_foot_transform.getRotation());
+  foot->setOrigin(stamped_foot_transform.getOrigin());
+  foot->setRotation(stamped_foot_transform.getRotation());
 
   return true;
 }

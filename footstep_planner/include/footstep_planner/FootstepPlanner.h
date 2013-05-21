@@ -72,8 +72,8 @@ public:
   bool plan();
 
   /// @brief Sets start, goal poses and calls FootstepPlanner::plan().
-  bool plan(const geometry_msgs::PoseStampedConstPtr& start,
-            const geometry_msgs::PoseStampedConstPtr& goal);
+  bool plan(const geometry_msgs::PoseStampedConstPtr start,
+            const geometry_msgs::PoseStampedConstPtr goal);
 
   /// @brief Sets start, goal poses and calls FootstepPlanner::plan().
   bool plan(float start_x, float start_y, float start_theta,
@@ -97,7 +97,7 @@ public:
    *
    * @return True if the two foot poses have been set successfully.
    */
-  bool setGoal(const geometry_msgs::PoseStampedConstPtr& goal_pose);
+  bool setGoal(const geometry_msgs::PoseStampedConstPtr goal_pose);
 
   /**
    * @brief Sets the goal pose as a robot pose centered between two feet.
@@ -111,7 +111,7 @@ public:
    *
    * @return True if the two foot poses have been set successfully.
    */
-  bool setStart(const geometry_msgs::PoseStampedConstPtr& start_pose);
+  bool setStart(const geometry_msgs::PoseStampedConstPtr start_pose);
 
   /**
    * @brief Sets the start pose as a robot pose centered between two feet.
@@ -133,7 +133,7 @@ public:
    * @return True if a replanning is necessary, i.e. the old path is not valid
    * any more.
    */
-  bool updateMap(const gridmap_2d::GridMap2DPtr& map);
+  bool updateMap(const gridmap_2d::GridMap2DPtr map);
 
   void setMarkerNamespace(const std::string& ns)
   {
@@ -253,7 +253,7 @@ protected:
   void setPlanner();
 
   /// @brief Updates the environment in case of a changed map.
-  void updateEnvironment(const gridmap_2d::GridMap2DPtr& old_map);
+  void updateEnvironment(const gridmap_2d::GridMap2DPtr old_map);
 
   boost::shared_ptr<FootstepPlannerEnvironment> ivPlannerEnvironmentPtr;
   gridmap_2d::GridMap2DPtr ivMapPtr;

@@ -113,25 +113,12 @@ FootstepPlannerEnvironment::updateGoal(const State& foot_left,
   // update the states for both feet (if necessary)
   const PlanningState* p_foot_left = getHashEntry(foot_left);
   if (p_foot_left == NULL)
-  {
     p_foot_left = createNewHashEntry(foot_left);
-    ivIdGoalFootLeft = p_foot_left->getId();
-  }
-  else
-  {
-    ivIdGoalFootLeft = p_foot_left->getId();
-  }
   const PlanningState* p_foot_right = getHashEntry(foot_right);
   if (p_foot_right == NULL)
-  {
     p_foot_right = createNewHashEntry(foot_right);
-    ivIdGoalFootRight = p_foot_right->getId();
-  }
-  else
-  {
-    ivIdGoalFootRight = p_foot_right->getId();
-  }
-
+  ivIdGoalFootLeft = p_foot_left->getId();
+  ivIdGoalFootRight = p_foot_right->getId();
   // check if everything has been set correctly
   assert(ivIdGoalFootLeft != -1);
   assert(ivIdGoalFootRight != -1);
@@ -164,25 +151,12 @@ FootstepPlannerEnvironment::updateStart(const State& foot_left,
   // update the states for both feet (if necessary)
   const PlanningState* p_foot_left = getHashEntry(foot_left);
   if (p_foot_left == NULL)
-  {
     p_foot_left = createNewHashEntry(foot_left);
-    ivIdStartFootLeft = p_foot_left->getId();
-  }
-  else
-  {
-    ivIdStartFootLeft = p_foot_left->getId();
-  }
   const PlanningState* p_foot_right = getHashEntry(foot_right);
   if (p_foot_right == NULL)
-  {
     p_foot_right = createNewHashEntry(foot_right);
-    ivIdStartFootRight = p_foot_right->getId();
-  }
-  else
-  {
-    ivIdStartFootRight = p_foot_right->getId();
-  }
-
+  ivIdStartFootLeft = p_foot_left->getId();
+  ivIdStartFootRight = p_foot_right->getId();
   // check if everything has been set correctly
   assert(ivIdStartFootLeft != -1);
   assert(ivIdStartFootRight != -1);
@@ -234,8 +208,6 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
   {
     StateID2IndexMapping[state_id][i] = -1;
   }
-
-  assert(StateID2IndexMapping.size() - 1 == state_id);
 
   return new_state;
 }

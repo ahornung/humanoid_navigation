@@ -209,6 +209,8 @@ FootstepPlannerEnvironment::createNewHashEntry(const PlanningState& s)
     StateID2IndexMapping[state_id][i] = -1;
   }
 
+  assert(StateID2IndexMapping.size() - 1 == state_id);
+
   return new_state;
 }
 
@@ -390,8 +392,7 @@ FootstepPlannerEnvironment::reset()
       ivpStateHash2State[i].clear();
   }
 
-  // NOTE: StateID2IndexMapping cleaned up by super class
-  // DiscreteSpaceInformation
+  StateID2IndexMapping.clear();
 
   ivExpandedStates.clear();
   ivNumExpandedStates = 0;

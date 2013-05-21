@@ -198,8 +198,6 @@ FootstepNavigation::executeFootsteps()
 
   tf::Transform from;
   std::string support_foot_id;
-  // TODO: use pointer instead of copying each time
-  State from_planned;
 
   // calculate and perform relative footsteps until goal is reached
   state_iter_t to_planned = ivPlanner.getPathBegin();
@@ -209,7 +207,7 @@ FootstepNavigation::executeFootsteps()
     return;
   }
 
-  from_planned = *to_planned;
+  const State* from_planned = to_planned.base();
   to_planned++;
   while (to_planned != ivPlanner.getPathEnd())
   {
@@ -223,7 +221,7 @@ FootstepNavigation::executeFootsteps()
       return;
     }
 
-    if (from_planned.getLeg() == RIGHT)
+    if (from_planned->getLeg() == RIGHT)
       support_foot_id = ivIdFootRight;
     else // support_foot = LLEG
       support_foot_id = ivIdFootLeft;
@@ -233,7 +231,7 @@ FootstepNavigation::executeFootsteps()
                          ros::Duration(0.5), &from))
     {
       // calculate relative step and check if it can be performed
-      if (getFootstep(from, from_planned, *to_planned, &step))
+      if (getFootstep(from, *from_planned, *to_planned, &step))
       {
         step_srv.request.step = step;
         ivFootstepSrv.call(step_srv);
@@ -255,7 +253,7 @@ FootstepNavigation::executeFootsteps()
       continue;
     }
 
-    from_planned = *to_planned;
+    from_planned = to_planned.base();
     to_planned++;
   }
   ROS_INFO("Succeeded walking to the goal.\n");
@@ -648,11 +646,11 @@ FootstepNavigation::getFootstepsFromPath(
   tf::Pose last(tf::createQuaternionFromYaw(current_support_leg.getTheta()),
                 tf::Point(current_support_leg.getX(), current_support_leg.getY(),
                           0.0));
-  State from_planned = *to_planned;
+  const State* from_planned = to_planned.base();
   to_planned++;
   for (; to_planned != ivPlanner.getPathEnd(); to_planned++)
   {
-    if (getFootstep(last, from_planned, *to_planned, &footstep))
+    if (getFootstep(last, *from_planned, *to_planned, &footstep))
     {
       footsteps.push_back(footstep);
     }
@@ -664,7 +662,7 @@ FootstepNavigation::getFootstepsFromPath(
 
     last = tf::Pose(tf::createQuaternionFromYaw(to_planned->getTheta()),
                     tf::Point(to_planned->getX(), to_planned->getY(), 0.0));
-    from_planned = *to_planned;
+    from_planned = to_planned.base();
   }
 
   return true;

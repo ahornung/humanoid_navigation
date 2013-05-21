@@ -228,9 +228,6 @@ FootstepNavigation::executeFootsteps()
     else // support_foot = LLEG
       support_foot_id = ivIdFootLeft;
 
-    ROS_ERROR("%f, %f, %f", from_planned.getX(), from_planned.getY(), from_planned.getTheta());
-    ROS_ERROR("%i", from_planned.getLeg());
-
     // try to get real placement of the support foot
     if (getFootTransform(support_foot_id, ivIdMapFrame, ros::Time::now(),
                          ros::Duration(0.5), &from))

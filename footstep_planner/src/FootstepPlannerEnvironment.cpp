@@ -330,6 +330,8 @@ FootstepPlannerEnvironment::updateMap(gridmap_2d::GridMap2DPtr map)
         boost::dynamic_pointer_cast<PathCostHeuristic>(
             ivHeuristicConstPtr);
     h->updateMap(map);
+
+    ivHeuristicExpired = true;
   }
 }
 

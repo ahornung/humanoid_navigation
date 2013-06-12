@@ -62,27 +62,26 @@ void EndpointModel::integrateMeasurement(Particles& particles, const PointCloud&
       octomap::point3d endPoint(it->x, it->y, it->z);
       float dist = m_distanceMap->getDistance(endPoint);
       if (dist > 0.0){ // endpoint is inside map:
-        //std::cout << dist << " ";
         particles[i].weight += logLikelihood(dist, m_sigma);
       } else { //assign weight of max.distance:
         particles[i].weight += logLikelihood(m_maxObstacleDistance, m_sigma);
       }
     }
     // TODO: handle max range measurements
-    //std::cout << "\n";
   }
 
 }
 
 bool EndpointModel::getHeightError(const Particle& p, const tf::StampedTransform& footprintToBase, double& heightError) const{
   tf::Vector3 xyz = p.pose.getOrigin();
-  double poseHeight = xyz.getZ();
+  double poseHeight = footprintToBase.getOrigin().getZ();
   std::vector<double> heights;
   m_mapModel->getHeightlist(xyz.getX(), xyz.getY(), 0.6, heights);
   if (heights.size() == 0)
     return false;
 
 
+  // TODO: verify this!
   // find nearest z-level:
   heightError = std::numeric_limits<double>::max();
   for (unsigned i = 0; i< heights.size(); i++){

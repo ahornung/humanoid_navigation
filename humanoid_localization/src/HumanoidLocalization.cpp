@@ -720,7 +720,7 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
         //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
 
         pcl::PointCloud<int> sampledIndices;
-        voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*4);
+        voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*3);
         pcl::copyPointCloud(ground, sampledIndices.points, pc);
         int numFloorPoints = sampledIndices.size();
 

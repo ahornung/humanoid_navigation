@@ -183,6 +183,8 @@ protected:
   void prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const;
   int filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const;
   
+  void voxelGridSampling(const PointCloud & pc, pcl::PointCloud<int> & sampledIndices, double searchRadius) const;
+  
   bool isAboveMotionThreshold(const tf::Pose& odomTransform);
   
   bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);

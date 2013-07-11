@@ -147,6 +147,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_filteredPointCloudPub = m_privateNh.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 1);
 
 
+  //TODO Propagate particles independent of sensor callback
   reset();
 
   // ROS subscriptions last:
@@ -688,25 +689,67 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
         pcl::transformPointCloud(ground, ground, matBaseFootprintToSensor);
         pcl::transformPointCloud(nonground, nonground, matBaseFootprintToSensor);
         pc.clear(); // clear pc again and refill it
-        int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
-        int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
+        //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
+
+        pcl::PointCloud<int> sampledIndices;
+        voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*4);
+        pcl::copyPointCloud(ground, sampledIndices.points, pc);
+        int numFloorPoints = sampledIndices.size();
+
+        //int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
+        
+        voxelGridSampling( nonground, sampledIndices, m_sensorSampleDist);
+        pcl::copyPointCloud( nonground, sampledIndices.points, nonground);
+        int numNonFloorPoints = sampledIndices.size();
+
+        pc += nonground;
+        //todo samplen besser machen
+
+
         ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
+        // create sparse ranges..
+        ranges.resize(pc.size());
+        for (unsigned int i=0; i<pc.size(); ++i)
+        {
+           pcl::PointXYZ p = pc.at(i);
+           ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+        }
+
     }
     else
     {
-        ROS_ERROR("No ground filtering is not implemented yet!");
-        return;
+       ROS_INFO("Starting uniform sampling");
+       //ROS_ERROR("No ground filtering is not implemented yet!");
+       // uniform sampling:
+       pcl::PointCloud<int> sampledIndices;
+       voxelGridSampling(pc, sampledIndices,  m_sensorSampleDist);
+       pcl::copyPointCloud(pc, sampledIndices.points, pc);
+
+       // adjust "ranges" array to contain the same points:
+       ranges.resize(sampledIndices.size());
+       for (size_t i = 0; i < ranges.size(); ++i){
+          pcl::PointXYZ p = pc[i]; 
+          ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+          //rangesSparse[i] = ranges[sampledIndices.points[i]];
+          //ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+       }
+       ROS_INFO("Done.");
+
+
     }
-    // create sparse ranges..
-    ranges.resize(pc.size());
-    for (unsigned int i=0; i<pc.size(); ++i)
-    {
-        pcl::PointXYZ p = pc.at(i);
-        ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
-    }
+    return;
 
 }
 
+void HumanoidLocalization::voxelGridSampling(const PointCloud & pc, pcl::PointCloud<int> & sampledIndices, double search_radius) const
+{
+   pcl::UniformSampling<pcl::PointXYZ> uniformSampling;
+   pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPtr;
+   cloudPtr.reset(new pcl::PointCloud<pcl::PointXYZ> (pc)); // TODO: Check if this is a shallow copy..
+   uniformSampling.setInputCloud(cloudPtr);
+   uniformSampling.setRadiusSearch(search_radius);
+   uniformSampling.compute(sampledIndices);
+}
 
 void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) {
   ROS_DEBUG("PointCloud received (time: %f)", msg->header.stamp.toSec());

@@ -275,6 +275,7 @@ protected:
   double m_groundFilterDistance;
   double m_groundFilterAngle;
   double m_groundFilterPlaneDistance;
+  double m_sensorSampleDistGroundFactor;
   int m_numFloorPoints;
   int m_numNonFloorPoints;
 

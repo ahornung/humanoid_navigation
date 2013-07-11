@@ -95,6 +95,8 @@ protected:
   double m_sigmaZ;
   double m_sigmaRoll;
   double m_sigmaPitch;
+  
+  bool m_use_squared_error;
 
 };
 }

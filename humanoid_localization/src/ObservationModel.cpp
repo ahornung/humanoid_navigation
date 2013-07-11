@@ -33,7 +33,8 @@ ObservationModel::ObservationModel(ros::NodeHandle* nh, boost::shared_ptr<MapMod
   m_rngNormal(*rngEngine, NormalDistributionT(0.0, 1.0)),
   m_rngUniform(*rngEngine, UniformDistributionT(0.0, 1.0)),
   m_weightRoll(1.0), m_weightPitch(1.0), m_weightZ(1.0),
-  m_sigmaZ(0.02), m_sigmaRoll(0.05), m_sigmaPitch(0.05)
+  m_sigmaZ(0.02), m_sigmaRoll(0.05), m_sigmaPitch(0.05),
+  m_use_squared_error(false)
 {
 
   m_map = m_mapModel->getMap();
@@ -44,6 +45,7 @@ ObservationModel::ObservationModel(ros::NodeHandle* nh, boost::shared_ptr<MapMod
   nh->param("motion_sigma_z", m_sigmaZ, m_sigmaZ);
   nh->param("motion_sigma_roll", m_sigmaRoll, m_sigmaRoll);
   nh->param("motion_sigma_pitch", m_sigmaPitch, m_sigmaPitch);
+  nh->param("obs_squared_distance", m_use_squared_error, m_use_squared_error);
 
   if (m_sigmaZ <= 0.0 || m_sigmaRoll <= 0.0 || m_sigmaPitch <= 0.0){
     ROS_ERROR("Sigma (std.dev) needs to be > 0 in ObservationModel");

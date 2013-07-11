@@ -56,18 +56,23 @@ void EndpointModel::integrateMeasurement(Particles& particles, const PointCloud&
     PointCloud pc_transformed;
     pcl::transformPointCloud(pc, pc_transformed, globalLaserOrigin);
 
+    std::vector<float>::const_iterator ranges_it = ranges.begin();
     // iterate over beams:
-    for (PointCloud::const_iterator it = pc_transformed.begin(); it != pc_transformed.end(); ++it){
+    for (PointCloud::const_iterator it = pc_transformed.begin(); it != pc_transformed.end(); ++it, ++ranges_it){
       // search only for endpoint in tree
       octomap::point3d endPoint(it->x, it->y, it->z);
       float dist = m_distanceMap->getDistance(endPoint);
+      float sigma_scaled = m_sigma;
+      if (m_use_squared_error)
+         sigma_scaled = (*ranges_it) * (*ranges_it) * (m_sigma);
       if (dist > 0.0){ // endpoint is inside map:
-        particles[i].weight += logLikelihood(dist, m_sigma);
+        particles[i].weight += logLikelihood(dist, sigma_scaled);
       } else { //assign weight of max.distance:
-        particles[i].weight += logLikelihood(m_maxObstacleDistance, m_sigma);
+        particles[i].weight += logLikelihood(m_maxObstacleDistance, sigma_scaled);
       }
     }
     // TODO: handle max range measurements
+    //std::cout << "\n";
   }
 
 }

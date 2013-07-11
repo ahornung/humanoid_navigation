@@ -48,6 +48,7 @@ m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
 m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
 m_groundFilterPointCloud(true), m_groundFilterDistance(0.04),
 m_groundFilterAngle(0.15), m_groundFilterPlaneDistance(0.07),
+m_sensorSampleDistGroundFactor(3),
 m_numFloorPoints(20), m_numNonFloorPoints(80),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
@@ -110,6 +111,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
   m_privateNh.param("ground_filter_distance", m_groundFilterDistance, m_groundFilterDistance);
   m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle); 
   m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
+  m_privateNh.param("sensor_sampling_dist_ground_factor", m_sensorSampleDistGroundFactor, m_sensorSampleDistGroundFactor);
   m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
   m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
   
@@ -720,7 +722,7 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
         //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
 
         pcl::PointCloud<int> sampledIndices;
-        voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*3);
+        voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*m_sensorSampleDistGroundFactor);
         pcl::copyPointCloud(ground, sampledIndices.points, pc);
         int numFloorPoints = sampledIndices.size();
 

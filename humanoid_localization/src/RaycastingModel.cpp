@@ -94,12 +94,14 @@ void RaycastingModel::integrateMeasurement(Particles& particles, const PointClou
         // to correct for particle drifts away from obstacles
         if(m_map->castRay(originP,direction, end, true, 1.5*max_range)){
           assert(m_map->isNodeOccupied(m_map->search(end)));
-          // TODO: use squared distances?
           float raycastRange = (originP - end).norm();
           float z = raycastRange - *ranges_it;
+          float sigma_scaled = m_sigmaHit;
+          if (m_use_squared_error)
+             sigma_scaled = (*ranges_it) * (*ranges_it) * (m_sigmaHit);
 
           // obstacle hit:
-          p = m_zHit / (SQRT_2_PI * m_sigmaHit) * exp(-(z * z) / (2 * m_sigmaHit * m_sigmaHit));
+          p = m_zHit / (SQRT_2_PI * sigma_scaled) * exp(-(z * z) / (2 * sigma_scaled * sigma_scaled));
 
           // short range:
           if (*ranges_it <= raycastRange)

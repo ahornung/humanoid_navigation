@@ -51,7 +51,7 @@ m_groundFilterAngle(0.15), m_groundFilterPlaneDistance(0.07),
 m_numFloorPoints(20), m_numNonFloorPoints(80),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
-m_constrainMotionZ (false), m_constrainMotionRP(false)
+m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_timerPeriod(0.1)
 {
 
   // raycasting or endpoint model?
@@ -111,6 +111,9 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
   m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
   m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
+  
+  m_privateNh.param("use_timer", m_useTimer, m_useTimer);
+  m_privateNh.param("timer_period", m_timerPeriod, m_timerPeriod);
 
   // motion model parameters
 
@@ -176,6 +179,11 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
 
   if (m_useIMU)
     m_imuSub = m_nh.subscribe("imu", 5, &HumanoidLocalization::imuCallback, this);
+  if (m_useTimer)
+  {
+     m_timer = m_nh.createTimer(ros::Duration(m_timerPeriod), &HumanoidLocalization::timerCallback, this);
+     ROS_INFO("Using timer with a period of %4f s", m_timerPeriod);
+  }
 
   ROS_INFO("NaoLocalization initialized with %d particles.", m_numParticles);
 }
@@ -192,6 +200,20 @@ HumanoidLocalization::~HumanoidLocalization() {
   delete m_initPoseSub;
 
 }
+  
+void HumanoidLocalization::timerCallback(const ros::TimerEvent & e){
+   ros::Time stamp = e.current_real;
+   try{
+      if(! m_tfListener.waitForTransform(m_targetFrameId, m_baseFrameId, stamp, ros::Duration(m_timerPeriod)) )
+         return;
+   }
+   catch(tf::TransformException& ex){
+      ROS_ERROR_STREAM( "Transform error for timerCallback: " << ex.what() << ", quitting callback.\n");
+      return;
+   }
+   publishPoseEstimate(e.current_real, false);
+}
+
 
 void HumanoidLocalization::reset(){
 

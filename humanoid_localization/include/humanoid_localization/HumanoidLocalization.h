@@ -191,6 +191,8 @@ protected:
 
   void constrainMotion(const tf::Pose& odomPose);
 
+  void timerCallback(const ros::TimerEvent & e);
+
   unsigned computeBeamStep(unsigned numBeams) const;
 
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
@@ -221,6 +223,7 @@ protected:
   ros::ServiceServer m_globalLocSrv, m_pauseLocSrv, m_resumeLocSrv, m_localizePointCloudSrv;
   tf::TransformListener m_tfListener;
   tf::TransformBroadcaster m_tfBroadcaster;
+  ros::Timer m_timer;
 
   std::string m_odomFrameId;
   std::string m_targetFrameId;
@@ -287,6 +290,10 @@ protected:
   bool m_useIMU;  ///< True = use IMU for initialization and observation models, false = use orientation from odometry
   bool m_constrainMotionZ; /// < True = do not estimate height, directly use odometry pose
   bool m_constrainMotionRP; /// < True = do not estimate roll and pitch, directly use odometry pose
+  
+  // timer stuff
+  bool m_useTimer;
+  double m_timerPeriod;
 };
 }
 

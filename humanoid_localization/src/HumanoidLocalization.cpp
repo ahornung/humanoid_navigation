@@ -35,7 +35,7 @@ m_rngEngine(randomSeed),
 m_rngNormal(m_rngEngine, NormalDistributionT(0.0, 1.0)),
 m_rngUniform(m_rngEngine, UniformDistributionT(0.0, 1.0)),
 m_nh(),m_privateNh("~"),
-m_odomFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("/map"),
+m_odomFrameId("odom"), m_targetFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("/map"),
 m_useRaycasting(true), m_initFromTruepose(false), m_numParticles(500),
 m_sensorSampleDist(0.2),
 m_nEffFactor(1.0), m_minParticleWeight(0.0),
@@ -58,6 +58,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
   m_privateNh.param("use_raycasting", m_useRaycasting, m_useRaycasting);
 
   m_privateNh.param("odom_frame_id", m_odomFrameId, m_odomFrameId);
+  m_privateNh.param("target_frame_id", m_targetFrameId, m_targetFrameId);
   m_privateNh.param("base_frame_id", m_baseFrameId, m_baseFrameId);
   m_privateNh.param("base_footprint_id", m_baseFootprintId, m_baseFootprintId);
   m_privateNh.param("global_frame_id", m_globalFrameId, m_globalFrameId);
@@ -150,6 +151,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false)
 
   // ROS subscriptions last:
   m_globalLocSrv = m_nh.advertiseService("global_localization", &HumanoidLocalization::globalLocalizationCallback, this);
+  m_localizePointCloudSrv = m_nh.advertiseService("localize_from_pointcloud", &HumanoidLocalization::localizeFromPointCloudServiceCallback, this);
 
   // subscription on laser, tf message filter
   m_laserSub = new message_filters::Subscriber<sensor_msgs::LaserScan>(m_nh, "scan", 100);
@@ -978,6 +980,76 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
   publishPoseEstimate(msg->header.stamp, false);
 }
 
+bool HumanoidLocalization::localizeFromPointCloudServiceCallback(humanoid_nav_msgs::LocalizeFromPointCloud::Request& req, humanoid_nav_msgs::LocalizeFromPointCloud::Response& res)
+{
+   
+   ros::Time stamp = req.cloud.header.stamp;
+   ROS_DEBUG("PointCloud received (time: %f)", stamp.toSec());
+
+  if (!m_initialized){
+    ROS_WARN("Loclization not initialized yet, skipping LocalizeFromPointCloud service callback.");
+    return false;
+  }
+
+  if (m_paused)
+  {
+     ROS_WARN("Localization is paused, skipping LocalizeFromPointCloud service callback.");
+     return false;
+  }
+
+  /// absolute, current odom pose
+  tf::Stamped<tf::Pose> odomPose;
+  // check if odometry available, skip scan if not.
+  if (!m_motionModel->lookupOdomPose(stamp, odomPose))
+    return false;
+
+
+  PointCloud pc;
+  pcl::fromROSMsg(req.cloud, pc);
+  PointCloud::ConstPtr msg = pc.makeShared();
+
+
+  PointCloud pc_filtered;
+  std::vector<float> rangesSparse;
+  prepareGeneralPointCloud(msg, pc_filtered, rangesSparse);
+
+  double maxRange = 10.0; // TODO #4: What is a maxRange for pointClouds? NaN? maxRange is expected to be a double and integrateMeasurement checks rangesSparse[i] > maxRange
+  ROS_DEBUG("Updating Pose Estimate from a PointCloud with %zu points and %zu ranges", pc_filtered.size(), rangesSparse.size());
+  bool sensor_integrated = localizeWithMeasurement(pc_filtered, rangesSparse, maxRange);
+
+  if(!sensor_integrated){ // no observation necessary: propagate particles forward by full interval
+     // relative odom transform to last odomPose
+     tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
+     m_motionModel->applyOdomTransform(m_particles, odomTransform);
+     constrainMotion(odomPose);
+  }
+  else{
+     m_lastLocalizedPose = odomPose;
+  }
+
+  m_motionModel->storeOdomPose(odomPose);
+
+  geometry_msgs::PoseWithCovarianceStamped p;
+  p.header.stamp = stamp;
+  p.header.frame_id = m_globalFrameId;
+
+  tf::Pose bestParticlePose;
+  if (m_bestParticleAsMean)
+     bestParticlePose = getMeanParticlePose();
+  else
+     bestParticlePose = getBestParticlePose();
+
+  tf::poseTFToMsg(bestParticlePose,p.pose.pose);
+  res.pose = p;
+
+  publishPoseEstimate(msg->header.stamp, sensor_integrated);
+  m_lastPointCloudTime = msg->header.stamp;
+  ROS_DEBUG("PointCloud callback complete.");
+  return true;
+
+}
+
+
 bool HumanoidLocalization::globalLocalizationCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
 
@@ -1168,18 +1240,17 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
 
 
   ////
-  // Send tf odom->map
-  ////
-  tf::Stamped<tf::Pose> odomToMapTF;
+  // Send tf target->map (where target is typically odom)
+  tf::Stamped<tf::Pose> targetToMapTF;
   try{
     tf::Stamped<tf::Pose> baseToMapTF(bestParticlePose.inverse(),time, m_baseFrameId);
-    m_tfListener.transformPose(m_odomFrameId, baseToMapTF, odomToMapTF);
+    m_tfListener.transformPose(m_targetFrameId, baseToMapTF, targetToMapTF); // typically target == odom
   } catch (const tf::TransformException& e){
-    ROS_WARN("Failed to subtract base to odom transform, will not publish pose estimate: %s", e.what());
+    ROS_WARN("Failed to subtract base to %s transform, will not publish pose estimate: %s", m_targetFrameId.c_str(), e.what());
     return;
   }
 
-  tf::Transform latestTF(tf::Quaternion(odomToMapTF.getRotation()), tf::Point(odomToMapTF.getOrigin()));
+  tf::Transform latestTF(tf::Quaternion(targetToMapTF.getRotation()), tf::Point(targetToMapTF.getOrigin()));
 
   // We want to send a transform that is good up until a
   // tolerance time so that odom can be used
@@ -1188,7 +1259,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   ros::Duration transformTolerance(m_transformTolerance);
   ros::Time transformExpiration = (time + transformTolerance);
 
-  tf::StampedTransform tmp_tf_stamped(latestTF.inverse(), transformExpiration, m_globalFrameId, m_odomFrameId);
+  tf::StampedTransform tmp_tf_stamped(latestTF.inverse(), transformExpiration, m_globalFrameId, m_targetFrameId);
 
   m_tfBroadcaster.sendTransform(tmp_tf_stamped);
 

@@ -54,6 +54,7 @@ m_useIMU(false),
 m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_timerPeriod(0.1)
 {
 
+   m_latest_transform.setData (tf::Transform(tf::createIdentityQuaternion()) );
   // raycasting or endpoint model?
   m_privateNh.param("use_raycasting", m_useRaycasting, m_useRaycasting);
 
@@ -202,6 +203,7 @@ HumanoidLocalization::~HumanoidLocalization() {
 }
   
 void HumanoidLocalization::timerCallback(const ros::TimerEvent & e){
+   /*
    ros::Time stamp = e.current_real;
    try{
       if(! m_tfListener.waitForTransform(m_targetFrameId, m_baseFrameId, stamp, ros::Duration(m_timerPeriod)) )
@@ -212,6 +214,10 @@ void HumanoidLocalization::timerCallback(const ros::TimerEvent & e){
       return;
    }
    publishPoseEstimate(e.current_real, false);
+   */
+   ros::Time transformExpiration = e.current_real + ros::Duration(m_transformTolerance);
+   tf::StampedTransform tmp_tf_stamped(m_latest_transform, transformExpiration, m_globalFrameId, m_targetFrameId);
+   m_tfBroadcaster.sendTransform(tmp_tf_stamped);
 }
 
 
@@ -1325,6 +1331,7 @@ void HumanoidLocalization::publishPoseEstimate(const ros::Time& time, bool publi
   ros::Time transformExpiration = (time + transformTolerance);
 
   tf::StampedTransform tmp_tf_stamped(latestTF.inverse(), transformExpiration, m_globalFrameId, m_targetFrameId);
+  m_latest_transform = tmp_tf_stamped;
 
   m_tfBroadcaster.sendTransform(tmp_tf_stamped);
 

@@ -281,6 +281,7 @@ protected:
 
   /// sensor data last integrated at this odom pose, to check if moved enough since then
   tf::Pose m_lastLocalizedPose;
+  tf::StampedTransform m_latest_transform;
 
   /// absolute, summed yaw angle since last measurement integraton
   double m_headYawRotationLastScan;

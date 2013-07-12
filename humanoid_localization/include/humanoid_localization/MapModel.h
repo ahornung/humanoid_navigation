@@ -50,7 +50,8 @@ public:
   virtual void verifyPoses(Particles& particles);
 
   virtual void initGlobal(Particles& particles,
-                          const Vector6d& initPose, const Vector6d& initNoise,
+                          double z, double roll, double pitch,
+                          const Vector6d& initNoise,
                           UniformGeneratorT& rngUniform, NormalGeneratorT& rngNormal);
 
   /// @return whether a map coordinate is occupied. Will return

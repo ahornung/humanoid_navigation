@@ -255,36 +255,14 @@ void HumanoidLocalization::reset(){
         posePtr->pose.covariance.at(i*6 +i) = m_initNoiseStd(i) * m_initNoiseStd(i);
       }
 
+      double roll, pitch, z;
+      initZRP(z, roll, pitch);
+
+
+
       posePtr->pose.pose.position.x = m_initPose(0);
       posePtr->pose.pose.position.y = m_initPose(1);
-      double roll, pitch;
-      if(m_initPoseRealZRP) {
-        // Get latest pose height
-        tf::Stamped<tf::Pose> lastOdomPose;
-        double poseHeight;
-        if(m_motionModel->getLastOdomPose(lastOdomPose) &&
-            lookupPoseHeight(lastOdomPose.stamp_, poseHeight)) {
-          posePtr->pose.pose.position.z = poseHeight;
-        } else {
-          ROS_WARN("Could not determine current pose height, falling back to init_pose_z");
-          posePtr->pose.pose.position.z = m_initPose(2);
-        }
-
-        // Get latest roll and pitch
-        if(!m_lastIMUMsgBuffer.empty()) {
-          getRP(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
-        } else {
-          ROS_WARN("Could not determine current roll and pitch, falling back to init_pose_{roll,pitch}");
-          roll = m_initPose(3);
-          pitch = m_initPose(4);
-        }
-      } else {
-        // Use pose height, roll and pitch from init_pose_{z,roll,pitch} parameters
-        posePtr->pose.pose.position.z = m_initPose(2);
-        roll = m_initPose(3);
-        pitch = m_initPose(4);
-      }
-
+      posePtr->pose.pose.position.z = z;
       tf::Quaternion quat;
       quat.setRPY(roll, pitch, m_initPose(5));
       tf::quaternionTFToMsg(quat, posePtr->pose.pose.orientation);
@@ -309,6 +287,36 @@ void HumanoidLocalization::reset(){
 }
 
 
+void HumanoidLocalization::initZRP(double& z, double& roll, double& pitch){
+  if(m_initPoseRealZRP) {
+    // Get latest pose height
+    tf::Stamped<tf::Pose> lastOdomPose;
+    double poseHeight;
+    if(m_motionModel->getLastOdomPose(lastOdomPose) &&
+        lookupPoseHeight(lastOdomPose.stamp_, poseHeight)) {
+      z = poseHeight;
+    } else {
+      ROS_WARN("Could not determine current pose height, falling back to init_pose_z");
+      z = m_initPose(2);
+    }
+
+    // Get latest roll and pitch
+    if(!m_lastIMUMsgBuffer.empty()) {
+      getRP(m_lastIMUMsgBuffer.back().orientation, roll, pitch);
+    } else {
+      ROS_WARN("Could not determine current roll and pitch, falling back to init_pose_{roll,pitch}");
+      roll = m_initPose(3);
+      pitch = m_initPose(4);
+    }
+  } else {
+    // Use pose height, roll and pitch from init_pose_{z,roll,pitch} parameters
+    z = m_initPose(2);
+    roll = m_initPose(3);
+    pitch = m_initPose(4);
+  }
+
+
+}
 void HumanoidLocalization::laserCallback(const sensor_msgs::LaserScanConstPtr& msg){
   ROS_DEBUG("Laser received (time: %f)", msg->header.stamp.toSec());
   
@@ -1165,7 +1173,10 @@ void HumanoidLocalization::resample(unsigned numParticles){
 void HumanoidLocalization::initGlobal(){
   ROS_INFO("Initializing with uniform distribution");
 
-  m_mapModel->initGlobal(m_particles, m_initPose, m_initNoiseStd, m_rngUniform, m_rngNormal);
+  double roll, pitch, z;
+  initZRP(z, roll, pitch);
+
+  m_mapModel->initGlobal(m_particles, z, roll, pitch, m_initNoiseStd, m_rngUniform, m_rngNormal);
 
 
   ROS_INFO("Global localization done");

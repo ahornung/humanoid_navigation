@@ -193,6 +193,8 @@ protected:
 
   unsigned computeBeamStep(unsigned numBeams) const;
 
+  void initZRP(double& z, double& roll, double& pitch);
+
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;
 
   EngineT m_rngEngine;

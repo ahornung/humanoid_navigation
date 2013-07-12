@@ -130,8 +130,8 @@ void MapModel::verifyPoses(Particles& particles){
 }
 
 
-void MapModel::initGlobal(Particles& particles,
-                          const Vector6d& initPose, const Vector6d& initNoise,
+void MapModel::initGlobal(Particles& particles, double z, double roll, double pitch,
+                          const Vector6d& initNoise,
                           UniformGeneratorT& rngUniform, NormalGeneratorT& rngNormal){
   double sizeX,sizeY,sizeZ, minX, minY, minZ;
   m_map->getMetricSize(sizeX,sizeY,sizeZ);
@@ -145,10 +145,10 @@ void MapModel::initGlobal(Particles& particles,
     // obtain a pose hypothesis:
     double x = minX + sizeX * rngUniform();
     double y = minY + sizeY * rngUniform();
-    std::vector<double> z;
-    getHeightlist(x, y, 0.6,z);
+    std::vector<double> z_list;
+    getHeightlist(x, y, 0.6,z_list);
 
-    for (unsigned zIdx = 0; zIdx < z.size(); zIdx++){
+    for (unsigned zIdx = 0; zIdx < z_list.size(); zIdx++){
       if (it == particles.end())
         break;
 
@@ -159,10 +159,10 @@ void MapModel::initGlobal(Particles& particles,
 
       it->pose.getOrigin().setX(x);
       it->pose.getOrigin().setY(y);
-      // TODO: sample z, roll, pitch around odom pose!
-      it->pose.getOrigin().setZ(z.at(zIdx) + initPose(2) + rngNormal() * initNoise(2));
+      // TODO: sample z, roll, pitch
+      it->pose.getOrigin().setZ(z_list.at(zIdx) + z + rngNormal() * initNoise(2));
       double yaw = rngUniform() * 2 * M_PI  -M_PI;
-      it->pose.setRotation(tf::createQuaternionFromYaw(yaw));
+      it->pose.setRotation(tf::createQuaternionFromRPY(roll, pitch, yaw));
       it->weight = weight;
       it++;
     }

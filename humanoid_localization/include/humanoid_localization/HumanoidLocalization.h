@@ -36,7 +36,6 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
-#include <humanoid_nav_msgs/LocalizeFromPointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -94,7 +93,6 @@ public:
   virtual void pointCloudCallback(const PointCloud::ConstPtr& msg);
   void initPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
   bool globalLocalizationCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-  bool localizeFromPointCloudServiceCallback(humanoid_nav_msgs::LocalizeFromPointCloud::Request& req, humanoid_nav_msgs::LocalizeFromPointCloud::Response& res);
   void pauseLocalizationCallback(const std_msgs::BoolConstPtr& msg);
   /// pause localization by service call
   bool pauseLocalizationSrvCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
@@ -220,7 +218,7 @@ protected:
                  m_poseArrayPub, m_bestPosePub, m_nEffPub,
                  m_filteredPointCloudPub;
   ros::Subscriber m_imuSub;
-  ros::ServiceServer m_globalLocSrv, m_pauseLocSrv, m_resumeLocSrv, m_localizePointCloudSrv;
+  ros::ServiceServer m_globalLocSrv, m_pauseLocSrv, m_resumeLocSrv;
   tf::TransformListener m_tfListener;
   tf::TransformBroadcaster m_tfBroadcaster;
   ros::Timer m_timer;

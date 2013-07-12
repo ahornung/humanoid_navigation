@@ -158,7 +158,6 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
 
   // ROS subscriptions last:
   m_globalLocSrv = m_nh.advertiseService("global_localization", &HumanoidLocalization::globalLocalizationCallback, this);
-  m_localizePointCloudSrv = m_nh.advertiseService("localize_from_pointcloud", &HumanoidLocalization::localizeFromPointCloudServiceCallback, this);
 
   // subscription on laser, tf message filter
   m_laserSub = new message_filters::Subscriber<sensor_msgs::LaserScan>(m_nh, "scan", 100);
@@ -205,18 +204,6 @@ HumanoidLocalization::~HumanoidLocalization() {
 }
   
 void HumanoidLocalization::timerCallback(const ros::TimerEvent & e){
-   /*
-   ros::Time stamp = e.current_real;
-   try{
-      if(! m_tfListener.waitForTransform(m_targetFrameId, m_baseFrameId, stamp, ros::Duration(m_timerPeriod)) )
-         return;
-   }
-   catch(tf::TransformException& ex){
-      ROS_ERROR_STREAM( "Transform error for timerCallback: " << ex.what() << ", quitting callback.\n");
-      return;
-   }
-   publishPoseEstimate(e.current_real, false);
-   */
    ros::Time transformExpiration = e.current_real + ros::Duration(m_transformTolerance);
    tf::StampedTransform tmp_tf_stamped(m_latest_transform, transformExpiration, m_globalFrameId, m_targetFrameId);
    m_tfBroadcaster.sendTransform(tmp_tf_stamped);
@@ -1053,74 +1040,7 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
   publishPoseEstimate(msg->header.stamp, false);
 }
 
-bool HumanoidLocalization::localizeFromPointCloudServiceCallback(humanoid_nav_msgs::LocalizeFromPointCloud::Request& req, humanoid_nav_msgs::LocalizeFromPointCloud::Response& res)
-{
-   
-   ros::Time stamp = req.cloud.header.stamp;
-   ROS_DEBUG("PointCloud received (time: %f)", stamp.toSec());
 
-  if (!m_initialized){
-    ROS_WARN("Loclization not initialized yet, skipping LocalizeFromPointCloud service callback.");
-    return false;
-  }
-
-  if (m_paused)
-  {
-     ROS_WARN("Localization is paused, skipping LocalizeFromPointCloud service callback.");
-     return false;
-  }
-
-  /// absolute, current odom pose
-  tf::Stamped<tf::Pose> odomPose;
-  // check if odometry available, skip scan if not.
-  if (!m_motionModel->lookupOdomPose(stamp, odomPose))
-    return false;
-
-
-  PointCloud pc;
-  pcl::fromROSMsg(req.cloud, pc);
-  PointCloud::ConstPtr msg = pc.makeShared();
-
-
-  PointCloud pc_filtered;
-  std::vector<float> rangesSparse;
-  prepareGeneralPointCloud(msg, pc_filtered, rangesSparse);
-
-  double maxRange = 10.0; // TODO #4: What is a maxRange for pointClouds? NaN? maxRange is expected to be a double and integrateMeasurement checks rangesSparse[i] > maxRange
-  ROS_DEBUG("Updating Pose Estimate from a PointCloud with %zu points and %zu ranges", pc_filtered.size(), rangesSparse.size());
-  bool sensor_integrated = localizeWithMeasurement(pc_filtered, rangesSparse, maxRange);
-
-  if(!sensor_integrated){ // no observation necessary: propagate particles forward by full interval
-     // relative odom transform to last odomPose
-     tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
-     m_motionModel->applyOdomTransform(m_particles, odomTransform);
-     constrainMotion(odomPose);
-  }
-  else{
-     m_lastLocalizedPose = odomPose;
-  }
-
-  m_motionModel->storeOdomPose(odomPose);
-
-  geometry_msgs::PoseWithCovarianceStamped p;
-  p.header.stamp = stamp;
-  p.header.frame_id = m_globalFrameId;
-
-  tf::Pose bestParticlePose;
-  if (m_bestParticleAsMean)
-     bestParticlePose = getMeanParticlePose();
-  else
-     bestParticlePose = getBestParticlePose();
-
-  tf::poseTFToMsg(bestParticlePose,p.pose.pose);
-  res.pose = p;
-
-  publishPoseEstimate(msg->header.stamp, sensor_integrated);
-  m_lastPointCloudTime = msg->header.stamp;
-  ROS_DEBUG("PointCloud callback complete.");
-  return true;
-
-}
 
 
 bool HumanoidLocalization::globalLocalizationCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)

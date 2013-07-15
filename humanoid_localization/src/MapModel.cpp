@@ -174,6 +174,7 @@ void MapModel::getHeightlist(double x, double y, double totalHeight, std::vector
   double minX, minY, minZ, maxX, maxY, maxZ;
   m_map->getMetricMin(minX, minY, minZ);
   m_map->getMetricMax(maxX, maxY, maxZ);
+
   double res = m_map->getResolution();
 
   double z =  maxZ-res/2.0;
@@ -268,7 +269,13 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh)
     usleep(1000000);
   }
 
+
+// Groovy:
+#if ROS_VERSION_MINIMUM(1, 9, 0)
+  m_map.reset(octomap_msgs::binaryMsgToMap(resp.map));
+#else  // Fuerte:
   m_map.reset(octomap_msgs::binaryMsgDataToMap(resp.map.data));
+#endif
 
   if (!m_map || m_map->size() <= 1){
     ROS_ERROR("Occupancy map is erroneous, exiting...");
@@ -276,7 +283,7 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh)
   }
   double x,y,z;
   m_map->getMetricSize(x,y,z);
-  ROS_INFO("Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m)", m_map->size(), x,y,z);
+  ROS_INFO("Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m), %f m res.", m_map->size(), x,y,z, m_map->getResolution());
 
 }
 

@@ -193,6 +193,10 @@ protected:
 
   unsigned computeBeamStep(unsigned numBeams) const;
 
+  /**
+   * Initializes z, roll and pitch values either from parameters
+   * or fromo real (odom) values
+   */
   void initZRP(double& z, double& roll, double& pitch);
 
   bool lookupPoseHeight(const ros::Time& t, double& poseHeight) const;

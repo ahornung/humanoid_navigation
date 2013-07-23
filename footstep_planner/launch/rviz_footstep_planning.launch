@@ -1,3 +1,3 @@
 <launch>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find footstep_planner)/config/rviz_footstep_planning.vcg" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find footstep_planner)/config/rviz_footstep_planning.rviz" /> 
 </launch>

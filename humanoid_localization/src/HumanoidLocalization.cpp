@@ -549,7 +549,7 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
   ROS_INFO("Laser PointCloud subsampled: %zu from %zu (%u out of valid range)", pc.size(), cloudPtr->size(), numBeamsSkipped);
 }
 
-int HumanoidLocalization::filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const{
+int HumanoidLocalization::filterUniform(const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const{
   int numPoints = static_cast<int>(cloud_in.size() );
   numSamples = std::min( numSamples, numPoints);
   std::vector<unsigned int> indices;
@@ -573,7 +573,7 @@ void HumanoidLocalization::filterGroundPlane(const PointCloud& pc, PointCloud& g
    nonground.header = pc.header;
 
    if (pc.size() < 50){
-      ROS_WARN("Pointcloud in OctomapServer too small, skipping ground plane extraction");
+      ROS_WARN("Pointcloud in HumanoidLocalization::filterGroundPlane too small, skipping ground plane extraction");
       nonground = pc;
    } else {
       // plane detection for ground plane removal:
@@ -707,28 +707,36 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
         Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
         pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
         pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
-        // TODO: This is stupid! Why transform the point cloud and not just the normal vector?
+        // TODO:Why transform the point cloud and not just the normal vector?
         pcl::transformPointCloud(pc, pc, matSensorToBaseFootprint );
         filterGroundPlane(pc, ground, nonground, m_groundFilterDistance, m_groundFilterAngle, m_groundFilterPlaneDistance);
-        // transform clouds back to sensor for integration
-        pcl::transformPointCloud(ground, ground, matBaseFootprintToSensor);
-        pcl::transformPointCloud(nonground, nonground, matBaseFootprintToSensor);
-        pc.clear(); // clear pc again and refill it
-        //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
 
+        // clear pc again and refill it based on classification
+        pc.clear();
         pcl::PointCloud<int> sampledIndices;
-        voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*m_sensorSampleDistGroundFactor);
-        pcl::copyPointCloud(ground, sampledIndices.points, pc);
-        int numFloorPoints = sampledIndices.size();
+
+        //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
+        int numFloorPoints = 0;
+        if (ground.size() > 0){ // check for 0 size, otherwise PCL crashes
+          // transform clouds back to sensor for integration
+          pcl::transformPointCloud(ground, ground, matBaseFootprintToSensor);
+          voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*m_sensorSampleDistGroundFactor);
+          pcl::copyPointCloud(ground, sampledIndices.points, pc);
+          numFloorPoints = sampledIndices.size();
+        }
 
         //int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
-        
-        voxelGridSampling( nonground, sampledIndices, m_sensorSampleDist);
-        pcl::copyPointCloud( nonground, sampledIndices.points, nonground);
-        int numNonFloorPoints = sampledIndices.size();
+        int numNonFloorPoints = 0;
+        if (nonground.size() > 0){ // check for 0 size, otherwise PCL crashes
+          // transform clouds back to sensor for integration
+          pcl::transformPointCloud(nonground, nonground, matBaseFootprintToSensor);
+          voxelGridSampling( nonground, sampledIndices, m_sensorSampleDist);
+          pcl::copyPointCloud( nonground, sampledIndices.points, nonground);
+          numNonFloorPoints = sampledIndices.size();
+          pc += nonground;
+        }
 
-        pc += nonground;
-        //todo samplen besser machen
+        //TODO improve sampling?
 
 
         ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());

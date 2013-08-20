@@ -44,6 +44,7 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_datatypes.h>
+#include <urdf/model.h>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/frames.hpp>

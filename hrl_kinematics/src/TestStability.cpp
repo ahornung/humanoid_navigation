@@ -65,7 +65,7 @@ bool TestStability::isPoseStable(const std::map<std::string, double>& joint_posi
   double angle = acos(upright_vector.dot(normal_vector.normalized()));
 
   tf::Quaternion q;
-  if (std::abs(angle) < SIMD_EPSILON)
+  if (std::abs(angle) < FLT_EPSILON)
     q=tf::createIdentityQuaternion();
   else{
     tf::Vector3 axis = upright_vector.cross(normal_vector).normalized();
@@ -259,8 +259,8 @@ bool TestStability::loadFootPolygon(){
     return false;
   }
 
-  tf::Pose geom_origin = tf::Pose(btTransform(btQuaternion(geom_pose.rotation.x, geom_pose.rotation.y, geom_pose.rotation.z, geom_pose.rotation.w),
-                                              btVector3(geom_pose.position.x, geom_pose.position.y, geom_pose.position.z)));
+  tf::Pose geom_origin = tf::Pose(tf::Transform(tf::Quaternion(geom_pose.rotation.x, geom_pose.rotation.y, geom_pose.rotation.z, geom_pose.rotation.w),
+                                              tf::Vector3(geom_pose.position.x, geom_pose.position.y, geom_pose.position.z)));
 
 
   if (geom->type != urdf::Geometry::MESH){

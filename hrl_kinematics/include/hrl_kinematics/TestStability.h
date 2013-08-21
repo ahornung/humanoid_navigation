@@ -77,6 +77,8 @@ public:
    */
   bool isPoseStable(const std::map<std::string, double>& joint_positions, FootSupport support_mode, const tf::Vector3& normal_vector);
 
+  void scaleConvexHull(double scale);
+
   /// @return the support polygon (for visualization)
   geometry_msgs::PolygonStamped getSupportPolygon() const;
   /// @return the center of mass (for visualization)
@@ -85,7 +87,7 @@ public:
   tf::Point getCOM() const {return p_com_;}
 
 protected:
-  void initFootPolygon();
+  void initFootPolygon(double scale=1.0);
   bool loadFootPolygon();
   std::vector<tf::Point> convexHull(const std::vector<tf::Point>& points) const;
   /// tests if point is in polygon in 2D. point and polygon will be projected down to z=0 (z values will be ignored)
@@ -99,6 +101,9 @@ protected:
   std::vector<tf::Point> support_polygon_;
   tf::Transform tf_to_support_;
   std::string rfoot_mesh_link_name;
+
+  //Convex Hull scaling factor
+  double scale_convex_hull_;
 };
 
 } /* namespace hrl_kinematics */

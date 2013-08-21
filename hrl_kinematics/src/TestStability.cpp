@@ -44,8 +44,8 @@ namespace hrl_kinematics {
 TestStability::TestStability()
 : Kinematics(), rfoot_mesh_link_name("RAnkleRoll_link")
 {
-
-  initFootPolygon();
+  //Build support polygon with default scale 1.0
+  initFootPolygon(1.0);
 }
 
 TestStability::~TestStability() {
@@ -95,7 +95,6 @@ bool TestStability::isPoseStable(const std::map<std::string, double>& joint_posi
   for (unsigned i = 0; i < support_polygon_.size(); ++i){
     support_polygon_[i] = rotate_plane * support_polygon_[i];
   }
-
 
   // append left if double support:
   if (support_mode == SUPPORT_DOUBLE){
@@ -219,7 +218,11 @@ bool TestStability::pointInConvexHull(const tf::Point& point, const std::vector<
   return true;
 }
 
-void TestStability::initFootPolygon(){
+void TestStability::initFootPolygon(double scale_convex_hull){
+  
+  //Init convex hull scaling factor
+  scale_convex_hull_ = scale_convex_hull;
+
   // TODO: param?
   if (!loadFootPolygon()){
     ROS_WARN("Could not load foot mesh, using default points");
@@ -230,18 +233,16 @@ void TestStability::initFootPolygon(){
     foot_support_polygon_right_.push_back(tf::Point(-0.03f, 0.02, 0.0));
   }
 
-
   // mirror for left:
   foot_support_polygon_left_ = foot_support_polygon_right_;
   for (unsigned i=0; i < foot_support_polygon_left_.size(); ++i){
     foot_support_polygon_left_[i] *= tf::Point(1.0, -1.0, 1.0);
   }
+
   // restore order of polygon
   foot_support_polygon_left_ = convexHull(foot_support_polygon_left_);
-
-
-
 }
+
 
 bool TestStability::loadFootPolygon(){
   boost::shared_ptr<const urdf::Link> foot_link =  urdf_model_.getLink(rfoot_mesh_link_name);
@@ -262,23 +263,24 @@ bool TestStability::loadFootPolygon(){
   tf::Pose geom_origin = tf::Pose(tf::Transform(tf::Quaternion(geom_pose.rotation.x, geom_pose.rotation.y, geom_pose.rotation.z, geom_pose.rotation.w),
                                               tf::Vector3(geom_pose.position.x, geom_pose.position.y, geom_pose.position.z)));
 
-
   if (geom->type != urdf::Geometry::MESH){
     ROS_ERROR_STREAM("Geometry for link "<< rfoot_mesh_link_name << " is not a mesh");
     return false;
   } else {
     shared_ptr<const urdf::Mesh> mesh = boost::dynamic_pointer_cast<const urdf::Mesh>(geom);
 
-    //// arm_navigation (Electric / Fuerte)
-    tf::Vector3 scale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
-    shapes::Mesh* shape_mesh = shapes::createMeshFromFilename(mesh->filename, &scale);
-    size_t vertex_count = shape_mesh->vertexCount;
+    //// arm_navigation (Fuerte / Groovy)
+   tf::Vector3 scale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
+   shapes::Mesh* shape_mesh = shapes::createMeshFromFilename(mesh->filename, &scale);
+   size_t vertex_count = shape_mesh->vertexCount;
 
     //// MoveIt:
-    //const Eigen::Vector3d scale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
-    //shapes::Mesh* shape_mesh = shapes::createMeshFromFilename(mesh->filename, scale);
-    //size_t vertex_count = shape_mesh->vertex_count;
+//     const Eigen::Vector3d scale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
+//     shapes::Mesh* shape_mesh = shapes::createMeshFromResource(mesh->filename, scale);
+//     size_t vertex_count = shape_mesh->vertex_count;
 
+    //Vector storing the original foot points
+    std::vector<tf::Point> foot_SP_right;
     for (unsigned int i = 0 ; i < vertex_count ; ++i)
     {
       unsigned int i3 = i * 3;
@@ -287,10 +289,52 @@ bool TestStability::loadFootPolygon(){
       tf::Point projectedP = geom_origin*p;
       projectedP.setZ(0.0);
       // transform into local foot frame:
-      foot_support_polygon_right_.push_back(projectedP);
+      //foot_support_polygon_right_.push_back(projectedP);
+      foot_SP_right.push_back(projectedP);
     }
 
-    foot_support_polygon_right_ = convexHull(foot_support_polygon_right_);
+    //Compute foot center point w.r.t local frame
+    float sum_x_coord = 0.0;
+    float sum_y_coord = 0.0;
+    tf::Point r_foot_center;
+    for (unsigned int i = 0 ; i < foot_SP_right.size(); ++i)
+    {
+    	sum_x_coord = sum_x_coord + foot_SP_right[i].x();
+    	sum_y_coord = sum_y_coord + foot_SP_right[i].y();
+    }
+    //X and Y of right foot center
+    r_foot_center.setX(sum_x_coord/foot_SP_right.size());
+    r_foot_center.setY(sum_y_coord/foot_SP_right.size());
+
+    //Vector storing foot points w.r.t foot center
+    std::vector<tf::Point> foot_SP_right_center;
+    tf::Point foot_point;
+    for (unsigned int i = 0 ; i < foot_SP_right.size(); ++i){
+      //Express point w.r.t foot center and directly apply scaling
+      foot_point.setX( (foot_SP_right[i].x() - r_foot_center.x()) * scale_convex_hull_ );
+      foot_point.setY( (foot_SP_right[i].y() - r_foot_center.y()) * scale_convex_hull_ );
+      foot_SP_right_center.push_back(foot_point);
+    }
+
+    //Express new(scaled) coordinates in local frame
+    std::vector<tf::Point> scaled_SP_right;
+    for (unsigned int i = 0 ; i < foot_SP_right_center.size() ; ++i){
+      //Express point w.r.t foot center and directly apply scaling
+      foot_point.setX( foot_SP_right_center[i].x() + r_foot_center.x() ) ;
+      foot_point.setY( foot_SP_right_center[i].y() + r_foot_center.y() ) ;
+      scaled_SP_right.push_back(foot_point);
+    }
+
+
+    //std::cout<<"Num points"<<scaled_SP_right.size()<<std::endl;
+
+    //Without scaling
+    //foot_support_polygon_right_ = convexHull(foot_support_polygon_right_);
+    //foot_support_polygon_right_ = convexHull(foot_SP_right);
+
+    //With scaling
+    foot_support_polygon_right_ = convexHull(scaled_SP_right);
+
   }
 
   ROS_INFO("Foot polygon loaded with %zu points", foot_support_polygon_right_.size());
@@ -298,6 +342,15 @@ bool TestStability::loadFootPolygon(){
   return true;
 
 }
+
+
+//Function to guarantee correct double support
+void TestStability::scaleConvexHull(double scaling_factor)
+{
+	//Reinit convex hull with new scaling factor
+	initFootPolygon(scaling_factor);
+}
+
 
 
 } /* namespace hrl_kinematics */

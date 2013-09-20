@@ -49,6 +49,7 @@ m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
 m_groundFilterPointCloud(true), m_groundFilterDistance(0.04),
 m_groundFilterAngle(0.15), m_groundFilterPlaneDistance(0.07),
 m_sensorSampleDistGroundFactor(3),
+m_fixedNumberPointCloudSampling(false),
 m_numFloorPoints(20), m_numNonFloorPoints(80),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
@@ -112,6 +113,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
   m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle); 
   m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
   m_privateNh.param("sensor_sampling_dist_ground_factor", m_sensorSampleDistGroundFactor, m_sensorSampleDistGroundFactor);
+  m_privateNh.param("fixed_number_point_cloud_sampling", m_fixedNumberPointCloudSampling, m_fixedNumberPointCloudSampling);
   m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
   m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
   
@@ -678,99 +680,125 @@ void HumanoidLocalization::filterGroundPlane(const PointCloud& pc, PointCloud& g
 
 void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const{
 
-    pc.clear();
-    // lookup Transfrom Sensor to BaseFootprint
-    tf::StampedTransform sensorToBaseFootprint;
-    try{
+   pc.clear();
+   // lookup Transfrom Sensor to BaseFootprint
+   tf::StampedTransform sensorToBaseFootprint;
+   try{
       m_tfListener.waitForTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, ros::Duration(0.2));
       m_tfListener.lookupTransform(m_baseFootprintId, msg->header.frame_id, msg->header.stamp, sensorToBaseFootprint);
 
 
-    }catch(tf::TransformException& ex){
+   }catch(tf::TransformException& ex){
       ROS_ERROR_STREAM( "Transform error for pointCloudCallback: " << ex.what() << ", quitting callback.\n");
       return;
-    }
+   }
 
-    /*** filter PointCloud and fill pc and ranges ***/
+   /*** filter PointCloud and fill pc and ranges ***/
 
-    // pass-through filter to get rid of near and far ranges
-    pcl::PassThrough<pcl::PointXYZ> pass;
-    pass.setInputCloud (msg);
-    pass.setFilterFieldName ("z");
-    pass.setFilterLimits (m_filterMinRange, m_filterMaxRange);
-    pass.filter (pc);
+   // pass-through filter to get rid of near and far ranges
+   pcl::PassThrough<pcl::PointXYZ> pass;
+   pass.setInputCloud (msg);
+   pass.setFilterFieldName ("z");
+   pass.setFilterLimits (m_filterMinRange, m_filterMaxRange);
+   pass.filter (pc);
 
-    // identify ground plane
-    PointCloud ground, nonground;
-    if (m_groundFilterPointCloud)
-    {
-        Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
-        pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
-        pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
-        // TODO:Why transform the point cloud and not just the normal vector?
-        pcl::transformPointCloud(pc, pc, matSensorToBaseFootprint );
-        filterGroundPlane(pc, ground, nonground, m_groundFilterDistance, m_groundFilterAngle, m_groundFilterPlaneDistance);
+   // identify ground plane
+   PointCloud ground, nonground;
+   if (m_groundFilterPointCloud)
+   {
+      if (m_fixedNumberPointCloudSampling)
+      {
+         Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
+         pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
+         pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
+         // TODO:Why transform the point cloud and not just the normal vector?
+         pcl::transformPointCloud(pc, pc, matSensorToBaseFootprint );
+         filterGroundPlane(pc, ground, nonground, m_groundFilterDistance, m_groundFilterAngle, m_groundFilterPlaneDistance);
 
-        // clear pc again and refill it based on classification
-        pc.clear();
-        pcl::PointCloud<int> sampledIndices;
+         // clear pc again and refill it based on classification
+         pc.clear();
+         pcl::PointCloud<int> sampledIndices;
 
-        //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
-        int numFloorPoints = 0;
-        if (ground.size() > 0){ // check for 0 size, otherwise PCL crashes
-          // transform clouds back to sensor for integration
-          pcl::transformPointCloud(ground, ground, matBaseFootprintToSensor);
-          voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*m_sensorSampleDistGroundFactor);
-          pcl::copyPointCloud(ground, sampledIndices.points, pc);
-          numFloorPoints = sampledIndices.size();
-        }
+         int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
+         int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
+         ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
+         // create sparse ranges..
+         ranges.resize(pc.size());
+         for (unsigned int i=0; i<pc.size(); ++i)
+         {
+            pcl::PointXYZ p = pc.at(i);
+            ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+         }
 
-        //int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
-        int numNonFloorPoints = 0;
-        if (nonground.size() > 0){ // check for 0 size, otherwise PCL crashes
-          // transform clouds back to sensor for integration
-          pcl::transformPointCloud(nonground, nonground, matBaseFootprintToSensor);
-          voxelGridSampling( nonground, sampledIndices, m_sensorSampleDist);
-          pcl::copyPointCloud( nonground, sampledIndices.points, nonground);
-          numNonFloorPoints = sampledIndices.size();
-          pc += nonground;
-        }
+      }
+      else //spatially uniform sampling
+      {
+         Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
+         pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
+         pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
+         // TODO:Why transform the point cloud and not just the normal vector?
+         pcl::transformPointCloud(pc, pc, matSensorToBaseFootprint );
+         filterGroundPlane(pc, ground, nonground, m_groundFilterDistance, m_groundFilterAngle, m_groundFilterPlaneDistance);
 
-        //TODO improve sampling?
+         // clear pc again and refill it based on classification
+         pc.clear();
+         pcl::PointCloud<int> sampledIndices;
 
+         int numFloorPoints = 0;
+         if (ground.size() > 0){ // check for 0 size, otherwise PCL crashes
+            // transform clouds back to sensor for integration
+            pcl::transformPointCloud(ground, ground, matBaseFootprintToSensor);
+            voxelGridSampling(ground, sampledIndices, m_sensorSampleDist*m_sensorSampleDistGroundFactor);
+            pcl::copyPointCloud(ground, sampledIndices.points, pc);
+            numFloorPoints = sampledIndices.size();
+         }
 
-        ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
-        // create sparse ranges..
-        ranges.resize(pc.size());
-        for (unsigned int i=0; i<pc.size(); ++i)
-        {
-           pcl::PointXYZ p = pc.at(i);
-           ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
-        }
+         int numNonFloorPoints = 0;
+         if (nonground.size() > 0){ // check for 0 size, otherwise PCL crashes
+            // transform clouds back to sensor for integration
+            pcl::transformPointCloud(nonground, nonground, matBaseFootprintToSensor);
+            voxelGridSampling( nonground, sampledIndices, m_sensorSampleDist);
+            pcl::copyPointCloud( nonground, sampledIndices.points, nonground);
+            numNonFloorPoints = sampledIndices.size();
+            pc += nonground;
+         }
 
-    }
-    else
-    {
-       ROS_INFO("Starting uniform sampling");
-       //ROS_ERROR("No ground filtering is not implemented yet!");
-       // uniform sampling:
-       pcl::PointCloud<int> sampledIndices;
-       voxelGridSampling(pc, sampledIndices,  m_sensorSampleDist);
-       pcl::copyPointCloud(pc, sampledIndices.points, pc);
-
-       // adjust "ranges" array to contain the same points:
-       ranges.resize(sampledIndices.size());
-       for (size_t i = 0; i < ranges.size(); ++i){
-          pcl::PointXYZ p = pc[i]; 
-          ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
-          //rangesSparse[i] = ranges[sampledIndices.points[i]];
-          //ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
-       }
-       ROS_INFO("Done.");
+         //TODO improve sampling?
 
 
-    }
-    return;
+         ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
+         // create sparse ranges..
+         ranges.resize(pc.size());
+         for (unsigned int i=0; i<pc.size(); ++i)
+         {
+            pcl::PointXYZ p = pc.at(i);
+            ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+         }
+
+      }
+   }
+   else
+   {
+      ROS_INFO("Starting uniform sampling");
+      //ROS_ERROR("No ground filtering is not implemented yet!");
+      // uniform sampling:
+      pcl::PointCloud<int> sampledIndices;
+      voxelGridSampling(pc, sampledIndices,  m_sensorSampleDist);
+      pcl::copyPointCloud(pc, sampledIndices.points, pc);
+
+      // adjust "ranges" array to contain the same points:
+      ranges.resize(sampledIndices.size());
+      for (size_t i = 0; i < ranges.size(); ++i){
+         pcl::PointXYZ p = pc[i]; 
+         ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+         //rangesSparse[i] = ranges[sampledIndices.points[i]];
+         //ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+      }
+      ROS_INFO("Done.");
+
+
+   }
+   return;
 
 }
 

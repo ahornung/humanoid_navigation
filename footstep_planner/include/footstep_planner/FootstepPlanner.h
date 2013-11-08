@@ -66,7 +66,7 @@ public:
    *
    * @return Success of planning.
    */
-  bool plan();
+  bool plan(bool force_new_plan=true);
 
   /// @brief Sets start, goal poses and calls FootstepPlanner::plan().
   bool plan(const geometry_msgs::PoseStampedConstPtr start,

@@ -490,7 +490,7 @@ FootstepPlanner::resetTotally()
 
 
 bool
-FootstepPlanner::plan()
+FootstepPlanner::plan(bool force_new_plan)
 {
   if (!ivMapPtr)
   {
@@ -504,7 +504,11 @@ FootstepPlanner::plan()
     return false;
   }
 
-  reset();
+  if (force_new_plan
+      || ivPlannerType == "RSTARPlanner" || ivPlannerType == "ARAPlanner" )
+  {
+    reset();
+  }
   // start the planning and return success
   return run();
 }
@@ -513,25 +517,7 @@ FootstepPlanner::plan()
 bool
 FootstepPlanner::replan()
 {
-  if (!ivMapPtr)
-  {
-    ROS_ERROR("FootstepPlanner has no map for re-planning yet.");
-    return false;
-  }
-  if (!ivGoalPoseSetUp || !ivStartPoseSetUp)
-  {
-    ROS_ERROR("FootstepPlanner has not set start and/or goal pose yet.");
-    return false;
-  }
-  // Workaround for R* and ARA: need to reinit. everything
-  if (ivPlannerType == "RSTARPlanner" || ivPlannerType == "ARAPlanner")
-  {
-    ROS_INFO("Reset planning information because planner cannot handle "
-             "replanning.");
-    reset();
-  }
-
-  return run();
+  return plan(false);
 }
 
 
@@ -610,12 +596,8 @@ FootstepPlanner::goalPoseCallback(
   {
     if (ivStartPoseSetUp)
     {
-      // this check enforces a planning from scratch if necessary (dependent on
-      // planning direction)
-	  if (ivEnvironmentParams.forward_search)
-        replan();
-	  else
-        plan();
+      // force planning from scratch when backwards direction
+      plan(!ivEnvironmentParams.forward_search);
     }
   }
 }
@@ -631,12 +613,8 @@ FootstepPlanner::startPoseCallback(
   {
     if (ivGoalPoseSetUp)
     {
-      // this check enforces a planning from scratch if necessary (dependent on
-      // planning direction)
-      if (ivEnvironmentParams.forward_search)
-        plan();
-      else
-        replan();
+      // force planning from scratch when forward direction
+      plan(ivEnvironmentParams.forward_search);
     }
   }
 }
@@ -653,7 +631,7 @@ FootstepPlanner::mapCallback(
   {
     // NOTE: update map currently simply resets the planner, i.e. replanning
     // here is in fact a planning from the scratch
-    replan();
+    plan(false);
   }
 }
 

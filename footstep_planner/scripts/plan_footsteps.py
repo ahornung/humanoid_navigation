@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# SVN $HeadURL$
-# SVN $Id$
-
 #
 # A simple service client calling a running footstep_planner node.
 # Using this program you can request footstep plans from the command line.

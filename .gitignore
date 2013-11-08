@@ -11,3 +11,15 @@
 *.lai
 *.la
 *.a
+
+# ROS stuff
+.cproject
+.project
+.pydevproject
+.settings
+cmake_install.cmake
+build/
+bin/
+lib/
+msg_gen/
+srv_gen/

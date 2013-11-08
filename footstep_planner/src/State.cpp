@@ -1,14 +1,8 @@
-// SVN $HeadURL: https://alufr-ros-pkg.googlecode.com/svn/trunk/humanoid_stacks/humanoid_navigation/footstep_planner/src/State2.cpp $
-// SVN $Id: State2.cpp 2852 2012-06-26 14:07:35Z Garimort.Johannes $
-
 /*
  * A footstep planner for humanoid robots
  *
  * Copyright 2010-2011 Johannes Garimort, Armin Hornung, University of Freiburg
  * http://www.ros.org/wiki/footstep_planner
- *
- * D* Lite (Koenig et al. 2002) partly based on the implementation
- * by J. Neufeld (http://code.google.com/p/dstarlite/)
  *
  *
  * This program is free software: you can redistribute it and/or modify

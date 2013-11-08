@@ -1,6 +1,3 @@
-// SVN $HeadURL: https://alufr-ros-pkg.googlecode.com/svn/trunk/humanoid_navigation/footstep_planner/include/footstep_planner/PlanningStateChangeQuery.h $
-// SVN $Id: PlanningStateChangeQuery.h 2135 2011-11-02 11:57:21Z garimort.johannes $
-
 /*
  * A footstep planner for humanoid robots
  *

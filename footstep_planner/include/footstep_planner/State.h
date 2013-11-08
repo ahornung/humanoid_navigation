@@ -1,6 +1,3 @@
-// SVN $HeadURL: https://alufr-ros-pkg.googlecode.com/svn/trunk/humanoid_stacks/humanoid_navigation/footstep_planner/include/footstep_planner/State2.h $
-// SVN $Id: State2.h 2793 2012-06-07 10:37:53Z Garimort.Johannes $
-
 /*
  * A footstep planner for humanoid robots
  *

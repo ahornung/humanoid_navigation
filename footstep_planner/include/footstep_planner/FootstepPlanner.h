@@ -26,6 +26,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <humanoid_nav_msgs/PlanFootsteps.h>
+#include <humanoid_nav_msgs/PlanFootstepsBetweenFeet.h>
 #include <footstep_planner/helper.h>
 #include <footstep_planner/PathCostHeuristic.h>
 #include <footstep_planner/FootstepPlannerEnvironment.h>
@@ -88,6 +89,17 @@ public:
   /// @brief Service handle to plan footsteps.
   bool planService(humanoid_nav_msgs::PlanFootsteps::Request &req,
                    humanoid_nav_msgs::PlanFootsteps::Response &resp);
+
+  /// @brief Service handle to plan footsteps.
+  bool planFeetService(humanoid_nav_msgs::PlanFootstepsBetweenFeet::Request &req,
+                   humanoid_nav_msgs::PlanFootstepsBetweenFeet::Response &resp);
+
+  /**
+   * @brief Sets the goal pose as two feet (left / right)
+   *
+   * @return True if the two foot poses have been set successfully.
+   */
+  bool setGoal(const State& left_foot, const State& right_foot);
 
   /**
    * @brief Sets the goal pose as a robot pose centered between two feet.
@@ -219,6 +231,9 @@ protected:
   void broadcastHeuristicPathVis();
   void broadcastPathVis();
 
+  /// helper to create service response
+  void extractFootstepsSrv(std::vector<humanoid_nav_msgs::StepTarget> & footsteps) const;
+
   /**
    * @return True if the newly calculated path is different from the existing
    * one (if one exists).
@@ -273,6 +288,7 @@ protected:
   ros::Publisher  ivPathVisPub;
   ros::Publisher  ivStartPoseVisPub;
   ros::ServiceServer ivFootstepPlanService;
+  ros::ServiceServer ivFootstepPlanFeetService;
 
   double ivFootSeparation;
   double ivMaxStepWidth;

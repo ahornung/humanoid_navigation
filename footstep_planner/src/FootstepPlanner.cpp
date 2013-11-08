@@ -363,8 +363,11 @@ FootstepPlanner::run()
   ivPathCost = double(path_cost) / FootstepPlannerEnvironment::cvMmScale;
 
   bool path_is_new = pathIsNew(solution_state_ids);
-  if (ret && solution_state_ids.size() > 0 && path_is_new)
+  if (ret && solution_state_ids.size() > 0)
   {
+    if (!path_is_new)
+      ROS_WARN("Solution found by SBPL is the same as the old solution. This could indicate that replanning failed.");
+
     ROS_INFO("Solution of size %zu found after %f s",
              solution_state_ids.size(),
              (ros::WallTime::now()-startTime).toSec());
@@ -391,12 +394,6 @@ FootstepPlanner::run()
       ROS_ERROR("extracting path failed\n\n");
       return false;
     }
-  }
-  else if (!path_is_new)
-  {
-    ROS_ERROR("Solution found by SBPL is the same as the old solution. "
-              "Replanning failed.");
-    return false;
   }
   else
   {
@@ -463,6 +460,7 @@ FootstepPlanner::extractPath(const std::vector<int>& state_ids)
 void
 FootstepPlanner::reset()
 {
+  ROS_INFO("Resetting planner");
   // reset the previously calculated paths
   ivPath.clear();
   ivPlanningStatesIds.clear();
@@ -479,6 +477,7 @@ FootstepPlanner::reset()
 void
 FootstepPlanner::resetTotally()
 {
+  ROS_INFO("Resetting planner and environment");
   // reset the previously calculated paths
   ivPath.clear();
   ivPlanningStatesIds.clear();
@@ -542,7 +541,7 @@ FootstepPlanner::plan(float start_x, float start_y, float start_theta,
     return false;
   }
 
-  return plan();
+  return plan(false);
 }
 
 
@@ -557,7 +556,43 @@ FootstepPlanner::planService(humanoid_nav_msgs::PlanFootsteps::Request &req,
   resp.footsteps.reserve(getPathSize());
   resp.final_eps = ivPlannerPtr->get_final_epsilon();
   resp.expanded_states = ivPlannerEnvironmentPtr->getNumExpandedStates();
+  extractFootstepsSrv(resp.footsteps);
 
+  resp.result = result;
+
+  // return true since service call was successful (independent from the
+  // success of the planning call)
+  return true;
+}
+
+
+bool
+FootstepPlanner::planFeetService(humanoid_nav_msgs::PlanFootstepsBetweenFeet::Request &req,
+                             humanoid_nav_msgs::PlanFootstepsBetweenFeet::Response &resp)
+{
+  // TODO check direction and change of states, force planning from scratch if does not fit
+  setStart(State(req.start_left.pose.x, req.start_left.pose.y, req.start_left.pose.theta, LEFT),
+           State(req.start_right.pose.x, req.start_right.pose.y, req.start_right.pose.theta, RIGHT));
+  setGoal(State(req.goal_left.pose.x, req.goal_left.pose.y, req.goal_left.pose.theta, LEFT),
+           State(req.goal_right.pose.x, req.goal_right.pose.y, req.goal_right.pose.theta, RIGHT));
+
+  bool result = plan(false);
+
+  resp.costs = getPathCosts();
+  resp.footsteps.reserve(getPathSize());
+  resp.final_eps = ivPlannerPtr->get_final_epsilon();
+  resp.expanded_states = ivPlannerEnvironmentPtr->getNumExpandedStates();
+  extractFootstepsSrv(resp.footsteps);
+
+  resp.result = result;
+
+  // return true since service call was successful (independent from the
+  // success of the planning call)
+  return true;
+}
+
+void
+FootstepPlanner::extractFootstepsSrv(std::vector<humanoid_nav_msgs::StepTarget> & footsteps) const{
   humanoid_nav_msgs::StepTarget foot;
   state_iter_t path_iter;
   for (path_iter = getPathBegin(); path_iter != getPathEnd(); ++path_iter)
@@ -577,13 +612,9 @@ FootstepPlanner::planService(humanoid_nav_msgs::PlanFootsteps::Request &req,
       continue;
     }
 
-    resp.footsteps.push_back(foot);
+    footsteps.push_back(foot);
   }
-  resp.result = result;
 
-  // return true since service call was successful (independent from the
-  // success of the planning call)
-  return true;
 }
 
 
@@ -670,6 +701,23 @@ FootstepPlanner::setGoal(float x, float y, float theta)
 
   ivGoalPoseSetUp = true;
   ROS_INFO("Goal pose set to (%f %f %f)", x, y, theta);
+
+  return true;
+}
+
+bool
+FootstepPlanner::setGoal(const State& left_foot, const State& right_foot)
+{
+  if (ivPlannerEnvironmentPtr->occupied(left_foot) ||
+      ivPlannerEnvironmentPtr->occupied(right_foot))
+  {
+    ivGoalPoseSetUp = false;
+    return false;
+  }
+  ivGoalFootLeft = left_foot;
+  ivGoalFootRight = right_foot;
+
+  ivGoalPoseSetUp = true;
 
   return true;
 }

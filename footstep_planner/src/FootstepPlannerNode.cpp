@@ -33,6 +33,7 @@ FootstepPlannerNode::FootstepPlannerNode()
 
   // service:
   ivFootstepPlanService = nh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
+  ivFootstepPlanFeetService = nh.advertiseService("plan_footsteps_feet", &FootstepPlanner::planFeetService, &ivFootstepPlanner);
 }
 
 

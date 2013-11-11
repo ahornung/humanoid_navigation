@@ -551,31 +551,18 @@ FootstepPlannerEnvironment::getNeighsOfCells(
                       // the same as of the planning state grid)
     for (int theta = 0; theta < ivNumAngleBins; ++theta)
     {
-      PlanningState s(state_2_cell(wx, ivCellSize),
-                      state_2_cell(wy, ivCellSize),
-                      theta,
-                      NOLEG,
-                      ivHashTableSize);
+      PlanningState s1(state_2_cell(wx, ivCellSize), state_2_cell(wy, ivCellSize),
+                      theta,LEFT, ivHashTableSize);
+      PlanningState s2(state_2_cell(wx, ivCellSize), state_2_cell(wy, ivCellSize),
+                      theta,RIGHT, ivHashTableSize);
 
-      // generate predecessor planning states
-      std::vector<Footstep>::const_iterator footstep_set_iter;
-      for(footstep_set_iter = ivFootstepSet.begin();
-          footstep_set_iter != ivFootstepSet.end();
-          ++footstep_set_iter)
-      {
-        // TODO: fix dummy state
-        PlanningState neighbor(s);
-        if (ivForwardSearch)
-          neighbor = footstep_set_iter->performMeOnThisState(s);
-        else
-          neighbor = footstep_set_iter->reverseMeOnThisState(s);
-        // check if predecessor exists
-        const PlanningState* pred_hash_entry = getHashEntry(neighbor);
-        if (pred_hash_entry == NULL)
-          continue;
-
+      const PlanningState* pred_hash_entry = getHashEntry(s1);
+      if (pred_hash_entry != NULL)
         neighbor_ids->push_back(pred_hash_entry->getId());
-      }
+
+      pred_hash_entry = getHashEntry(s2);
+      if (pred_hash_entry != NULL)
+        neighbor_ids->push_back(pred_hash_entry->getId());
 
     }
   }

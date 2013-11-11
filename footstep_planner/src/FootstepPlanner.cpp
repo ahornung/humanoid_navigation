@@ -21,6 +21,8 @@
 #include <footstep_planner/FootstepPlanner.h>
 #include <humanoid_nav_msgs/ClipFootstep.h>
 
+// for debugging change map, usually not needed:
+// #include <opencv2/opencv.hpp>
 
 using gridmap_2d::GridMap2D;
 using gridmap_2d::GridMap2DPtr;
@@ -832,32 +834,26 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr old_map)
         pow(std::abs(ivEnvironmentParams.foot_origin_shift_y) + ivEnvironmentParams.footsize_y / 2.0, 2.0))
                           / ivMapPtr->getResolution();
     changed_cells = (changedDistMap <= max_foot_radius); // threshold, also invert back
+    // Debug:
+    //cv::imwrite("change_map.png", changed_cells);
 
     // loop over changed cells (now marked with 255 in the mask):
-    unsigned int num_changed_cells = 0;
-    double wx, wy;
-    // TODO: State2?
-    State s;
-    for (int y = 0; y < changed_cells.rows; ++y)
-    {
-      for (int x = 0; x < changed_cells.cols; ++x)
-      {
-        if (changed_cells.at<uchar>(x,y) == 255)
-        {
-          ++num_changed_cells;
+    for (int y = 0; y < changed_cells.rows; ++y) {
+      for (int x = 0; x < changed_cells.cols; ++x) {
+        if (changed_cells.at<uchar>(x,y) == 255) {
           changed_states.push_back(std::pair<int,int> (x,y));
         }
       }
     }
 
-    if (num_changed_cells == 0)
+    if (changed_states.size() == 0)
     {
       ROS_INFO("Maps identical, no map update necessary");
       return;
     }
 
-    ROS_INFO("%d changed map cells found", num_changed_cells);
-    if (num_changed_cells <= ivChangedCellsLimit)
+    ROS_INFO("%zu changed map cells found", changed_states.size());
+    if (changed_states.size() <= ivChangedCellsLimit)
       force_reset = false;
 
   }

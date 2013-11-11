@@ -533,65 +533,54 @@ FootstepPlannerEnvironment::reachable(const PlanningState& from,
 
 
 void
-FootstepPlannerEnvironment::getPredsOfGridCells(
-    const std::vector<State>& changed_states,
-    std::vector<int>* pred_ids)
+FootstepPlannerEnvironment::getNeighsOfCells(
+    const std::vector<std::pair<int,int > >& changed_states,
+    std::vector<int>* neighbor_ids)
 {
-  pred_ids->clear();
+  neighbor_ids->clear();
 
-  std::vector<State>::const_iterator state_iter;
+  std::vector<std::pair<int,int > >::const_iterator state_iter;
   for (state_iter = changed_states.begin();
       state_iter != changed_states.end();
       ++state_iter)
   {
-    PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
-                    ivHashTableSize);
-    // generate predecessor planning states
-    std::vector<Footstep>::const_iterator footstep_set_iter;
-    for(footstep_set_iter = ivFootstepSet.begin();
-        footstep_set_iter != ivFootstepSet.end();
-        ++footstep_set_iter)
+    double wx, wy;
+    ivMapPtr->mapToWorld(state_iter->first, state_iter->second, wx, wy);
+    // on each grid cell ivNumAngleBins-many planning states
+    // can be placed (if the resolution of the grid cells is
+                      // the same as of the planning state grid)
+    for (int theta = 0; theta < ivNumAngleBins; ++theta)
     {
-      PlanningState pred = footstep_set_iter->reverseMeOnThisState(s);
-      // check if predecessor exists
-      const PlanningState* pred_hash_entry = getHashEntry(pred);
-      if (pred_hash_entry == NULL)
-        continue;
-      pred_ids->push_back(pred_hash_entry->getId());
+      PlanningState s(state_2_cell(wx, ivCellSize),
+                      state_2_cell(wy, ivCellSize),
+                      theta,
+                      NOLEG,
+                      ivHashTableSize);
+
+      // generate predecessor planning states
+      std::vector<Footstep>::const_iterator footstep_set_iter;
+      for(footstep_set_iter = ivFootstepSet.begin();
+          footstep_set_iter != ivFootstepSet.end();
+          ++footstep_set_iter)
+      {
+        // TODO: fix dummy state
+        PlanningState neighbor(s);
+        if (ivForwardSearch)
+          neighbor = footstep_set_iter->performMeOnThisState(s);
+        else
+          neighbor = footstep_set_iter->reverseMeOnThisState(s);
+        // check if predecessor exists
+        const PlanningState* pred_hash_entry = getHashEntry(neighbor);
+        if (pred_hash_entry == NULL)
+          continue;
+
+        neighbor_ids->push_back(pred_hash_entry->getId());
+      }
+
     }
   }
 }
 
-
-void
-FootstepPlannerEnvironment::getSuccsOfGridCells(
-    const std::vector<State>& changed_states,
-    std::vector<int>* succ_ids)
-{
-  succ_ids->clear();
-
-  std::vector<State>::const_iterator state_iter;
-  for (state_iter = changed_states.begin();
-      state_iter != changed_states.end();
-      ++state_iter)
-  {
-    PlanningState s(*state_iter, ivCellSize, ivNumAngleBins,
-                    ivHashTableSize);
-    // generate successors
-    std::vector<Footstep>::const_iterator footstep_set_iter;
-    for(footstep_set_iter = ivFootstepSet.begin();
-        footstep_set_iter != ivFootstepSet.end();
-        ++footstep_set_iter)
-    {
-      PlanningState succ = footstep_set_iter->performMeOnThisState(s);
-      // check if successor exists
-      const PlanningState* succ_hash_entry = getHashEntry(succ);
-      if (succ_hash_entry == NULL)
-        continue;
-      succ_ids->push_back(succ_hash_entry->getId());
-    }
-  }
-}
 
 
 int

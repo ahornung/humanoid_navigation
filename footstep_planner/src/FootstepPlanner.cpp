@@ -801,6 +801,10 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr old_map)
 //  // last, set new map
 //  ivPlannerEnvironmentPtr->updateMap(ivMapPtr);
 
+  bool force_reset = true;
+  std::vector<std::pair<int,int> > changed_states;
+  cv::Mat changed_cells;
+
   if (ivPlannerType == "ADPlanner" &&
       ivMapPtr->getResolution() == old_map->getResolution() &&
       ivMapPtr->size().height == old_map->size().height &&
@@ -808,9 +812,6 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr old_map)
   {
     ROS_INFO("Received an updated map => change detection");
 
-    // TODO: State2?
-    std::vector<State> changed_states;
-    cv::Mat changed_cells;
 
     // get new occupied cells only (0: occupied in binary map)
     // changedCells(x,y) = old(x,y) AND NOT(new(x,y))
@@ -844,17 +845,7 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr old_map)
         if (changed_cells.at<uchar>(x,y) == 255)
         {
           ++num_changed_cells;
-          ivMapPtr->mapToWorld(x, y, wx, wy);
-          s.setX(wx);
-          s.setY(wy);
-          // on each grid cell ivNumAngleBins-many planning states
-          // can be placed (if the resolution of the grid cells is
-                            // the same as of the planning state grid)
-          for (int theta = 0; theta < ivEnvironmentParams.num_angle_bins; ++theta)
-          {
-            s.setTheta(angle_cell_2_state(theta, ivEnvironmentParams.num_angle_bins));
-            changed_states.push_back(s);
-          }
+          changed_states.push_back(std::pair<int,int> (x,y));
         }
       }
     }
@@ -867,39 +858,29 @@ FootstepPlanner::updateEnvironment(const GridMap2DPtr old_map)
 
     ROS_INFO("%d changed map cells found", num_changed_cells);
     if (num_changed_cells <= ivChangedCellsLimit)
-    {
-      // update planer
-      ROS_INFO("Use old information in new planning task");
+      force_reset = false;
 
-      std::vector<int> neighbour_ids;
-      if (ivEnvironmentParams.forward_search)
-        ivPlannerEnvironmentPtr->getSuccsOfGridCells(changed_states, &neighbour_ids);
-      else
-        ivPlannerEnvironmentPtr->getPredsOfGridCells(changed_states, &neighbour_ids);
-
-      boost::shared_ptr<ADPlanner> h =
-          boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
-      h->costs_changed(PlanningStateChangeQuery(neighbour_ids));
-    }
-    else
-    {
-      //TODO: cleanup (merge with block below)
-      ROS_INFO("Completely reset map for new planning task");
-      // reset planner
-      ivPlannerEnvironmentPtr->reset();
-      ivPlannerEnvironmentPtr->updateMap(ivMapPtr);
-      setPlanner();
-      //ivPlannerPtr->force_planning_from_scratch();
-    }
   }
-  else
-  {
-    ROS_INFO("Reset old information in new planning task");
+
+  if (force_reset){
+    ROS_INFO("Completely reset map for new planning task");
     // reset planner
     ivPlannerEnvironmentPtr->reset();
     ivPlannerEnvironmentPtr->updateMap(ivMapPtr);
     setPlanner();
+    // bug in planning from scratch? => reset above instead
     //ivPlannerPtr->force_planning_from_scratch();
+
+  } else{ // incrementally replan:
+    // update planner
+    ROS_INFO("Reuse information in updated environment");
+
+    std::vector<int> neighbour_ids;
+    ivPlannerEnvironmentPtr->getNeighsOfCells(changed_states, &neighbour_ids);
+
+    ivPlannerEnvironmentPtr->updateMap(ivMapPtr);
+    boost::shared_ptr<ADPlanner> adPlanner = boost::dynamic_pointer_cast<ADPlanner>(ivPlannerPtr);
+    adPlanner->costs_changed(PlanningStateChangeQuery(neighbour_ids));
   }
 }
 

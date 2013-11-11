@@ -267,11 +267,8 @@ public:
    */
   bool reachable(const PlanningState& from, const PlanningState& to);
 
-  void getPredsOfGridCells(const std::vector<State>& changed_states,
-                           std::vector<int>* pred_ids);
-
-  void getSuccsOfGridCells(const std::vector<State>& changed_states,
-                           std::vector<int>* succ_ids);
+  void getNeighsOfCells(const std::vector<std::pair<int,int > >& changed_states,
+                           std::vector<int>* neighbor_ids);
 
   /**
    * @brief Update the heuristic values (e.g. after the map has changed).

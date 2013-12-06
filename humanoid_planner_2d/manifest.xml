@@ -1,7 +1,8 @@
 <package>
-  <description brief="humanoid_planner_2d">
+  <description brief="Simple 2D path planner using SBPL">
 
-     humanoid_planner_2d
+     humanoid_planner_2d - provides a simple 2D path planner as wrapper around
+     SBPL (ARA*, AD*, R*).
 
   </description>
   <author>Armin Hornung</author>

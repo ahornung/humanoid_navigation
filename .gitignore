@@ -23,3 +23,7 @@ bin/
 lib/
 msg_gen/
 srv_gen/
+
+# SBPL output:
+debug.txt
+envdebug.txt

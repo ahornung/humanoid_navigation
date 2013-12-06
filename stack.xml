@@ -2,7 +2,7 @@
   <description brief="Various packages for humanoid (biped) navigation.">
         <p>This stack contains packages for humanoid (biped) navigation,
         developed at the <a href="http://hrl.informatik.uni-freiburg.de/">Humanoid Robots Lab</a> 
-    at the Albert-Ludwigs-Universität in Freiburg, Germany.
+    at the Albert-Ludwigs-University in Freiburg, Germany.
    </p>
    
   </description>
@@ -21,8 +21,6 @@
   <depend stack="perception_pcl" />
   <depend stack="octomap_msgs" /> 
   <depend stack="octomap_ros" />
-  <depend stack="robot_model" /> <!-- kdl_parser, robot_state_publisher -->
-  <depend stack="arm_navigation" /> <!-- geometric_shapes in hrl_kinematics -->
   
   <depends>octomap</depends>
   <depends>sbpl</depends>

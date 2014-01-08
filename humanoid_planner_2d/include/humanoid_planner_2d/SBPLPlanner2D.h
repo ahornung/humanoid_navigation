@@ -54,7 +54,7 @@ public:
   gridmap_2d::GridMap2DPtr getMap() const { return map_;};
 
   /**
-   * Plans from start to goal, assuming that the map was set with updateMap().
+   * @brief Plans from start to goal, assuming that the map was set with updateMap().
    * When successful, you can retrieve the path with getPath().
    *
    * @param start
@@ -62,7 +62,15 @@ public:
    * @return success of planning
    */
   bool plan(const geometry_msgs::Pose& start, const geometry_msgs::Pose& goal);
-  
+
+  /**
+   * @brief Plans from start to goal, assuming that the map was set with updateMap().
+   * When successful, you can retrieve the path with getPath().
+   *
+   * @return success of planning
+   */
+  bool plan(double startX, double startY, double goalX, double goalY);
+
   inline const nav_msgs::Path& getPath() const{return path_;};
 
 protected:

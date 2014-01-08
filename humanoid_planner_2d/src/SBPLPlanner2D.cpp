@@ -91,6 +91,19 @@ bool SBPLPlanner2D::plan(const geometry_msgs::Pose& start, const geometry_msgs::
   return plan();
 }
 
+bool SBPLPlanner2D::plan(double startX, double startY, double goalX, double goalY){
+  start_pose_.position.x = startX;
+  start_pose_.position.y = startY;
+
+  goal_pose_.position.x = goalX;
+  goal_pose_.position.y = goalY;
+
+  start_received_ = true;
+  goal_received_ = true;
+
+  return plan();
+}
+
 bool SBPLPlanner2D::plan(){
   path_.poses.clear();
 
@@ -201,3 +214,5 @@ void SBPLPlanner2D::setPlanner(){
     planner_.reset(new RSTARPlanner(planner_environment_.get(),forward_search_));
   }
 }
+
+

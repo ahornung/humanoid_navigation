@@ -190,9 +190,9 @@ bool SBPLPlanner2D::updateMap(gridmap_2d::GridMap2DPtr map){
   map_->inflateMap(robot_radius_);
 
 
-  for(unsigned int j = 0; j < map->getInfo().height; ++j){
-    for(unsigned int i = 0; i < map->getInfo().width; ++i){
-      if (map->isOccupiedAtCell(i,j))
+  for(unsigned int j = 0; j < map_->getInfo().height; ++j){
+    for(unsigned int i = 0; i < map_->getInfo().width; ++i){
+      if (map_->isOccupiedAtCell(i,j))
         planner_environment_->UpdateCost(i, j, OBSTACLE_COST);
       else
         planner_environment_->UpdateCost(i,j,0);

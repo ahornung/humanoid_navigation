@@ -45,6 +45,15 @@ GridMap2D::GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap) {
 
 }
 
+GridMap2D::GridMap2D(const GridMap2D& other)
+ : m_binaryMap(other.m_binaryMap.clone()),
+   m_distMap(other.m_distMap.clone()),
+   m_mapInfo(other.m_mapInfo),
+   m_frameId(other.m_frameId)
+{
+
+}
+
 GridMap2D::~GridMap2D() {
 
 }

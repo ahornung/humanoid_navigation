@@ -51,6 +51,8 @@ public:
   /// Setup the internal map representation and initialize the SBPL planning environment
   bool updateMap(gridmap_2d::GridMap2DPtr map);
 
+  gridmap_2d::GridMap2DPtr getMap() const { return map_;};
+
   /**
    * Plans from start to goal, assuming that the map was set with updateMap().
    * When successful, you can retrieve the path with getPath().

@@ -172,7 +172,8 @@ bool SBPLPlanner2D::updateMap(gridmap_2d::GridMap2DPtr map){
   // environment is set up, reset planner:
   setPlanner();
 
-  map_ = map;
+  // store local copy:
+  map_.reset(new gridmap_2d::GridMap2D(*map));
   map_->inflateMap(robot_radius_);
 
 

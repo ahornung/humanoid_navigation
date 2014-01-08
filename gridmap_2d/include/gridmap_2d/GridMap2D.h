@@ -50,6 +50,8 @@ class GridMap2D {
 public:
   GridMap2D();
   GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap);
+  ///@brief Copy constructor, performs a deep copy of underlying data structures
+  GridMap2D(const GridMap2D& other);
   virtual ~GridMap2D();
 
   void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;

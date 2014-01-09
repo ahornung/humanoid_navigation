@@ -72,6 +72,7 @@ public:
   bool plan(double startX, double startY, double goalX, double goalY);
 
   inline const nav_msgs::Path& getPath() const{return path_;};
+  inline double getRobotRadius() const{return robot_radius_;};
 
 protected:
   bool plan();

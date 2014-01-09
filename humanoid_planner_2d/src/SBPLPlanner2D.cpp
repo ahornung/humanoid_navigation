@@ -30,6 +30,7 @@
 
 SBPLPlanner2D::SBPLPlanner2D()
   : nh_(),
+  robot_radius_(0.25),
   start_received_(false), goal_received_(false)
     //m_wayPointDistance(0.2)
 {
@@ -40,7 +41,7 @@ SBPLPlanner2D::SBPLPlanner2D()
   nh_private.param("allocated_time", allocated_time_, 7.0);
   nh_private.param("forward_search", forward_search_, false);
   nh_private.param("initial_epsilon", initial_epsilon_, 3.0);
-  nh_private.param("robot_radius", robot_radius_, 0.1);
+  nh_private.param("robot_radius", robot_radius_, robot_radius_);
 
   path_pub_ = nh_.advertise<nav_msgs::Path>("path", 0);
 

@@ -39,9 +39,9 @@ GridMap2D::GridMap2D()
 
 }
 
-GridMap2D::GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap) {
+GridMap2D::GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap, bool unknown_as_obstacle) {
 
-  setMap(gridMap);
+  setMap(gridMap, unknown_as_obstacle);
 
 }
 
@@ -58,15 +58,15 @@ GridMap2D::~GridMap2D() {
 
 }
 
-void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
-  m_mapInfo = gridMap->info;
-  m_frameId = gridMap->header.frame_id;
+void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle){
+  m_mapInfo = grid_map->info;
+  m_frameId = grid_map->header.frame_id;
   // allocate map structs so that x/y in the world correspond to x/y in the image
   // (=> cv::Mat is rotated by 90 deg, because it's row-major!)
   m_binaryMap = cv::Mat(m_mapInfo.width, m_mapInfo.height, CV_8UC1);
   m_distMap = cv::Mat(m_binaryMap.size(), CV_32FC1);
 
-  std::vector<signed char>::const_iterator mapDataIter = gridMap->data.begin();
+  std::vector<signed char>::const_iterator mapDataIter = grid_map->data.begin();
 
   //TODO check / param
   unsigned char map_occ_thres = 70;
@@ -75,8 +75,9 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& gridMap){
   // (0,0) is lower left corner of OccupancyGrid
   for(unsigned int j = 0; j < m_mapInfo.height; ++j){
     for(unsigned int i = 0; i < m_mapInfo.width; ++i){
-      if (*mapDataIter > map_occ_thres){
-        // m_mapInfo.height-1-i
+      if (*mapDataIter > map_occ_thres
+          || (unknown_as_obstacle && *mapDataIter < 0))
+      {
         m_binaryMap.at<uchar>(i,j) = 0;
       } else{
         m_binaryMap.at<uchar>(i,j) = 255;

@@ -1,0 +1,46 @@
+<package>
+  <name>footstep_planner</name>
+  <version>1.0.1</version>
+  <description>
+
+     <p>A footstep planner for humanoid / biped robots. The planner builds on SBPL and has anytime as well as dynamic replanning capabilities. The supported planners are: ARA*, AD*, R*.</p>
+     <p>Details can be found in the following publications:</p>
+     <p><em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
+     by J. Garimort, A. Hornung, and M. Bennewitz; published in 
+     Proc. of the IEEE International Conference on Robotics &amp; Automation (ICRA), 2011</p>
+     <p><em>Anytime Search-Based Footstep Planning with Suboptimality Bounds</em>
+     by A. Hornung, A. Dornbush, M. Likhachev, and M. Bennewitz; published in
+     Proc. of the IEEE-RAS International Conference on Humanoid
+     Robots (HUMANOIDS), 2012
+     </p>
+
+  </description>
+  <author>Johannes Garimort, Armin Hornung</author>
+  <maintainer email="HornungA@informatik.uni-freiburg.de">Armin Hornung</maintainer>
+  <license>GPL 3</license>
+  <url>http://ros.org/wiki/footstep_planner</url>
+  
+  <build_depend>actionlib</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>gridmap_2d</build_depend>
+  <build_depend>humanoid_nav_msgs</build_depend>
+  <build_depend>map_server</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sbpl</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+
+  <run_depend>actionlib</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>gridmap_2d</run_depend>
+  <run_depend>humanoid_nav_msgs</run_depend>
+  <run_depend>map_server</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sbpl</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

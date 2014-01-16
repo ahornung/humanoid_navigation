@@ -1,0 +1,25 @@
+<package>
+  <name>humanoid_navigation</name>
+  <version>1.0.1</version>
+  <description>
+        <p>This stack contains packages for humanoid (biped) navigation,
+        developed at the <a href="http://hrl.informatik.uni-freiburg.de/">Humanoid Robots Lab</a>
+    at the Albert-Ludwigs-Universitat in Freiburg, Germany.
+   </p>
+  </description>
+  <maintainer email="HornungA@informatik.uni-freiburg.de">Armin Hornung</maintainer>
+  <author>Armin Hornung</author>
+  <license>BSD,GPL 3</license>
+  <url>http://ros.org/wiki/humanoid_navigation</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>humanoid_localization</run_depend>
+  <run_depend>footstep_planner</run_depend>
+  <run_depend>gridmap_2d</run_depend>
+  <run_depend>hrl_kinematics</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

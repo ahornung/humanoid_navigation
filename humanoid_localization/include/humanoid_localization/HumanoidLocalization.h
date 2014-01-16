@@ -280,6 +280,8 @@ protected:
   double m_groundFilterAngle;
   double m_groundFilterPlaneDistance;
   double m_sensorSampleDistGroundFactor;
+
+  bool m_fixedNumberPointCloudSampling;
   int m_numFloorPoints;
   int m_numNonFloorPoints;
 

@@ -49,6 +49,7 @@ m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
 m_groundFilterPointCloud(true), m_groundFilterDistance(0.04),
 m_groundFilterAngle(0.15), m_groundFilterPlaneDistance(0.07),
 m_sensorSampleDistGroundFactor(3),
+m_fixedNumberPointCloudSampling(false),
 m_numFloorPoints(20), m_numNonFloorPoints(80),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
@@ -112,6 +113,7 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
   m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle); 
   m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
   m_privateNh.param("sensor_sampling_dist_ground_factor", m_sensorSampleDistGroundFactor, m_sensorSampleDistGroundFactor);
+  m_privateNh.param("fixed_number_point_cloud_sampling", m_fixedNumberPointCloudSampling, m_fixedNumberPointCloudSampling);
   m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
   m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
   
@@ -704,6 +706,33 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
     PointCloud ground, nonground;
     if (m_groundFilterPointCloud)
     {
+      if (m_fixedNumberPointCloudSampling)
+      {
+         Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
+         pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
+         pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
+         // TODO:Why transform the point cloud and not just the normal vector?
+         pcl::transformPointCloud(pc, pc, matSensorToBaseFootprint );
+         filterGroundPlane(pc, ground, nonground, m_groundFilterDistance, m_groundFilterAngle, m_groundFilterPlaneDistance);
+
+         // clear pc again and refill it based on classification
+         pc.clear();
+         pcl::PointCloud<int> sampledIndices;
+
+         int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
+         int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
+         ROS_INFO("PointCloudGroundFiltering done. Added %d non-ground points and %d ground points (from %zu). Cloud size is %zu", numNonFloorPoints, numFloorPoints, ground.size(), pc.size());
+         // create sparse ranges..
+         ranges.resize(pc.size());
+         for (unsigned int i=0; i<pc.size(); ++i)
+         {
+            pcl::PointXYZ p = pc.at(i);
+            ranges[i] = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+         }
+
+      }
+      else //spatially uniform sampling
+      {
         Eigen::Matrix4f matSensorToBaseFootprint, matBaseFootprintToSensor;
         pcl_ros::transformAsMatrix(sensorToBaseFootprint, matSensorToBaseFootprint);
         pcl_ros::transformAsMatrix(sensorToBaseFootprint.inverse(), matBaseFootprintToSensor);
@@ -715,7 +744,6 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
         pc.clear();
         pcl::PointCloud<int> sampledIndices;
 
-        //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
         int numFloorPoints = 0;
         if (ground.size() > 0){ // check for 0 size, otherwise PCL crashes
           // transform clouds back to sensor for integration
@@ -725,7 +753,6 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
           numFloorPoints = sampledIndices.size();
         }
 
-        //int numNonFloorPoints = filterUniform( nonground, pc, m_numNonFloorPoints );
         int numNonFloorPoints = 0;
         if (nonground.size() > 0){ // check for 0 size, otherwise PCL crashes
           // transform clouds back to sensor for integration
@@ -749,6 +776,7 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
         }
 
     }
+   }
     else
     {
        ROS_INFO("Starting uniform sampling");

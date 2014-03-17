@@ -38,15 +38,15 @@ public:
   State(double x, double y, double theta, Leg leg);
   ~State();
 
-  void setX(double x) { ivX = x; };
-  void setY(double y) { ivY = y; };
-  void setTheta(double theta) { ivTheta = theta; };
-  void setLeg(Leg leg) { ivLeg = leg; };
+  void setX(double x) { ivX = x; }
+  void setY(double y) { ivY = y; }
+  void setTheta(double theta) { ivTheta = theta; }
+  void setLeg(Leg leg) { ivLeg = leg; }
 
-  double getX() const { return ivX; };
+  double getX() const { return ivX; }
   double getY() const { return ivY; };
-  double getTheta() const { return ivTheta; };
-  Leg getLeg() const { return ivLeg; };
+  double getTheta() const { return ivTheta; }
+  Leg getLeg() const { return ivLeg; }
 
   /**
    * @brief Compare two states on equality of x, y, theta, leg upon

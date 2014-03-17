@@ -38,9 +38,9 @@ public:
     goal_sub_ = nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, &SBPLPlanner2D::goalCallback, &planner_);
     start_sub_ = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1, &SBPLPlanner2D::startCallback, &planner_);
 
-  };
+  }
 
-  virtual ~SBPLPlanner2DNode(){};
+  virtual ~SBPLPlanner2DNode(){}
 
 protected:
   SBPLPlanner2D planner_;

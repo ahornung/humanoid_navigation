@@ -51,7 +51,7 @@ public:
     ivFootstepPlanService = ivNh.advertiseService("plan_footsteps", &FootstepPlanner::planService, &ivFootstepPlanner);
   }
 
-  virtual ~FootstepPlannerWallsNode(){};
+  virtual ~FootstepPlannerWallsNode(){}
 
   void mapCallback(const nav_msgs::OccupancyGridConstPtr& occupancyMap)
   {

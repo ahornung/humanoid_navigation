@@ -37,7 +37,7 @@ PathCostHeuristic::PathCostHeuristic(double cell_size,
   ivInflationRadius(inflation_radius),
   ivGoalX(-1),
   ivGoalY(-1)
-{};
+{}
 
 
 PathCostHeuristic::~PathCostHeuristic()

@@ -109,7 +109,7 @@ public:
   void setMap(const cv::Mat& binaryMap);
 
   inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
-  inline float getResolution() const {return m_mapInfo.resolution; };
+  inline float getResolution() const {return m_mapInfo.resolution; }
   /// returns the tf frame ID of the map (usually "/map")
   inline const std::string getFrameID() const {return m_frameId;}
   /// @return the cv::Mat distance image.
@@ -117,7 +117,7 @@ public:
   /// @return the cv::Mat binary image.
   const cv::Mat& binaryMap() const {return m_binaryMap;}
   /// @return the size of the cv::Mat binary image. Note that x/y are swapped wrt. height/width
-  inline const CvSize size() const {return m_binaryMap.size();};
+  inline const CvSize size() const {return m_binaryMap.size();}
 
 
 protected:

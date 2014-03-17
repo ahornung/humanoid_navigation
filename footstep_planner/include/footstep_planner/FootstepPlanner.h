@@ -147,13 +147,13 @@ public:
   void setMarkerNamespace(const std::string& ns)
   {
     ivMarkerNamespace = ns;
-  };
+  }
 
   /// @brief Set the maximal search time.
   void setMaxSearchTime(int search_time)
   {
     ivMaxSearchTime = search_time;
-  };
+  }
 
   /**
    * @brief Callback to set the goal pose as a robot pose centered between
@@ -192,25 +192,25 @@ public:
   void clearFootstepPathVis(unsigned num_footsteps=0);
 
   /// @return Costs of the planned footstep path.
-  double getPathCosts() const { return ivPathCost; };
+  double getPathCosts() const { return ivPathCost; }
 
   /// @return Number of expanded states.
   size_t getNumExpandedStates() const
   {
     return ivPlannerPtr->get_n_expands();
-  };
+  }
 
   /// @return Number of planned foot poses.
-  size_t getNumFootPoses() const { return ivPath.size(); };
+  size_t getNumFootPoses() const { return ivPath.size(); }
 
-  state_iter_t getPathBegin() const { return ivPath.begin(); };
-  state_iter_t getPathEnd() const { return ivPath.end(); };
+  state_iter_t getPathBegin() const { return ivPath.begin(); }
+  state_iter_t getPathEnd() const { return ivPath.end(); }
 
   /// @return Size of the planned path.
-  int getPathSize() { return ivPath.size(); };
+  int getPathSize() { return ivPath.size(); }
 
-  State getStartFootLeft() { return ivStartFootLeft; };
-  State getStartFootRight() { return ivStartFootRight; };
+  State getStartFootLeft() { return ivStartFootLeft; }
+  State getStartFootRight() { return ivStartFootRight; }
 
   /// @brief Reset the previous planning information.
   void reset();
@@ -219,7 +219,7 @@ public:
   void resetTotally();
 
   /// @return True if for the current start and goal pose a path exists.
-  bool pathExists() { return (bool)ivPath.size(); };
+  bool pathExists() { return (bool)ivPath.size(); }
 
   /// @brief Planning parameters.
   environment_params ivEnvironmentParams;

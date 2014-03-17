@@ -47,7 +47,7 @@ public:
   virtual double getHValue(const PlanningState& from,
                            const PlanningState& to) const = 0;
 
-  HeuristicType getHeuristicType() const { return ivHeuristicType; };
+  HeuristicType getHeuristicType() const { return ivHeuristicType; }
 
 protected:
   double ivCellSize;

@@ -91,24 +91,24 @@ public:
    * cannot be done in the constructor since often such an ID is not known
    * when the planning state is created.)
    */
-  void setId(unsigned int id) { ivId = id; };
+  void setId(unsigned int id) { ivId = id; }
 
-  Leg getLeg() const { return ivLeg; };
-  int getTheta() const { return ivTheta; };
-  int getX() const { return ivX; };
-  int getY() const { return ivY; };
+  Leg getLeg() const { return ivLeg; }
+  int getTheta() const { return ivTheta; }
+  int getX() const { return ivX; }
+  int getY() const { return ivY; }
 
   /**
    * @return The (non-unique) hash tag used to identify the planning
    * state.
    */
-  unsigned int getHashTag() const { return ivHashTag; };
+  unsigned int getHashTag() const { return ivHashTag; }
 
   /**
    * @return The (unique) ID used within the SBPL to access the
    * planning state.
    */
-  int getId() const { return ivId; };
+  int getId() const { return ivId; }
 
   /// @brief Computes the continuous State the PlanningState represents.
   State getState(double cell_size, int num_angle_bins) const;

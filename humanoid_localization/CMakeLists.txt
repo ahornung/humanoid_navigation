@@ -1,33 +1,13 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(humanoid_localization)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE RelWithDebInfo)
-#set(ROS_BUILD_TYPE Debug)
-
-rosbuild_init()
-
+find_package(catkin REQUIRED COMPONENTS roscpp pcl_conversions pcl_ros message_filters sensor_msgs)
+find_package(OpenMP)
+find_package(Boost REQUIRED COMPONENTS random)
 find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIRS})
-add_definitions(${EIGEN_DEFINITIONS})
-
-find_package(octomap REQUIRED)                                                                        
-include_directories(${OCTOMAP_INCLUDE_DIRS})                                                          
-link_directories(${OCTOMAP_LIBRARY_DIRS})
-
-
-set(LIB_FILES 
-  src/HumanoidLocalization.cpp 
-  src/MotionModel.cpp 
-  src/MapModel.cpp
-  src/ObservationModel.cpp 
-  src/RaycastingModel.cpp
-)
+find_package(octomap REQUIRED)
+include_directories(${OCTOMAP_INCLUDE_DIRS})
+link_libraries(${OCTOMAP_LIBRARIES})
 
 find_package(dynamicEDT3D)
 if (${dynamicEDT3D_FOUND})                                                                       
@@ -40,18 +20,38 @@ else (${dynamicEDT3D_FOUND})
   add_definitions(-DSKIP_ENDPOINT_MODEL)
 endif (${dynamicEDT3D_FOUND})
 
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES mapmodel motionmodel observationmodel raycastingmodel observationmodel humanoidlocalization
+  CATKIN_DEPENDS tf
+  DEPENDS octomap OpenMP
+)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+include_directories(include
+  ${catkin_INCLUDE_DIRS}
+)
 
+if (${dynamicEDT3D_FOUND})
+  add_library(endpointmodel src/EndpointModel.cpp)
+endif (${dynamicEDT3D_FOUND})
 
+add_library(mapmodel src/MapModel.cpp)
+add_library(motionmodel src/MotionModel.cpp)
+add_library(observationmodel src/ObservationModel.cpp)
 
-rosbuild_add_library(${PROJECT_NAME} ${LIB_FILES})
-rosbuild_add_boost_directories()
-rosbuild_add_openmp_flags(${PROJECT_NAME})
+add_library(raycastingmodel src/RaycastingModel.cpp)
+target_link_libraries(raycastingmodel observationmodel)
 
-rosbuild_add_executable(localization_node src/localization_node.cpp)
-#rosbuild_link_boost(${PROJECT_NAME} random)
-target_link_libraries(localization_node ${PROJECT_NAME} ${OCTOMAP_LIBRARIES})
+add_library(humanoidlocalization src/HumanoidLocalization.cpp)
+target_link_libraries(humanoidlocalization mapmodel motionmodel observationmodel raycastingmodel ${catkin_LIBRARIES})
+
+add_executable(localization_node src/localization_node.cpp)
+target_link_libraries(localization_node humanoidlocalization ${catkin_LIBRARIES})
+
+# install
+install(TARGETS mapmodel motionmodel observationmodel raycastingmodel humanoidlocalization
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+) 
+install(TARGETS localization_node
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

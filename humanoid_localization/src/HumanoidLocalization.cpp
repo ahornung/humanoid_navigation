@@ -25,6 +25,12 @@
 #include <iostream>
 #include <pcl/keypoints/uniform_sampling.h>
 
+#include <pcl_ros/transforms.h>
+
+#if PCL_VERSION_COMPARE(>=,1,7,0)
+  #include<pcl_conversions/pcl_conversions.h>
+#endif
+
 // simple timing benchmark output
 #define _BENCH_TIME 0
 
@@ -165,8 +171,8 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
   m_laserFilter->registerCallback(boost::bind(&HumanoidLocalization::laserCallback, this, _1));
 
   // subscription on point cloud, tf message filter
-  m_pointCloudSub = new message_filters::Subscriber<PointCloud>(m_nh, "point_cloud", 100);
-  m_pointCloudFilter = new tf::MessageFilter< PointCloud >(*m_pointCloudSub, m_tfListener, m_odomFrameId, 100);
+  m_pointCloudSub = new message_filters::Subscriber<sensor_msgs::PointCloud2>(m_nh, "point_cloud", 100);
+  m_pointCloudFilter = new tf::MessageFilter<sensor_msgs::PointCloud2>(*m_pointCloudSub, m_tfListener, m_odomFrameId, 100);
   m_pointCloudFilter->registerCallback(boost::bind(&HumanoidLocalization::pointCloudCallback, this, _1));
 
   // subscription on init pose, tf message filter
@@ -407,7 +413,11 @@ bool HumanoidLocalization::isAboveMotionThreshold(const tf::Pose& odomPose){
 
 bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range){
   ros::WallTime startTime = ros::WallTime::now();
+#if PCL_VERSION_COMPARE(>=,1,7,0)
+  ros::Time t = pcl_conversions::fromPCL(pc_filtered.header).stamp;
+#else
   ros::Time t = pc_filtered.header.stamp;
+#endif
   // apply motion model with temporal sampling:
   m_motionModel->applyOdomTransformTemporal(m_particles, t, m_temporalSamplingRange);
   
@@ -508,7 +518,11 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
   ranges.reserve(50);
 
   // build a point cloud
+#if PCL_VERSION_COMPARE(>=,1,7,0)
+  pcl_conversions::toPCL(laser->header, pc.header);
+#else
   pc.header = laser->header;
+#endif
   pc.points.reserve(50);
   for (unsigned beam_idx = 0; beam_idx < numBeams; beam_idx+= step){
     float range = laser->ranges[beam_idx];
@@ -676,7 +690,7 @@ void HumanoidLocalization::filterGroundPlane(const PointCloud& pc, PointCloud& g
 
 
 
-void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const{
+void HumanoidLocalization::prepareGeneralPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc, std::vector<float>& ranges) const{
 
     pc.clear();
     // lookup Transfrom Sensor to BaseFootprint
@@ -695,7 +709,15 @@ void HumanoidLocalization::prepareGeneralPointCloud(const PointCloud::ConstPtr &
 
     // pass-through filter to get rid of near and far ranges
     pcl::PassThrough<pcl::PointXYZ> pass;
-    pass.setInputCloud (msg);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pcd_tmp(new pcl::PointCloud<pcl::PointXYZ>());
+#if PCL_VERSION_COMPARE(>=,1,7,0)
+    pcl::PCLPointCloud2 pcd2_tmp;
+    pcl_conversions::toPCL(*msg, pcd2_tmp);
+    pcl::fromPCLPointCloud2(pcd2_tmp, *pcd_tmp);
+#else
+    pcl::fromROSMsg(*msg, *pcd_tmp);
+#endif
+    pass.setInputCloud (pcd_tmp);
     pass.setFilterFieldName ("z");
     pass.setFilterLimits (m_filterMinRange, m_filterMaxRange);
     pass.filter (pc);
@@ -784,7 +806,7 @@ void HumanoidLocalization::voxelGridSampling(const PointCloud & pc, pcl::PointCl
    uniformSampling.compute(sampledIndices);
 }
 
-void HumanoidLocalization::pointCloudCallback(const PointCloud::ConstPtr & msg) {
+void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
   ROS_DEBUG("PointCloud received (time: %f)", msg->header.stamp.toSec());
 
   if (!m_initialized){

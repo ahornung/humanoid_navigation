@@ -49,7 +49,9 @@ namespace gridmap_2d{
 class GridMap2D {
 public:
   GridMap2D();
-  GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap);
+  ///@brief Copy constructor, performs a deep copy of underlying data structures
+  GridMap2D(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle = false);
+  GridMap2D(const GridMap2D& other);
   virtual ~GridMap2D();
 
   void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;
@@ -103,10 +105,10 @@ public:
   bool isOccupiedAtCell(unsigned int mx, unsigned int my) const;
 
   /// Initialize map from a ROS OccupancyGrid message
-  void setMap(const nav_msgs::OccupancyGridConstPtr& gridMap);
+  void setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle = false);
 
-  /// Initialize from an existing cv::Map. mapInfo (in particular resultion) remains the same!
-  void setMap(const cv::Mat& binaryMap);
+  /// Initialize from an existing cv::Map. mapInfo (in particular resolution) remains the same!
+  void setMap(const cv::Mat& binary_map);
 
   inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
   inline float getResolution() const {return m_mapInfo.resolution; };

@@ -30,6 +30,7 @@
 
 SBPLPlanner2D::SBPLPlanner2D()
   : nh_(),
+  robot_radius_(0.25),
   start_received_(false), goal_received_(false)
     //m_wayPointDistance(0.2)
 {
@@ -40,7 +41,7 @@ SBPLPlanner2D::SBPLPlanner2D()
   nh_private.param("allocated_time", allocated_time_, 7.0);
   nh_private.param("forward_search", forward_search_, false);
   nh_private.param("initial_epsilon", initial_epsilon_, 3.0);
-  nh_private.param("robot_radius", robot_radius_, 0.1);
+  nh_private.param("robot_radius", robot_radius_, robot_radius_);
 
   path_pub_ = nh_.advertise<nav_msgs::Path>("path", 0);
 
@@ -84,6 +85,19 @@ void SBPLPlanner2D::startCallback(const geometry_msgs::PoseWithCovarianceStamped
 bool SBPLPlanner2D::plan(const geometry_msgs::Pose& start, const geometry_msgs::Pose& goal){
   start_pose_ = start;
   goal_pose_ = goal;
+
+  start_received_ = true;
+  goal_received_ = true;
+
+  return plan();
+}
+
+bool SBPLPlanner2D::plan(double startX, double startY, double goalX, double goalY){
+  start_pose_.position.x = startX;
+  start_pose_.position.y = startY;
+
+  goal_pose_.position.x = goalX;
+  goal_pose_.position.y = goalY;
 
   start_received_ = true;
   goal_received_ = true;
@@ -172,13 +186,14 @@ bool SBPLPlanner2D::updateMap(gridmap_2d::GridMap2DPtr map){
   // environment is set up, reset planner:
   setPlanner();
 
-  map_ = map;
+  // store local copy:
+  map_.reset(new gridmap_2d::GridMap2D(*map));
   map_->inflateMap(robot_radius_);
 
 
-  for(unsigned int j = 0; j < map->getInfo().height; ++j){
-    for(unsigned int i = 0; i < map->getInfo().width; ++i){
-      if (map->isOccupiedAtCell(i,j))
+  for(unsigned int j = 0; j < map_->getInfo().height; ++j){
+    for(unsigned int i = 0; i < map_->getInfo().width; ++i){
+      if (map_->isOccupiedAtCell(i,j))
         planner_environment_->UpdateCost(i, j, OBSTACLE_COST);
       else
         planner_environment_->UpdateCost(i,j,0);
@@ -200,3 +215,5 @@ void SBPLPlanner2D::setPlanner(){
     planner_.reset(new RSTARPlanner(planner_environment_.get(),forward_search_));
   }
 }
+
+

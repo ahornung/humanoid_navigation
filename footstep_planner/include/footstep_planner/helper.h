@@ -29,7 +29,8 @@
 #include <angles/angles.h>
 #include <tf/tf.h>
 
-#include <math.h>
+#include <functional>
+#include <cmath>
 
 
 namespace footstep_planner
@@ -147,15 +148,9 @@ inline double cont_val(int length, double cell_size)
 /// @return The hash value of the key.
 inline unsigned int int_hash(int key)
 {
-  key += (key << 12);
-  key ^= (key >> 22);
-  key += (key << 4);
-  key ^= (key >> 9);
-  key += (key << 10);
-  key ^= (key >> 2);
-  key += (key << 7);
-  key ^= (key >> 12);
-  return key;
+  static std::hash<int> hash_fn;
+
+  return hash_fn( key );
 }
 
 

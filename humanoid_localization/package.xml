@@ -1,0 +1,54 @@
+<package>
+  <name>humanoid_localization</name>
+  <version>1.0.1</version>
+  <description>
+
+     <p>6D localization for humanoid robots based on depth data (laser, point clouds).
+     Two observation models are currently available based on OctoMap as 3D map:
+     Ray casting and an end point model (lookup in the distance map).</p>
+     <p>Details can be found in the publication <br/>
+     <em>"Humanoid Navigation with Dynamic Footstep Plans"</em>
+     by A. Hornung, K.M. Wurm, and M. Bennewitz; published in 
+     IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2010</p>
+  </description>
+  <maintainer email="HornungA@informatik.uni-freiburg.de">Armin Hornung</maintainer>
+  <author>Armin Hornung</author>
+  <author>Stefan Osswald</author>
+  <author>Daniel Maier</author>
+  <license>GPL</license>
+  <url>http://ros.org/wiki/humanoid_localization</url>
+  
+  <build_depend>roscpp</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>message_filters</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>std_srvs</build_depend>
+  <build_depend>octomap_msgs</build_depend>
+  <build_depend>octomap_ros</build_depend>
+  <build_depend>octomap</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>std_srvs</run_depend>
+  <run_depend>octomap_msgs</run_depend>
+  <run_depend>octomap_ros</run_depend>
+  <run_depend>octomap</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>pcl_conversions</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

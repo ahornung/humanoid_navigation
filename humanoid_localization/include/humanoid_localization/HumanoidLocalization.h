@@ -41,8 +41,6 @@
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/ros/conversions.h>
-#include <pcl_ros/transforms.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
@@ -90,7 +88,7 @@ public:
   HumanoidLocalization(unsigned randomSeed);
   virtual ~HumanoidLocalization();
   virtual void laserCallback(const sensor_msgs::LaserScanConstPtr& msg);
-  virtual void pointCloudCallback(const PointCloud::ConstPtr& msg);
+  virtual void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
   void initPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
   bool globalLocalizationCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   void pauseLocalizationCallback(const std_msgs::BoolConstPtr& msg);
@@ -178,7 +176,7 @@ protected:
    * near range, floor and subsamples a sparse point cloud (out of m_numSensorBeams points)
    *
    */
-  void prepareGeneralPointCloud(const PointCloud::ConstPtr & msg, PointCloud& pc, std::vector<float>& ranges) const;
+  void prepareGeneralPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc, std::vector<float>& ranges) const;
   int filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const;
   
   void voxelGridSampling(const PointCloud & pc, pcl::PointCloud<int> & sampledIndices, double searchRadius) const;
@@ -215,8 +213,8 @@ protected:
 
   message_filters::Subscriber<sensor_msgs::LaserScan>* m_laserSub;
   tf::MessageFilter<sensor_msgs::LaserScan>* m_laserFilter;
-  message_filters::Subscriber< PointCloud >* m_pointCloudSub;
-  tf::MessageFilter< PointCloud  >* m_pointCloudFilter;
+  message_filters::Subscriber<sensor_msgs::PointCloud2>* m_pointCloudSub;
+  tf::MessageFilter<sensor_msgs::PointCloud2>* m_pointCloudFilter;
   message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseSub;
   tf::MessageFilter<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseFilter;
 

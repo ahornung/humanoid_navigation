@@ -81,7 +81,7 @@ public:
       size_t seed = std::tr1::hash<int>()(x.first);
       return std::tr1::hash<int>()(x.second) + 0x9e3779b9 + (seed<<6) + (seed>>2);
     }
-  };
+  }
 
   typedef std::vector<int> exp_states_t;
   typedef exp_states_t::const_iterator exp_states_iter_t;
@@ -164,27 +164,27 @@ public:
   void reset();
 
   /// @return The number of expanded states during the search.
-  int getNumExpandedStates() { return ivNumExpandedStates; };
+  int getNumExpandedStates() { return ivNumExpandedStates; }
 
   exp_states_2d_iter_t getExpandedStatesStart()
   {
     return ivExpandedStates.begin();
-  };
+  }
 
   exp_states_2d_iter_t getExpandedStatesEnd()
   {
     return ivExpandedStates.end();
-  };
+  }
 
   exp_states_iter_t getRandomStatesStart()
   {
     return ivRandomStates.begin();
-  };
+  }
 
   exp_states_iter_t getRandomStatesEnd()
   {
     return ivRandomStates.end();
-  };
+  }
 
   /**
    * @return The costs (in mm, truncated as int) to reach the
@@ -345,7 +345,7 @@ protected:
   {
     bool operator ()(const PlanningState* a,
                      const PlanningState* b) const;
-  };
+  }
 
   /**
    * @brief ID of the planning goal, i.e. dependent on the planning direction

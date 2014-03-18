@@ -178,11 +178,11 @@ protected:
    */
   void prepareGeneralPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc, std::vector<float>& ranges) const;
   int filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const;
-  
+
   void voxelGridSampling(const PointCloud & pc, pcl::PointCloud<int> & sampledIndices, double searchRadius) const;
-  
+
   bool isAboveMotionThreshold(const tf::Pose& odomTransform);
-  
+
   bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);
 
   void constrainMotion(const tf::Pose& odomPose);
@@ -294,7 +294,7 @@ protected:
   bool m_useIMU;  ///< True = use IMU for initialization and observation models, false = use orientation from odometry
   bool m_constrainMotionZ; /// < True = do not estimate height, directly use odometry pose
   bool m_constrainMotionRP; /// < True = do not estimate roll and pitch, directly use odometry pose
-  
+
   // timer stuff
   bool m_useTimer;
   double m_timerPeriod;

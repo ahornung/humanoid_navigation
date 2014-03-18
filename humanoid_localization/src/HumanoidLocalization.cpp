@@ -115,12 +115,12 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
   // point cloud observation model parameters
   m_privateNh.param("ground_filter_point_cloud", m_groundFilterPointCloud, m_groundFilterPointCloud);
   m_privateNh.param("ground_filter_distance", m_groundFilterDistance, m_groundFilterDistance);
-  m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle); 
+  m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle);
   m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
   m_privateNh.param("sensor_sampling_dist_ground_factor", m_sensorSampleDistGroundFactor, m_sensorSampleDistGroundFactor);
   m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
   m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
-  
+
   m_privateNh.param("use_timer", m_useTimer, m_useTimer);
   m_privateNh.param("timer_period", m_timerPeriod, m_timerPeriod);
 
@@ -208,7 +208,7 @@ HumanoidLocalization::~HumanoidLocalization() {
   delete m_initPoseSub;
 
 }
-  
+
 void HumanoidLocalization::timerCallback(const ros::TimerEvent & e){
    ros::Time transformExpiration = e.current_real + ros::Duration(m_transformTolerance);
    tf::StampedTransform tmp_tf_stamped(m_latest_transform, transformExpiration, m_globalFrameId, m_targetFrameId);

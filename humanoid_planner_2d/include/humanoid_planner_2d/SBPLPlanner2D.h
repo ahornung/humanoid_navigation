@@ -94,10 +94,10 @@ protected:
   bool start_received_, goal_received_;
   geometry_msgs::Pose start_pose_, goal_pose_;
   nav_msgs::Path path_;
-  
+
   static const unsigned char OBSTACLE_COST = 20;
 
   //double m_wayPointDistance;
 };
 
-#endif 
+#endif

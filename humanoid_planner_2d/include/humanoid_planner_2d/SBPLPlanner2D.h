@@ -71,6 +71,9 @@ public:
    */
   bool plan(double startX, double startY, double goalX, double goalY);
 
+  /// @return costs of the path (=length in m), if planning was successful
+  inline double getPathCosts() const{return path_costs_;};
+
   inline const nav_msgs::Path& getPath() const{return path_;};
   inline double getRobotRadius() const{return robot_radius_;};
 
@@ -94,10 +97,10 @@ protected:
   bool start_received_, goal_received_;
   geometry_msgs::Pose start_pose_, goal_pose_;
   nav_msgs::Path path_;
-
+  double path_costs_;
+  
   static const unsigned char OBSTACLE_COST = 20;
 
-  //double m_wayPointDistance;
 };
 
 #endif

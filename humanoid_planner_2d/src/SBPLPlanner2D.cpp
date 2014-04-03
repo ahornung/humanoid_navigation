@@ -31,11 +31,12 @@
 SBPLPlanner2D::SBPLPlanner2D()
   : nh_(),
   robot_radius_(0.25),
-  start_received_(false), goal_received_(false)
-    //m_wayPointDistance(0.2)
+  start_received_(false), goal_received_(false),
+  path_costs_(0.0)
 {
-	// private NodeHandle for parameters:
-	ros::NodeHandle nh_private("~");
+  
+  // private NodeHandle for parameters:
+  ros::NodeHandle nh_private("~");
   nh_private.param("planner_type", planner_type_, std::string("ARAPlanner"));
   nh_private.param("search_until_first_solution", search_until_first_solution_, false);
   nh_private.param("allocated_time", allocated_time_, 7.0);
@@ -148,6 +149,9 @@ bool SBPLPlanner2D::plan(){
     ROS_INFO("Solution not found");
     return false;
   }
+
+  // scale costs (SBPL uses mm and does not know map res)
+  path_costs_ = double(solution_cost) / ENVNAV2D_COSTMULT * map_->getResolution();
 
   // extract / publish path:
   path_.poses.reserve(solution_stateIDs.size());

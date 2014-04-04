@@ -144,7 +144,7 @@ bool SBPLPlanner2D::plan(){
 
 
   if(planner_->replan(allocated_time_, &solution_stateIDs, &solution_cost))
-    ROS_INFO("Solution found. Costs: %d;  final eps: %f", solution_cost, planner_->get_final_epsilon());
+    ROS_DEBUG("Solution found. Costs: %d;  final eps: %f", solution_cost, planner_->get_final_epsilon());
   else{
     ROS_INFO("Solution not found");
     return false;

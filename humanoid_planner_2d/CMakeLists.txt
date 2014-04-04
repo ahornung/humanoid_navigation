@@ -11,9 +11,14 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
+## CMake config:
+#find_package(sbpl REQUIRED)
+## pkg-config:
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SBPL REQUIRED sbpl)
+
 include_directories(${SBPL_INCLUDE_DIRS})
+# not needed for SBPL with CMake config
 link_directories(${SBPL_LIBRARY_DIRS})
 
 

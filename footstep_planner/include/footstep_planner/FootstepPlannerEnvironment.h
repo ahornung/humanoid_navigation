@@ -81,7 +81,7 @@ public:
       size_t seed = std::tr1::hash<int>()(x.first);
       return std::tr1::hash<int>()(x.second) + 0x9e3779b9 + (seed<<6) + (seed>>2);
     }
-  }
+  };
 
   typedef std::vector<int> exp_states_t;
   typedef exp_states_t::const_iterator exp_states_iter_t;
@@ -345,7 +345,7 @@ protected:
   {
     bool operator ()(const PlanningState* a,
                      const PlanningState* b) const;
-  }
+  };
 
   /**
    * @brief ID of the planning goal, i.e. dependent on the planning direction

@@ -10,7 +10,8 @@ link_directories(${SBPL_LIBRARY_DIRS})
 
 catkin_package(
   INCLUDE_DIRS include
-  DEPENDS sbpl
+  LIBRARIES ${PROJECT_NAME}
+  DEPENDS sbpl  
 )
 
 include_directories(include)

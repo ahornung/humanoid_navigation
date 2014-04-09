@@ -69,7 +69,7 @@ void SBPLPlanner2D::goalCallback(const geometry_msgs::PoseStampedConstPtr& goal_
 }
 
 void SBPLPlanner2D::startCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& start_pose){
-  // set goal:
+  // set start:
   start_pose_ = start_pose->pose.pose;
   start_received_ = true;
   ROS_DEBUG("Received start: %f %f", start_pose_.position.x, start_pose_.position.y);
@@ -113,6 +113,7 @@ bool SBPLPlanner2D::plan(){
     ROS_ERROR("Map not set");
     return false;
   }
+
   unsigned start_x, start_y, goal_x, goal_y;
   if (!map_->worldToMap(start_pose_.position.x, start_pose_.position.y, start_x, start_y)){
     ROS_ERROR("Start coordinates out of map bounds");
@@ -120,6 +121,15 @@ bool SBPLPlanner2D::plan(){
   }
   if (!map_->worldToMap(goal_pose_.position.x, goal_pose_.position.y, goal_x, goal_y)){
     ROS_ERROR("Goal coordinates out of map bounds");
+    return false;
+  }
+
+  if (map_->isOccupiedAtCell(start_x, start_y)){
+    ROS_ERROR("Start coordinate (%f %f) is occupied in map", start_pose_.position.x, start_pose_.position.y);
+    return false;
+  }
+  if (map_->isOccupiedAtCell(goal_x, goal_y)){
+    ROS_ERROR("Goal coordinate (%f %f) is occupied in map", goal_pose_.position.x, goal_pose_.position.y);
     return false;
   }
 

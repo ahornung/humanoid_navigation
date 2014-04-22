@@ -97,6 +97,9 @@ public:
   /// Returns map value at map cell <mx, my>; out of bounds will be returned as 0!
   uchar binaryMapAtCell(unsigned int mx, unsigned int my) const;
 
+  /// Returns map value at map cell <mx, my>; out of bounds will be returned as 0!
+  uchar& binaryMapAtCell(unsigned int mx, unsigned int my);
+
   /// @return true if map is occupied at world coordinate <wx, wy>. Out of bounds
   /// 		will be returned as occupied.
   bool isOccupiedAt(double wx, double wy) const;
@@ -110,6 +113,9 @@ public:
   /// Initialize from an existing cv::Map. mapInfo (in particular resolution) remains the same!
   void setMap(const cv::Mat& binary_map);
 
+  /// Recalculate the internale distance map. Required after manual changes to the grid map data.
+  void updateDistanceMap();
+
   inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}
   inline float getResolution() const {return m_mapInfo.resolution; };
   /// returns the tf frame ID of the map (usually "/map")
@@ -121,6 +127,8 @@ public:
   /// @return the size of the cv::Mat binary image. Note that x/y are swapped wrt. height/width
   inline const CvSize size() const {return m_binaryMap.size();};
 
+  const static uchar FREE = 255;  ///< char value for "free": 255
+  const static uchar OCCUPIED = 0; ///< char value for "free": 0
 
 protected:
   cv::Mat m_binaryMap;	///< binary occupancy map. 255: free, 0 occupied.
@@ -131,6 +139,7 @@ protected:
 };
 
 typedef boost::shared_ptr< GridMap2D> GridMap2DPtr;
+typedef boost::shared_ptr<const GridMap2D> GridMap2DConstPtr;
 }
 
 #endif /* GRIDMAP2D_H_ */

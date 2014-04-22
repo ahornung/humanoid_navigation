@@ -58,6 +58,12 @@ GridMap2D::~GridMap2D() {
 
 }
 
+void GridMap2D::updateDistanceMap(){
+  cv::distanceTransform(m_binaryMap, m_distMap, CV_DIST_L2, CV_DIST_MASK_PRECISE);
+  // distance map now contains distance in meters:
+  m_distMap = m_distMap * m_mapInfo.resolution;
+}
+
 void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle){
   m_mapInfo = grid_map->info;
   m_frameId = grid_map->header.frame_id;
@@ -78,16 +84,15 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unk
       if (*mapDataIter > map_occ_thres
           || (unknown_as_obstacle && *mapDataIter < 0))
       {
-        m_binaryMap.at<uchar>(i,j) = 0;
+        m_binaryMap.at<uchar>(i,j) = OCCUPIED;
       } else{
-        m_binaryMap.at<uchar>(i,j) = 255;
+        m_binaryMap.at<uchar>(i,j) = FREE;
       }
       mapDataIter++;
     }
   }
-  cv::distanceTransform(m_binaryMap, m_distMap, CV_DIST_L2, CV_DIST_MASK_PRECISE);
-  // distance map now contains distance in meters:
-  m_distMap = m_distMap * m_mapInfo.resolution;
+
+  updateDistanceMap();
 
   ROS_INFO("GridMap2D created with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
 }
@@ -162,13 +167,16 @@ uchar GridMap2D::binaryMapAt(double wx, double wy) const{
     return 0;
 }
 
-
 float GridMap2D::distanceMapAtCell(unsigned int mx, unsigned int my) const{
   return m_distMap.at<float>(mx, my);
 }
 
 
 uchar GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my) const{
+  return m_binaryMap.at<uchar>(mx, my);
+}
+
+uchar& GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my){
   return m_binaryMap.at<uchar>(mx, my);
 }
 

@@ -49,8 +49,9 @@ namespace gridmap_2d{
 class GridMap2D {
 public:
   GridMap2D();
-  ///@brief Copy constructor, performs a deep copy of underlying data structures
+  ///@brief Create from nav_msgs::OccupancyGrid
   GridMap2D(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle = false);
+  ///@brief Copy constructor, performs a deep copy of underlying data structures
   GridMap2D(const GridMap2D& other);
   virtual ~GridMap2D();
 
@@ -107,13 +108,16 @@ public:
   /// @return true if map is occupied at cell <mx, my>
   bool isOccupiedAtCell(unsigned int mx, unsigned int my) const;
 
-  /// Initialize map from a ROS OccupancyGrid message
+  ///@brief Initialize map from a ROS OccupancyGrid message
   void setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle = false);
 
-  /// Initialize from an existing cv::Map. mapInfo (in particular resolution) remains the same!
+  ///@brief Converts back into a ROS nav_msgs::OccupancyGrid msg
+  nav_msgs::OccupancyGrid toOccupancyGridMsg() const;
+
+  ///@brief Initialize from an existing cv::Map. mapInfo (in particular resolution) remains the same!
   void setMap(const cv::Mat& binary_map);
 
-  /// Recalculate the internale distance map. Required after manual changes to the grid map data.
+  ///@brief Recalculate the internal distance map. Required after manual changes to the grid map data.
   void updateDistanceMap();
 
   inline const nav_msgs::MapMetaData& getInfo() const {return m_mapInfo;}

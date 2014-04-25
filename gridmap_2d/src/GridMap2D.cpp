@@ -88,13 +88,37 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unk
       } else{
         m_binaryMap.at<uchar>(i,j) = FREE;
       }
-      mapDataIter++;
+      ++mapDataIter;
     }
   }
 
   updateDistanceMap();
 
   ROS_INFO("GridMap2D created with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
+}
+
+nav_msgs::OccupancyGrid GridMap2D::toOccupancyGridMsg() const{
+  nav_msgs::OccupancyGrid msg;
+  msg.header.frame_id = m_frameId;
+  msg.header.stamp = ros::Time::now();
+  msg.info = m_mapInfo;
+  msg.data.resize(msg.info.height*msg.info.width);
+
+  // iterate over map, store in data
+  std::vector<signed char>::iterator mapDataIter = msg.data.begin();
+  // (0,0) is lower left corner of OccupancyGrid
+  for(unsigned int j = 0; j < m_mapInfo.height; ++j){
+    for(unsigned int i = 0; i < m_mapInfo.width; ++i){
+      if (m_binaryMap.at<uchar>(i,j) == OCCUPIED)
+        *mapDataIter = 100;
+      else
+        *mapDataIter = 0;
+
+      ++mapDataIter;
+    }
+  }
+
+  return msg;
 }
 
 void GridMap2D::setMap(const cv::Mat& binaryMap){

@@ -1075,7 +1075,22 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
   m_receivedSensorData = false;
   m_initialized = true;
 
-  publishPoseEstimate(msg->header.stamp, false);
+
+  // adjust stamp so that we are not publishing transform with stamp=0 (RViz)
+  ros::Time stampPublish;
+  if (msg->header.stamp.isZero()){
+    tf::Stamped<tf::Pose> lastOdomPose;
+    m_motionModel->getLastOdomPose(lastOdomPose);
+    stampPublish = lastOdomPose.stamp_;
+    if (stampPublish.isZero())
+       stampPublish = ros::Time::now();
+    ROS_INFO("Stamp=0. Setting stamp to %f",stampPublish.toSec());
+  }
+  else
+    stampPublish = msg->header.stamp;
+
+
+  publishPoseEstimate(stampPublish, false);
 }
 
 

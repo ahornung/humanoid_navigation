@@ -423,7 +423,8 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   
   // constrain to ground plane, if desired:
   tf::Stamped<tf::Transform> odomPose;
-  assert(m_motionModel->lookupOdomPose(t, odomPose));
+  if (!m_motionModel->lookupOdomPose(t, odomPose))
+    return false;
   constrainMotion(odomPose);
 
   // transformation from torso frame to sensor

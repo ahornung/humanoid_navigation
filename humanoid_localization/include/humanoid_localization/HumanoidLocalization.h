@@ -278,8 +278,6 @@ protected:
   double m_groundFilterAngle;
   double m_groundFilterPlaneDistance;
   double m_sensorSampleDistGroundFactor;
-  int m_numFloorPoints;
-  int m_numNonFloorPoints;
 
 
   /// sensor data last integrated at this odom pose, to check if moved enough since then

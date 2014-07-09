@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *
@@ -41,7 +38,7 @@ m_rngEngine(randomSeed),
 m_rngNormal(m_rngEngine, NormalDistributionT(0.0, 1.0)),
 m_rngUniform(m_rngEngine, UniformDistributionT(0.0, 1.0)),
 m_nh(),m_privateNh("~"),
-m_odomFrameId("odom"), m_targetFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("/map"),
+m_odomFrameId("odom"), m_targetFrameId("odom"), m_baseFrameId("torso"), m_baseFootprintId("base_footprint"), m_globalFrameId("map"),
 m_useRaycasting(true), m_initFromTruepose(false), m_numParticles(500),
 m_sensorSampleDist(0.2),
 m_nEffFactor(1.0), m_minParticleWeight(0.0),
@@ -50,12 +47,11 @@ m_bestParticleAsMean(true),
 m_receivedSensorData(false), m_initialized(false), m_initGlobal(false), m_paused(false),
 m_syncedTruepose(false),
 m_observationThresholdTrans(0.1), m_observationThresholdRot(M_PI/6),
-m_observationThresholdHeadYawRot(0.1), m_observationThresholdHeadPitchRot(0.1),
+m_observationThresholdHeadYawRot(0.5), m_observationThresholdHeadPitchRot(0.3),
 m_temporalSamplingRange(0.1), m_transformTolerance(0.1),
 m_groundFilterPointCloud(true), m_groundFilterDistance(0.04),
 m_groundFilterAngle(0.15), m_groundFilterPlaneDistance(0.07),
 m_sensorSampleDistGroundFactor(3),
-m_numFloorPoints(20), m_numNonFloorPoints(80),
 m_headYawRotationLastScan(0.0), m_headPitchRotationLastScan(0.0),
 m_useIMU(false),
 m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_timerPeriod(0.1)
@@ -118,8 +114,6 @@ m_constrainMotionZ (false), m_constrainMotionRP(false), m_useTimer(false), m_tim
   m_privateNh.param("ground_filter_angle", m_groundFilterAngle, m_groundFilterAngle);
   m_privateNh.param("ground_filter_plane_distance", m_groundFilterPlaneDistance, m_groundFilterPlaneDistance);
   m_privateNh.param("sensor_sampling_dist_ground_factor", m_sensorSampleDistGroundFactor, m_sensorSampleDistGroundFactor);
-  m_privateNh.param("num_floor_points", m_numFloorPoints, m_numFloorPoints);
-  m_privateNh.param("num_non_floor_points", m_numNonFloorPoints, m_numNonFloorPoints);
 
   m_privateNh.param("use_timer", m_useTimer, m_useTimer);
   m_privateNh.param("timer_period", m_timerPeriod, m_timerPeriod);
@@ -230,7 +224,7 @@ void HumanoidLocalization::reset(){
     if (m_initFromTruepose){ // useful for evaluation, when ground truth available:
       geometry_msgs::PoseStamped truePose;
       tf::Stamped<tf::Pose> truePoseTF;
-      tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), ros::Time::now(), "/torso_real"); // TODO: param
+      tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(), tf::Vector3(0,0,0)), ros::Time::now(), "torso_real"); // TODO: param
 
       ros::Time lookupTime = ros::Time::now();
       while(m_nh.ok() && !m_tfListener.waitForTransform(m_globalFrameId, ident.frame_id_, lookupTime, ros::Duration(1.0))){
@@ -737,7 +731,6 @@ void HumanoidLocalization::prepareGeneralPointCloud(const sensor_msgs::PointClou
         pc.clear();
         pcl::PointCloud<int> sampledIndices;
 
-        //int numFloorPoints = filterUniform( ground, pc, m_numFloorPoints );
         int numFloorPoints = 0;
         if (ground.size() > 0){ // check for 0 size, otherwise PCL crashes
           // transform clouds back to sensor for integration
@@ -1076,20 +1069,17 @@ void HumanoidLocalization::initPoseCallback(const geometry_msgs::PoseWithCovaria
   m_initialized = true;
 
 
-  // adjust stamp so that we are not publishing transform with stamp=0 (RViz)
-  ros::Time stampPublish;
-  if (msg->header.stamp.isZero()){
+  // Fix "0" time warning (when initializing pose from RViz)
+  ros::Time stampPublish = msg->header.stamp;
+  if (stampPublish.isZero()){
     tf::Stamped<tf::Pose> lastOdomPose;
     m_motionModel->getLastOdomPose(lastOdomPose);
     stampPublish = lastOdomPose.stamp_;
     if (stampPublish.isZero())
        stampPublish = ros::Time::now();
-    ROS_INFO("Stamp=0. Setting stamp to %f",stampPublish.toSec());
+  
   }
-  else
-    stampPublish = msg->header.stamp;
-
-
+  
   publishPoseEstimate(stampPublish, false);
 }
 

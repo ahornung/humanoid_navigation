@@ -284,6 +284,8 @@ OccupancyMap::OccupancyMap(ros::NodeHandle* nh)
   double x,y,z;
   m_map->getMetricSize(x,y,z);
   ROS_INFO("Occupancy map initialized with %zd nodes (%.2f x %.2f x %.2f m), %f m res.", m_map->size(), x,y,z, m_map->getResolution());
+  
+  m_map->writeBinary("/tmp/octomap_loc");
 
 }
 

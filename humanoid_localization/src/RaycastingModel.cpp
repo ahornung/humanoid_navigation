@@ -1,6 +1,3 @@
-// SVN $HeadURL$
-// SVN $Id$
-
 /*
  * 6D localization for humanoid robots
  *
@@ -48,6 +45,13 @@ RaycastingModel::RaycastingModel(ros::NodeHandle* nh, boost::shared_ptr<MapModel
   if (m_zRand <= 0.0){
     ROS_ERROR("raycasting/z_rand needs to be > 0.0");
   }
+   #pragma omp parallel
+   #pragma omp critical
+    {
+      if (omp_get_thread_num() == 0){
+        ROS_INFO("Using %d threads in RaycastingModel", omp_get_num_threads());
+      }
+    }
 }
 
 RaycastingModel::~RaycastingModel(){

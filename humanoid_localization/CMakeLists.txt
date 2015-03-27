@@ -29,7 +29,7 @@ endif (${dynamicEDT3D_FOUND})
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${LIBRARIES} observationmodel humanoidlocalization
+  LIBRARIES ${LIBRARIES} humanoidlocalization
   CATKIN_DEPENDS tf
   DEPENDS octomap OpenMP
 )
@@ -56,7 +56,7 @@ add_executable(localization_node src/localization_node.cpp)
 target_link_libraries(localization_node humanoidlocalization ${catkin_LIBRARIES})
 
 # install
-install(TARGETS mapmodel motionmodel observationmodel raycastingmodel humanoidlocalization
+install(TARGETS ${LIBRARIES} humanoidlocalization
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 ) 
 install(TARGETS localization_node

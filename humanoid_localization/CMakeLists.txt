@@ -14,12 +14,14 @@ SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
+SET(LIBRARIES mapmodel motionmodel observationmodel raycastingmodel)
+
 find_package(dynamicEDT3D)
 if (${dynamicEDT3D_FOUND})                                                                       
   include_directories(${DYNAMICEDT3D_INCLUDE_DIRS})                                                          
   link_directories(${DYNAMICEDT3D_LIBRARY_DIRS})
   LINK_LIBRARIES(${OCTOMAP_LIBRARIES} ${DYNAMICEDT3D_LIBRARIES})
-  list(APPEND LIB_FILES src/EndpointModel.cpp)                                      
+  list(APPEND LIBRARIES endpointmodel)
 else (${dynamicEDT3D_FOUND})
   MESSAGE(WARNING "dynamicEDT3D library (part of OctoMap >1.5) not found, skipping endpoint model")
   add_definitions(-DSKIP_ENDPOINT_MODEL)
@@ -27,7 +29,7 @@ endif (${dynamicEDT3D_FOUND})
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES mapmodel motionmodel observationmodel raycastingmodel observationmodel humanoidlocalization
+  LIBRARIES ${LIBRARIES} humanoidlocalization
   CATKIN_DEPENDS tf
   DEPENDS octomap OpenMP
 )
@@ -48,13 +50,13 @@ add_library(raycastingmodel src/RaycastingModel.cpp)
 target_link_libraries(raycastingmodel observationmodel)
 
 add_library(humanoidlocalization src/HumanoidLocalization.cpp)
-target_link_libraries(humanoidlocalization mapmodel motionmodel observationmodel raycastingmodel ${catkin_LIBRARIES})
+target_link_libraries(humanoidlocalization ${LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(localization_node src/localization_node.cpp)
 target_link_libraries(localization_node humanoidlocalization ${catkin_LIBRARIES})
 
 # install
-install(TARGETS mapmodel motionmodel observationmodel raycastingmodel humanoidlocalization
+install(TARGETS ${LIBRARIES} humanoidlocalization
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 ) 
 install(TARGETS localization_node

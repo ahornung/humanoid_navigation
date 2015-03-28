@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(humanoid_localization)
 
-find_package(catkin REQUIRED COMPONENTS roscpp pcl_conversions pcl_ros message_filters sensor_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp pcl_conversions pcl_ros message_filters sensor_msgs cmake_modules)
 find_package(OpenMP)
 find_package(Boost REQUIRED COMPONENTS random)
 find_package(Eigen REQUIRED)

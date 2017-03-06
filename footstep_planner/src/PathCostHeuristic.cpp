@@ -134,6 +134,9 @@ PathCostHeuristic::calculateDistances(const PlanningState& from,
 void
 PathCostHeuristic::updateMap(gridmap_2d::GridMap2DPtr map)
 {
+  if (ivpGrid) // reset map before change it's sizes (in other case we will get SEGMENT ERROR)
+    resetGrid();
+
   ivMapPtr.reset();
   ivMapPtr = map;
 
@@ -146,8 +149,7 @@ PathCostHeuristic::updateMap(gridmap_2d::GridMap2DPtr map)
     ivGridSearchPtr->destroy();
   ivGridSearchPtr.reset(new SBPL2DGridSearch(width, height,
                                              ivMapPtr->getResolution()));
-  if (ivpGrid)
-    resetGrid();
+
   ivpGrid = new unsigned char* [width];
 
   for (unsigned x = 0; x < width; ++x)
@@ -171,8 +173,9 @@ PathCostHeuristic::updateMap(gridmap_2d::GridMap2DPtr map)
 void
 PathCostHeuristic::resetGrid()
 {
-  CvSize size = ivMapPtr->size();
-  for (int x = 0; x < size.width; ++x)
+  // CvSize size = ivMapPtr->size(); // here we get (height; width) instead of (width; height)
+  int width = ivMapPtr->getInfo().width;
+  for (int x = 0; x < width; ++x)
   {
     if (ivpGrid[x])
     {
